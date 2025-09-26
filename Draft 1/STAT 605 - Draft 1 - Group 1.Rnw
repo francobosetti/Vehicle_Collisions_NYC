@@ -14,8 +14,13 @@
 \subtitle{Introduction}
 
 
+
 \subtitle{Visualizations}
 
+<<>>=
+
+
+@
 
 \subtitle{Preliminary Statistical Modeling & Interpretation}
 
