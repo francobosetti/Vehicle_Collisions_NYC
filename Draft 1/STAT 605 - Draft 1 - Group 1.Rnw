@@ -1,0 +1,76 @@
+\documentclass[10pt]{article}
+\usepackage[left=1in,right=1in,top=1in,bottom=1in]{geometry}
+\usepackage{amsmath}
+\usepackage{hyperref}
+%\SweaveOpts[concordance=TRUE]
+\begin{document}
+
+
+\title{Motor vehicle colisions in NYC}
+\author{Group 1 (605 - S1)}
+\maketitle
+\tableofcontents
+
+\subtitle{Introduction}
+
+
+\subtitle{Visualizations}
+
+
+\subtitle{Preliminary Statistical Modeling & Interpretation}
+
+<<>>=
+library(dplyr)
+library(broom)
+library(lubridate)
+
+crash_data <- read.csv("Motor_Vehicle_Collisions_-_Crashes.csv", header = TRUE, stringsAsFactors = FALSE)
+
+@
+
+<<>>=
+crash_data_small <- crash_data %>%
+  transmute(
+    is_fatal = ifelse(NUMBER.OF.PERSONS.KILLED > 0, 1, 0),  # outcome
+    BOROUGH,
+    CRASH_HOUR = hour(hm(CRASH.TIME)),
+    CONTRIBUTING.FACTOR.VEHICLE.1,
+    vehicle_cat = case_when(
+      grepl("MOTORCYCLE|MOTORBIKE", VEHICLE.TYPE.CODE.1, ignore.case = TRUE) ~ "motorcycle",
+      grepl("TRUCK|BUS", VEHICLE.TYPE.CODE.1, ignore.case = TRUE) ~ "truck_bus",
+      grepl("BICYCLE|BIKE|SCOOTER", VEHICLE.TYPE.CODE.1, ignore.case = TRUE) ~ "bike_scooter",
+      TRUE ~ "car_suv"
+    )
+  )
+
+crash_data_small <- crash_data_small %>%
+  mutate(hour = as.numeric(substr(CRASH_HOUR, 1, 2)),
+         tod = ifelse(hour >= 6 & hour < 18, "day", "night"))
+
+rm(crash_data)
+gc()
+
+model <- glm(is_fatal ~ BOROUGH + tod + vehicle_cat + CONTRIBUTING.FACTOR.VEHICLE.1,
+             data = crash_data_small,
+             family = binomial)
+
+summary(model)
+
+exp(coef(model))
+
+results <- tidy(model, exponentiate = TRUE, conf.int = TRUE)
+
+results %>%
+  filter(term != "(Intercept)") %>%
+  mutate(significant = ifelse(conf.low > 1 | conf.high < 1, "yes", "no")) %>%
+  select(term, estimate, conf.low, conf.high, significant)
+
+@
+
+
+<<echo=FALSE>>=
+
+@
+
+
+\end{document}
