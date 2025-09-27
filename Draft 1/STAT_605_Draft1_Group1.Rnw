@@ -198,17 +198,15 @@ The histogram below shows the total number of accidents in the dataset for each 
 
 <<>>=
 layout(mat = 1)
-dates <- nyc$CRASH.DATE
 times <- nyc$CRASH.TIME
 hours <- as.numeric(sub("\\:.*", "", times))
-hist(hours)
 par(tck = -0.015, mgp = c(1.5, 0.4, 0), mar = c(3, 3, 3, 1.5))
 hist(hours, xlab = "Time of day", ylab = "Number of accidents", axes = FALSE, 
      main="Total Number of Accidents per Time of Day", 
      breaks=seq(-0.5, 23.5, 1))
 
 labels <- c("12:00AM", "3:00AM", "6:00AM", "9:00AM", 
-             "12:00PM", "3:00PM", "6:00PM", "9:00PM")
+            "12:00PM", "3:00PM", "6:00PM", "9:00PM")
 axp <- seq(0, 23, by=3)
 axis(1, at=axp, labels = labels)
 axp2 <- seq(0, 150000, by=50000)
