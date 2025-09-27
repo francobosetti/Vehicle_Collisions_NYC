@@ -75,7 +75,9 @@ Primary Dataset: NYC Motor Vehicle Collisions
 
 Our primary dataset contains police-reported motor vehicle collision records from New York City, maintained by the NYPD through their TrafficStat initiative. The dataset includes 2.21 million collision records with 29 variables.
 
+
 Source: NYC OpenData (2025)
+
 
 Key variables include:
 \begin{itemize}
@@ -92,14 +94,19 @@ Secondary Dataset: Twitter Traffic Classifications (\url{https://data.mendeley.c
 
 Our secondary dataset contains classified tweets collected from Twitter's API, with each tweet categorized by its traffic-related content.
 
+
 Source: Research dataset by Sina Dabiri (2018)
+
+
 Variables include:
-Tweet ID
-Classification label: 
-Non-Traffic (Class 0): General tweets unrelated to traffic
-Traffic Incident (Class 1): Reports of crashes, breakdowns, road closures
-Traffic Conditions (Class 2): Congestion reports, traffic advisories, flow conditions
-Tweet text content
+\begin{itemize}
+  \item Tweet ID
+  \item Classification label: 
+  \item Non-Traffic (Class 0): General tweets unrelated to traffic
+  \item Traffic Incident (Class 1): Reports of crashes, breakdowns, road closures
+  \item Traffic Conditions (Class 2): Congestion reports, traffic advisories, flow conditions
+  \item Tweet text content
+\end{itemize}
 
 Preprocessing: We haven't processed the Twitter data yet, but plan to rename variables and clean the text data to prepare it for our analysis and comparison with the collision records.
 
@@ -252,7 +259,7 @@ In the dataset every entry has up to 5 `contributing factors'. Below, We see the
 \end{kframe}
 \includegraphics[width=\maxwidth]{figure/unnamed-chunk-4-1} 
 \end{knitrout}
-An overwhelming cause of accidents are due to driver distraction, more then 3 times the next most common.
+An overwhelming cause of accidents are due to driver distraction, more than 3 times the next most common.
 
 
 \subsection{Crashes by Time of Day}
@@ -263,28 +270,22 @@ The histogram below shows the total number of accidents in the dataset for each 
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
 \begin{alltt}
 \hlkwd{layout}\hldef{(}\hlkwc{mat} \hldef{=} \hlnum{1}\hldef{)}
-\hldef{dates} \hlkwb{<-} \hldef{nyc}\hlopt{$}\hldef{CRASH.DATE}
 \hldef{times} \hlkwb{<-} \hldef{nyc}\hlopt{$}\hldef{CRASH.TIME}
 \hldef{hours} \hlkwb{<-} \hlkwd{as.numeric}\hldef{(}\hlkwd{sub}\hldef{(}\hlsng{"\textbackslash{}\textbackslash{}:.*"}\hldef{,} \hlsng{""}\hldef{, times))}
-\hlkwd{hist}\hldef{(hours)}
-\end{alltt}
-\end{kframe}
-\includegraphics[width=\maxwidth]{figure/unnamed-chunk-5-1} 
-\begin{kframe}\begin{alltt}
 \hlkwd{par}\hldef{(}\hlkwc{tck} \hldef{=} \hlopt{-}\hlnum{0.015}\hldef{,} \hlkwc{mgp} \hldef{=} \hlkwd{c}\hldef{(}\hlnum{1.5}\hldef{,} \hlnum{0.4}\hldef{,} \hlnum{0}\hldef{),} \hlkwc{mar} \hldef{=} \hlkwd{c}\hldef{(}\hlnum{3}\hldef{,} \hlnum{3}\hldef{,} \hlnum{3}\hldef{,} \hlnum{1.5}\hldef{))}
 \hlkwd{hist}\hldef{(hours,} \hlkwc{xlab} \hldef{=} \hlsng{"Time of day"}\hldef{,} \hlkwc{ylab} \hldef{=} \hlsng{"Number of accidents"}\hldef{,} \hlkwc{axes} \hldef{=} \hlnum{FALSE}\hldef{,}
      \hlkwc{main}\hldef{=}\hlsng{"Total Number of Accidents per Time of Day"}\hldef{,}
      \hlkwc{breaks}\hldef{=}\hlkwd{seq}\hldef{(}\hlopt{-}\hlnum{0.5}\hldef{,} \hlnum{23.5}\hldef{,} \hlnum{1}\hldef{))}
 
 \hldef{labels} \hlkwb{<-} \hlkwd{c}\hldef{(}\hlsng{"12:00AM"}\hldef{,} \hlsng{"3:00AM"}\hldef{,} \hlsng{"6:00AM"}\hldef{,} \hlsng{"9:00AM"}\hldef{,}
-             \hlsng{"12:00PM"}\hldef{,} \hlsng{"3:00PM"}\hldef{,} \hlsng{"6:00PM"}\hldef{,} \hlsng{"9:00PM"}\hldef{)}
+            \hlsng{"12:00PM"}\hldef{,} \hlsng{"3:00PM"}\hldef{,} \hlsng{"6:00PM"}\hldef{,} \hlsng{"9:00PM"}\hldef{)}
 \hldef{axp} \hlkwb{<-} \hlkwd{seq}\hldef{(}\hlnum{0}\hldef{,} \hlnum{23}\hldef{,} \hlkwc{by}\hldef{=}\hlnum{3}\hldef{)}
 \hlkwd{axis}\hldef{(}\hlnum{1}\hldef{,} \hlkwc{at}\hldef{=axp,} \hlkwc{labels} \hldef{= labels)}
 \hldef{axp2} \hlkwb{<-} \hlkwd{seq}\hldef{(}\hlnum{0}\hldef{,} \hlnum{150000}\hldef{,} \hlkwc{by}\hldef{=}\hlnum{50000}\hldef{)}
 \hlkwd{axis}\hldef{(}\hlnum{2}\hldef{,} \hlkwc{at} \hldef{= axp2,} \hlkwc{labels} \hldef{= axp2)}
 \end{alltt}
 \end{kframe}
-\includegraphics[width=\maxwidth]{figure/unnamed-chunk-5-2} 
+\includegraphics[width=\maxwidth]{figure/unnamed-chunk-5-1} 
 \end{knitrout}
 
 We can see that most of the accidents occur during the daytime, with a semi-continuous increasing and decreasing structure. The distribution reaches its lowest value at 3:00AM, and peaks around 4:00PM. There are slight spikes around 8-9AM, when people would be driving to work, and also around 4-5:00PM, when people would be leaving work. There is also a small spike around midnight.
