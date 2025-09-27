@@ -16,10 +16,51 @@
 
 \section{Visualizations}
 
+\subsection{Histogram of Crashes by Time of Day}
+
+The histogram below shows the total number of accidents in the dataset for each time of day. 
+
 <<>>=
-
-
+layout(mat = 1)
+dates <- nyc$CRASH.DATE
+times <- nyc$CRASH.TIME
+hours <- as.numeric(sub("\\:.*", "", times))
+hist(hours)
+par(tck = -0.015, mgp = c(1.5, 0.4, 0), mar = c(3, 3, 3, 1.5))
+hist(hours, xlab = "Time of day", ylab = "Number of accidents", axes = FALSE, main="Total Number of Accidents per Time of Day", breaks=seq(-0.5, 23.5, 1))
+labels <- c("12:00AM", "3:00AM", "6:00AM", "9:00AM", 
+             "12:00PM", "3:00PM", "6:00PM", "9:00PM")
+axp <- seq(0, 23, by=3)
+axis(1, at=axp, labels = labels)
+axp2 <- seq(0, 150000, by=50000)
+axis(2, at = axp2, labels = axp2)
 @
+
+We can see that most of the accidents occur during the daytime, with a semi-continuous increasing and decreasing structure. The distribution reaches its lowest value at 3:00AM, and peaks around 4:00PM. There are slight spikes around 8-9AM, when people would be driving to work, and also around 4-5:00PM, when people would be leaving work. There is also a small spike around midnight.
+
+\subsection{Box Plot of Injuries by Person Type}
+
+This series of box plots focuses on collisions that resulted in at least 10 total injuries. We compare the total number of people injured with the amounts of people injured of different types: pedestrians, motorists, and cyclists.
+
+<<>>=
+people_injured <- nyc$NUMBER.OF.PERSONS.INJURED
+pedestrians_injured <- nyc$NUMBER.OF.PEDESTRIANS.INJURED
+motorists_injured <- nyc$NUMBER.OF.MOTORIST.INJURED
+cyclists_injured <- nyc$NUMBER.OF.CYCLIST.INJURED
+
+mass_factor <- people_injured >= 10
+people_injured_mass <- people_injured[mass_factor]
+motorists_injured_mass <- motorists_injured[mass_factor]
+pedestrians_injured_mass <- pedestrians_injured[mass_factor]
+cyclists_injured_mass <- cyclists_injured[mass_factor]
+layout(mat = matrix(c(1, 2, 3, 4), 4, byrow = TRUE))
+boxplot(people_injured_mass, main="total people injured for mass casualty events (over 10 people injured)", horizontal=TRUE, ylim = c(0, 45))
+boxplot(motorists_injured_mass, main="motorists injured", horizontal=TRUE, ylim = c(0, 45))
+boxplot(pedestrians_injured_mass, main="pedestrians injured", horizontal=TRUE, ylim = c(0, 45))
+boxplot(cyclists_injured_mass, main = "cyclists injured", horizontal=TRUE, ylim = c(0, 45))
+@
+
+The vast majority of these collisions resulted in motorists being the main affected group. This is unsurprising, as every collision must involve motorists, but the other possible parties may not even be present. Pedestrians were mostly uninjured by these collisions, with some exceptions that result in the amount of pedestrian injuries to go into the 20s. Cyclists were the most unaffected by these mass injury collisions, with a couple of collisions injuring one cyclist, but otherwise 0 cyclists were injured in any of the other collisions. 
 
 \section{Preliminary Statistical Modeling & Interpretation}
 
