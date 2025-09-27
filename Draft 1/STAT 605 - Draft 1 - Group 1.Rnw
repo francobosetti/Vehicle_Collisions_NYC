@@ -11,66 +11,100 @@
 \maketitle
 \tableofcontents
 
-\subtitle{Introduction}
+\section{Introduction}
 
 
-\subtitle{Visualizations}
+\section{Visualizations}
 
 
-\subtitle{Preliminary Statistical Modeling & Interpretation}
+\section{Preliminary Statistical Modeling & Interpretation}
+
+To better understand the factors that influence the severity of motor vehicle collisions in New York City, we developed a preliminary statistical model using logistic regression. The outcome of interest is whether a crash was fatal (at least one person killed) or non-fatal. Logistic regression is appropriate in this context because the outcome is binary (fatal vs. non-fatal), and it allows us to estimate how different factors change the odds of a fatal crash while holding other conditions constant.
+
+The predictors included in the model were the borough of occurrence, time of day (day vs. night), vehicle type, and the primary contributing factor reported by police. By examining the estimated odds ratios and their statistical significance, we can identify which circumstances or behaviors are most strongly associated with fatal outcomes.
+
+\subsection{Code and Results}
 
 <<>>=
 library(dplyr)
 library(broom)
 library(lubridate)
 
-crash_data <- read.csv("Motor_Vehicle_Collisions_-_Crashes.csv", header = TRUE, stringsAsFactors = FALSE)
+nyc <- read.csv(file = "data/Motor_Vehicle_Collisions_-_Crashes.csv")
+nyc$CRASH.DATE <- as.Date(nyc$CRASH.DATE, format = "%m/%d/%Y")
+nyc$BOROUGH <- factor(nyc$BOROUGH)
+nyc$YEAR_MONTH <- format(nyc$CRASH.DATE, "%Y-%m")
+nyc$YEAR <- format(nyc$CRASH.DATE, "%Y")
 
 @
 
 <<>>=
-crash_data_small <- crash_data %>%
+nyc_small <- nyc %>%
+  filter(BOROUGH != "" &
+           CONTRIBUTING.FACTOR.VEHICLE.1 != "" &
+           CONTRIBUTING.FACTOR.VEHICLE.1 != "1" &
+           CONTRIBUTING.FACTOR.VEHICLE.1 != "80") %>%
   transmute(
     is_fatal = ifelse(NUMBER.OF.PERSONS.KILLED > 0, 1, 0),  # outcome
-    BOROUGH,
-    CRASH_HOUR = hour(hm(CRASH.TIME)),
-    CONTRIBUTING.FACTOR.VEHICLE.1,
-    vehicle_cat = case_when(
+    borough = BOROUGH,
+    crash_hour = hour(hm(CRASH.TIME)),
+    contributing_factor = factor(CONTRIBUTING.FACTOR.VEHICLE.1),
+    vehicle_cat = factor(case_when(
       grepl("MOTORCYCLE|MOTORBIKE", VEHICLE.TYPE.CODE.1, ignore.case = TRUE) ~ "motorcycle",
       grepl("TRUCK|BUS", VEHICLE.TYPE.CODE.1, ignore.case = TRUE) ~ "truck_bus",
       grepl("BICYCLE|BIKE|SCOOTER", VEHICLE.TYPE.CODE.1, ignore.case = TRUE) ~ "bike_scooter",
       TRUE ~ "car_suv"
-    )
+    ))
   )
 
-crash_data_small <- crash_data_small %>%
-  mutate(hour = as.numeric(substr(CRASH_HOUR, 1, 2)),
+nyc_small$BOROUGH <- droplevels(as.factor(nyc_small$borough))
+
+nyc_small <- nyc_small %>%
+  mutate(hour = as.numeric(substr(crash_hour, 1, 2)),
          tod = ifelse(hour >= 6 & hour < 18, "day", "night"))
 
-rm(crash_data)
+
+rm(nyc)
 gc()
 
-model <- glm(is_fatal ~ BOROUGH + tod + vehicle_cat + CONTRIBUTING.FACTOR.VEHICLE.1,
-             data = crash_data_small,
+model <- glm(is_fatal ~ borough + tod + vehicle_cat + contributing_factor,
+             data = nyc_small,
              family = binomial)
 
-summary(model)
 
-exp(coef(model))
+summ <- summary(model)
 
-results <- tidy(model, exponentiate = TRUE, conf.int = TRUE)
+coefs <- summ$coefficients
+est <- coefs[, "Estimate"]         # log-odds
+se  <- coefs[, "Std. Error"]       # standard errors
 
-results %>%
-  filter(term != "(Intercept)") %>%
-  mutate(significant = ifelse(conf.low > 1 | conf.high < 1, "yes", "no")) %>%
-  select(term, estimate, conf.low, conf.high, significant)
+# compute odds ratios + 95% confidence intervals
+ci_low  <- exp(est - 1.96 * se)
+ci_high <- exp(est + 1.96 * se)
 
+results_table <- data.frame(
+  term        = rownames(coefs),
+  odds_ratio  = exp(est),
+  ci_low      = ci_low,
+  ci_high     = ci_high,
+  significant = ifelse(coefs[, "Pr(>|z|)"] < 0.05, "yes", "no"),
+  row.names   = NULL
+)
+
+# filter out the intercept/baseline to keep table cleaner
+results_table <- results_table[results_table$term != "(Intercept)", ]
+
+results_table$term <- gsub("vehicle_cat", "Vehicle: ", results_table$term)
+results_table$term <- gsub("borough", "Borough: ", results_table$term)
+results_table$term <- gsub("tod", "Time of Day: ", results_table$term)
+results_table$term <- gsub("contributing_factor", "Contributing Factor: ", results_table$term)
+
+results_table
 @
 
+\subsection{Interpretation}
+The results of this preliminary model suggest several important patterns. Time of day matters: crashes at night are nearly twice as likely to be fatal compared to daytime. Vehicle type is also critical, with motorcycles showing odds of fatality more than five times higher than car/SUVs, while trucks and buses were not significantly different from cars. At the geographic level (compared to Bronx - the baseline), Manhattan crashes are less likely to be fatal, while Staten Island crashes are more likely, though differences across boroughs are smaller in magnitude than behavioral or vehicle factors. Among reported contributing factors, the most prominent risks include unsafe speed, drug involvement, and disregarding traffic signals, all of which more than double the odds of a fatal outcome. Some mechanical defect categories produced extreme values, but these estimates are unstable due to very few cases and should not be over-interpreted.
 
-<<echo=FALSE>>=
-
-@
-
+Overall, the model highlights that risky behaviors (speeding, drugs, ignoring signals) and motorcycle use are the most important predictors of fatal crashes, while borough differences and many minor mechanical issues play a secondary role. These insights provide a foundation for further, more refined modeling, while already pointing to clear public safety priorities: addressing speeding, impaired driving, and high-risk vehicle types.
 
 \end{document}
