@@ -16,6 +16,10 @@
 
 \section{Visualizations}
 
+<<>>=
+
+
+@
 
 \section{Preliminary Statistical Modeling & Interpretation}
 
