@@ -1,0 +1,423 @@
+\documentclass[10pt]{article}
+\usepackage[left=1in,right=1in,top=1in,bottom=1in]{geometry}
+\usepackage{amsmath}
+\usepackage{hyperref}
+%\SweaveOpts[concordance=TRUE]
+\begin{document}
+
+
+\title{Motor vehicle colisions in NYC}
+\author{Group 1 (605 - S1)}
+\maketitle
+\tableofcontents
+
+\newpage
+
+\section{Introduction}
+
+Motor vehicle collisions are a major concern in major populated urban areas like New York City (NYC), where millions of people use diverse transportation systems every day. Understanding these incidents through data analysis can help us identify patterns and make safety improvements. On the other hand, social media platforms such as Twitter have become spaces where people share their real-time information about traffic incidents and congestion. This project will analyze motor vehicle collision data in NYC and explore the relationship between actual incidents and social media traffic discussions. 
+
+\section{Dataset Description}
+Primary Dataset: NYC Motor Vehicle Collisions 
+
+(\url{https://data.cityofnewyork.us/Public-Safety/Motor-Vehicle-Collisions-Crashes/h9gi-nx95/about_data})
+
+Our primary dataset contains police-reported motor vehicle collision records from New York City, maintained by the NYPD through their TrafficStat initiative. The dataset includes 2.21 million collision records with 29 variables.
+
+Source: NYC OpenData (2025)
+
+Key variables include:
+\begin{itemize}
+  \item Location \& Time: Borough, coordinates (latitude \& longitude), street names, zip codes, crash date/time
+  \item Casualties: Injuries and fatalities by category (pedestrians, cyclists, motorists)
+  \item Contributing Factors: Up to five causal factors per collision
+  \item Vehicle Types: Vehicle type classifications (ATV, bicycle, car/SUV, e-bike, e-scooter, truck/bus, motorcycle, other) for each vehicle involved
+\end{itemize}
+
+
+Preprocessing: We prepared the dataset for analysis by converting crash dates to a standard date format, organizing borough names as categorical variables, and creating additional time-based variables to explore patterns across years and months. 
+
+Secondary Dataset: Twitter Traffic Classifications (\url{https://data.mendeley.com/datasets/c3xvj5snvv/1})
+
+Our secondary dataset contains classified tweets collected from Twitter's API, with each tweet categorized by its traffic-related content.
+
+Source: Research dataset by Sina Dabiri (2018)
+Variables include:
+Tweet ID
+Classification label: 
+Non-Traffic (Class 0): General tweets unrelated to traffic
+Traffic Incident (Class 1): Reports of crashes, breakdowns, road closures
+Traffic Conditions (Class 2): Congestion reports, traffic advisories, flow conditions
+Tweet text content
+
+Preprocessing: We haven't processed the Twitter data yet, but plan to rename variables and clean the text data to prepare it for our analysis and comparison with the collision records.
+
+\newpage
+
+
+\section{Visualizations}
+
+Prepare the data for processing:
+
+<<>>=
+nyc <- read.csv(file = "data/Motor_Vehicle_Collisions_-_Crashes.csv")
+nyc$CRASH.DATE <- as.Date(nyc$CRASH.DATE, format = "%m/%d/%Y")
+nyc$BOROUGH <- factor(nyc$BOROUGH)
+nyc$YEAR_MONTH <- format(nyc$CRASH.DATE, "%Y-%m")
+nyc$YEAR <- format(nyc$CRASH.DATE, "%Y")
+@
+
+\subsection{Vehicle Collisions over Time}
+By grouping the collisions into each month in which they occured, we can plot a line graph showing the number of collisions over the past 13 years.
+<<>>=
+monthly_counts <- table(nyc$YEAR_MONTH)
+months <- names(monthly_counts)
+colspermonth <- as.numeric(monthly_counts)
+plot_months <- as.Date(paste0(months, "-01"))
+plot(plot_months, colspermonth,
+     main="Number of Monthly Vehicle Collisions in New York City",
+     type="o",
+     pch=20,
+     xlab="Month",
+     ylab="Number of Collisions",
+     xaxt="n",
+     yaxt="n",
+     xaxs="i",
+     yaxs="i",
+     ylim=c(0,max(colspermonth)+1000))
+
+
+xticks <- seq(min(plot_months), max(plot_months)+365, by = "6 months")
+axis.Date(1, at = xticks, 
+          format = "%b\n%Y", cex.axis = 0.6)
+axis(2, at = seq(0, max(colspermonth)+1000, by = 1000), cex.axis = 0.7, las=1) 
+abline(v = xticks, col = "gray", lty = "dotted")
+@
+A notable trend is the sudden drop in collisions at the beginning of 2020. This is clearly due to the Covid-19 pandemic, which limited the time people spent outside their homes. What is more notable is how the number of collisions seems to even out to a much lower level than pre-pandemic. More research is needed into why we see this pattern.
+\\ \\
+Next, we explore the number of collisions over time within each borough. Note that a large quantity of entries from the dataset do not have a location attached, so those results are not considered for this analysis.
+<<>>=
+borough <- levels(nyc$BOROUGH)
+borough <- borough[borough != ""]
+colors = c("red", "blue", "darkgreen", "purple", "orange")
+plot_months <- list()
+colspermonth <- list()
+for (b in borough){
+  monthly_counts <- table(nyc$YEAR_MONTH[nyc$BOROUGH==b])
+  months <- names(monthly_counts)
+  colspermonth[[b]] <- as.numeric(monthly_counts)
+  plot_months[[b]] <- as.Date(paste0(months, "-01"))
+}
+
+max_col <- max(sapply(colspermonth, max))
+min_dat <- as.Date(min(sapply(plot_months,min)))
+max_dat <- as.Date(max(sapply(plot_months,max)))
+
+plot(plot_months[[1]], colspermonth[[1]],
+     main="Number of Monthly Vehicle Collisions in New York City",
+     type="l",
+     pch=20,
+     col= colors[1],
+     xlab="Month",
+     ylab="Number of Collisions",
+     xaxt="n",
+     yaxt="n",
+     xaxs="i",
+     yaxs="i",
+     ylim=c(0,max_col+500))
+
+for (i in 2:(length(borough))){
+  lines(plot_months[[i]], colspermonth[[i]], type="l", pch=20, col=colors[i])
+}
+
+legend("topright", 
+       legend = borough,
+       col = colors,
+       lty = 1)
+
+
+xticks <- seq(min_dat, max_dat+365, by = "6 months")
+axis.Date(1, at = xticks, 
+          format = "%b\n%Y", cex.axis = 0.6)
+axis(2, at = seq(0, max_col+1000, by = 1000), cex.axis = 0.7, las=1) 
+abline(v = xticks, col = "gray", lty = "dotted")
+@
+Each borough follows very similar shapes in their respective line. Further analysis to normalize by some factor, e.g. by population or road network density may provide more insight.
+
+\subsection{Causes of Collisions}
+In the dataset every entry has up to 5 `contributing factors'. Below, We see these results aggregated and the top 5 most prevalent causes displayed in a bar chart.
+<<>>=
+cfs <- unique(nyc$CONTRIBUTING.FACTOR.VEHICLE.1)
+cont_fact <- c()
+for (f in cfs){
+  s <- 0
+  for (i in 1:5){
+    colmn <- paste0("CONTRIBUTING.FACTOR.VEHICLE.",i)
+    s <- s + sum(nyc[[colmn]] == f)
+  }
+  cont_fact <- append(cont_fact,s)
+}
+names(cont_fact) <- cfs
+fivemost <- sort(cont_fact, decreasing=TRUE)[3:7] 
+#1st and 2nd are unspecified or null
+
+par(mar = c(10, 5, 4, 2))
+barplot(fivemost, 
+        main = "Top Contributing Factors",
+        col = c("darkseagreen4", "darkseagreen", "darkseagreen3", 
+                "darkseagreen2", "darkseagreen1"),
+        las = 2,
+        cex.names = 0.8,
+        yaxt = "n",
+        ylim = c(0,ceiling(max(fivemost)/100000)*100000)
+        )
+
+title(ylab = "Number of Cases", line=4)
+
+axis(2, at = seq(0, ceiling(max(fivemost)/100000)*100000, by = 100000), 
+     labels = format(seq(0, ceiling(max(fivemost)/100000)*100000, by = 100000), 
+                     big.mark = ",",
+                     scientific = FALSE),
+     cex.axis = 0.8,
+     las = 1,
+     )
+@
+An overwhelming cause of accidents are due to driver distraction, more then 3 times the next most common.
+
+
+\subsection{Crashes by Time of Day}
+
+The histogram below shows the total number of accidents in the dataset for each time of day. 
+
+<<>>=
+layout(mat = 1)
+dates <- nyc$CRASH.DATE
+times <- nyc$CRASH.TIME
+hours <- as.numeric(sub("\\:.*", "", times))
+hist(hours)
+par(tck = -0.015, mgp = c(1.5, 0.4, 0), mar = c(3, 3, 3, 1.5))
+hist(hours, xlab = "Time of day", ylab = "Number of accidents", axes = FALSE, 
+     main="Total Number of Accidents per Time of Day", 
+     breaks=seq(-0.5, 23.5, 1))
+
+labels <- c("12:00AM", "3:00AM", "6:00AM", "9:00AM", 
+             "12:00PM", "3:00PM", "6:00PM", "9:00PM")
+axp <- seq(0, 23, by=3)
+axis(1, at=axp, labels = labels)
+axp2 <- seq(0, 150000, by=50000)
+axis(2, at = axp2, labels = axp2)
+@
+
+We can see that most of the accidents occur during the daytime, with a semi-continuous increasing and decreasing structure. The distribution reaches its lowest value at 3:00AM, and peaks around 4:00PM. There are slight spikes around 8-9AM, when people would be driving to work, and also around 4-5:00PM, when people would be leaving work. There is also a small spike around midnight.
+
+\subsection{Injuries by Person Type}
+
+This series of box plots focuses on collisions that resulted in at least 10 total injuries. We compare the total number of people injured with the amounts of people injured of different types: pedestrians, motorists, and cyclists.
+
+<<>>=
+people_injured <- nyc$NUMBER.OF.PERSONS.INJURED
+pedestrians_injured <- nyc$NUMBER.OF.PEDESTRIANS.INJURED
+motorists_injured <- nyc$NUMBER.OF.MOTORIST.INJURED
+cyclists_injured <- nyc$NUMBER.OF.CYCLIST.INJURED
+
+mass_factor <- people_injured >= 10
+people_injured_mass <- people_injured[mass_factor]
+motorists_injured_mass <- motorists_injured[mass_factor]
+pedestrians_injured_mass <- pedestrians_injured[mass_factor]
+cyclists_injured_mass <- cyclists_injured[mass_factor]
+layout(mat = matrix(c(1, 2, 3, 4), 4, byrow = TRUE))
+boxplot(people_injured_mass, 
+        main="total people injured for mass casualty events 
+        (over 10 people injured)", 
+        horizontal=TRUE, ylim = c(0, 45))
+boxplot(motorists_injured_mass, main="motorists injured", 
+        horizontal=TRUE, ylim = c(0, 45))
+boxplot(pedestrians_injured_mass, main="pedestrians injured", 
+        horizontal=TRUE, ylim = c(0, 45))
+boxplot(cyclists_injured_mass, main = "cyclists injured", 
+        horizontal=TRUE, ylim = c(0, 45))
+@
+
+The vast majority of these collisions resulted in motorists being the main affected group. This is unsurprising, as every collision must involve motorists, but the other possible parties may not even be present. Pedestrians were mostly uninjured by these collisions, with some exceptions that result in the amount of pedestrian injuries to go into the 20s. Cyclists were the most unaffected by these mass injury collisions, with a couple of collisions injuring one cyclist, but otherwise 0 cyclists were injured in any of the other collisions. 
+
+
+\subsection{Borough VS Injury Severity}
+
+\subsubsection{Contingency Table}
+
+This contingency table examines whether crash severity (fatal, injury, or no injury) varies across NYC boroughs.
+
+<<>>=
+nyc$injury_severity <- ifelse(nyc$NUMBER.OF.CYCLIST.KILLED > 0, 
+                              "FATAL/DIED",
+                       ifelse(nyc$NUMBER.OF.PERSONS.INJURED > 0, 
+                              "INJURY", "NO INJURY"))
+
+
+# removing NA's
+borough_injury_data <- nyc[!is.na(nyc$BOROUGH) & !is.na(nyc$injury_severity), ]
+
+# Contingency Table
+(borough_injury_table <- table(borough_injury_data$BOROUGH, 
+                               borough_injury_data$injury_severity))
+@
+
+<<>>=
+# Chi-square test
+(chi_test1 <- chisq.test(borough_injury_table))
+@
+
+Since p-value < alpha = 0.05, we reject the null hypothesis and conclude that we have sufficient evidence to prove the true population of boroughs are not evenly distributed or in other words, that the distribution of fatal, injury, and property-damage-only crashes varies significantly across NYC boroughs (Chi-square, df=8, p-value < 0.0001). Furthermore, there is a massive test statistic of $X^2$ = 6377.3 which shows the huge differences between what we'd expect if boroughs were all the same vs. what we actually observe.
+
+
+\subsubsection{Barplot of Row Proportions (by Borough)}
+This barplot shows crash severity proportions within each borough.
+
+<<>>=
+(prop_table1 <- prop.table(borough_injury_table, margin = 1))
+barplot(prop_table1)
+@
+
+While all boroughs have low fatal crash rates (around 0.1-0.16\%), Staten Island has the highest fatality rate at 0.159\%, followed by Brooklyn at 0.142\%. Manhattan appears to be the safest borough with the lowest rates of both fatal (0.107\%) and injury crashes (18.9\%). Brooklyn and the Bronx have the highest injury rates at 26.1\% and 25.3\% respectively, while Manhattan has significantly more no injury crashes (80.1\%) compared to other boroughs.
+
+\subsubsection{Cramer’s V}
+
+<<echo=FALSE, message=FALSE, warning=FALSE>>=
+library(rcompanion)
+@
+
+<<>>=
+cramerV(borough_injury_table)
+@
+
+The chi-square test concluded that there is a statistically significant association between borough and crash severity. However, the effect size was very small (Cramer's V = 0.046), indicating that while borough differences are statistically detectable, they explain less than 1\% of the variation in crash severity. This suggests that factors other than borough location are much more important in determining crash outcomes.
+
+\subsection{Total Persons Injured vs Killed}
+This scatterplot examines the relationship between injuries and fatalities in NYC vehicle crashes.
+<<>>=
+injury_data <- nyc[nyc$NUMBER.OF.PERSONS.INJURED > 0 | 
+                     nyc$NUMBER.OF.PERSONS.KILLED > 0, ]
+
+plot(injury_data$NUMBER.OF.PERSONS.INJURED, 
+     injury_data$NUMBER.OF.PERSONS.KILLED,
+     main = "Relationship Between Injuries and Fatalities in NYC Crashes",
+     xlab = "Number of Persons Injured",
+     ylab = "Number of Persons Killed",
+     pch = 16,
+     col = "darkblue",
+     cex = 0.6)
+
+abline(lm(injury_data$NUMBER.OF.PERSONS.KILLED ~ 
+            injury_data$NUMBER.OF.PERSONS.INJURED), 
+       col = "red", lwd = 2)
+@
+
+The plot shows that most crashes result in injuries but no deaths which can be seen by the concentration of points along the bottom. Fatal crashes are rare and scattered across injury levels, with no clear correlation. The flat regression line shows that there is a minimal relationship between injuries and deaths, suggesting fatalities depend more on crash circumstances than the number of people involved.
+
+
+
+\section{Preliminary Statistical Modeling \& Interpretation}
+
+To better understand the factors that influence the severity of motor vehicle collisions in New York City, we developed a preliminary statistical model using logistic regression. The outcome of interest is whether a crash was fatal (at least one person killed) or non-fatal. Logistic regression is appropriate in this context because the outcome is binary (fatal vs. non-fatal), and it allows us to estimate how different factors change the odds of a fatal crash while holding other conditions constant.
+
+The predictors included in the model were the borough of occurrence, time of day (day vs. night), vehicle type, and the primary contributing factor reported by police. By examining the estimated odds ratios and their statistical significance, we can identify which circumstances or behaviors are most strongly associated with fatal outcomes.
+
+\subsection{Code and Results}
+
+<<echo=FALSE, message=FALSE, warning=FALSE>>=
+library(dplyr)
+library(broom)
+library(lubridate)
+@
+
+Data cleansing and transformations:
+<<>>=
+nyc_small <- nyc %>%
+  filter(BOROUGH != "" &
+           CONTRIBUTING.FACTOR.VEHICLE.1 != "" &
+           CONTRIBUTING.FACTOR.VEHICLE.1 != "1" &
+           CONTRIBUTING.FACTOR.VEHICLE.1 != "80") %>%
+  transmute(
+    is_fatal = ifelse(NUMBER.OF.PERSONS.KILLED > 0, 1, 0),  # outcome
+    borough = BOROUGH,
+    crash_hour = hour(hm(CRASH.TIME)),
+    contributing_factor = CONTRIBUTING.FACTOR.VEHICLE.1,
+    vehicle_cat = factor(case_when(
+      grepl("MOTORCYCLE|MOTORBIKE", VEHICLE.TYPE.CODE.1, ignore.case = TRUE) ~ 
+        "motorcycle",
+      grepl("TRUCK|BUS", VEHICLE.TYPE.CODE.1, ignore.case = TRUE) ~ 
+        "truck_bus",
+      grepl("BICYCLE|BIKE|SCOOTER", VEHICLE.TYPE.CODE.1, ignore.case = TRUE) ~ 
+        "bike_scooter",
+      TRUE ~ "car_suv"
+    ))
+  )
+
+nyc_small <- nyc_small %>%
+  mutate(hour = as.numeric(substr(crash_hour, 1, 2)),
+         tod = ifelse(hour >= 6 & hour < 18, "day", "night"))
+
+nyc_small$BOROUGH <- droplevels(as.factor(nyc_small$borough))
+
+# set baselines for model
+nyc_small$borough <- relevel(as.factor(nyc_small$BOROUGH), 
+                             ref = "STATEN ISLAND")
+nyc_small$tod <- relevel(as.factor(nyc_small$tod), 
+                         ref = "day")
+nyc_small$vehicle_cat <- relevel(as.factor(nyc_small$vehicle_cat), 
+                                 ref = "car_suv")
+nyc_small$contributing_factor <- relevel(
+  as.factor(nyc_small$contributing_factor),ref = "Unspecified")
+
+
+@
+
+Creating the logistic regression model:
+<<>>=
+model <- glm(is_fatal ~ borough + tod + vehicle_cat + contributing_factor,
+             data = nyc_small,
+             family = binomial)
+
+
+summ <- summary(model)
+
+coefs <- summ$coefficients
+est <- coefs[, "Estimate"]         # log-odds
+se  <- coefs[, "Std. Error"]       # standard errors
+
+# compute odds ratios + 95% confidence intervals
+ci_low  <- exp(est - 1.96 * se)
+ci_high <- exp(est + 1.96 * se)
+
+results_table <- data.frame(
+  term        = rownames(coefs),
+  odds_ratio  = exp(est),
+  ci_low      = ci_low,
+  ci_high     = ci_high,
+  significant = ifelse(coefs[, "Pr(>|z|)"] < 0.05, "yes", "no"),
+  row.names   = NULL
+)
+
+# filter out the intercept/baseline to keep table cleaner
+results_table <- results_table[results_table$term != "(Intercept)", ]
+
+results_table$term <- gsub("vehicle_cat", "Vehicle: ", 
+                           results_table$term)
+results_table$term <- gsub("borough", "Borough: ", 
+                           results_table$term)
+results_table$term <- gsub("tod", "Time of Day: ", 
+                           results_table$term)
+results_table$term <- gsub("contributing_factor", "Contributing Factor: ", 
+                           results_table$term)
+
+results_table
+@
+
+\subsection{Interpretation}
+The revised model confirms several strong predictors of fatal crashes. Compared to Staten Island, crashes in the Bronx, Queens, and Manhattan show significantly lower odds of being fatal, while Brooklyn is not statistically different. Nighttime crashes remain much riskier, with nearly 1.8 times higher odds of fatality compared to daytime. Vehicle type shows especially pronounced differences: motorcycle crashes are about 14 times more likely to be fatal than car/SUV crashes, while trucks and buses carry over 3 times the risk and bicycles/scooters nearly 3 times the risk.
+
+Reported contributing factors highlight behaviors that dramatically elevate risk. Crashes linked to alcohol are almost 2 times more likely to result in death, while those involving drug use show odds 8–10 times higher than the baseline. Dangerous driving behaviors such as speeding, traffic signal violations, unsafe lane changes, and pedestrian/bicyclist error all significantly increase fatal crash likelihood, often by a factor of 4–5 or more. By contrast, mechanical defect categories (e.g., “brakes defective”) produce unstable estimates due to rare occurrences and should be interpreted cautiously.
+
+Overall, these results suggest that time of day, vehicle type, and risky human behaviors are the dominant predictors of fatal outcomes in NYC crashes, while borough differences are smaller in magnitude.
+
+\end{document}
