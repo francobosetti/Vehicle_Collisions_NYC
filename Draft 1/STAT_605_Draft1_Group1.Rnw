@@ -24,7 +24,9 @@ Primary Dataset: NYC Motor Vehicle Collisions
 
 Our primary dataset contains police-reported motor vehicle collision records from New York City, maintained by the NYPD through their TrafficStat initiative. The dataset includes 2.21 million collision records with 29 variables.
 
+
 Source: NYC OpenData (2025)
+
 
 Key variables include:
 \begin{itemize}
@@ -41,14 +43,19 @@ Secondary Dataset: Twitter Traffic Classifications (\url{https://data.mendeley.c
 
 Our secondary dataset contains classified tweets collected from Twitter's API, with each tweet categorized by its traffic-related content.
 
+
 Source: Research dataset by Sina Dabiri (2018)
+
+
 Variables include:
-Tweet ID
-Classification label: 
-Non-Traffic (Class 0): General tweets unrelated to traffic
-Traffic Incident (Class 1): Reports of crashes, breakdowns, road closures
-Traffic Conditions (Class 2): Congestion reports, traffic advisories, flow conditions
-Tweet text content
+\begin{itemize}
+  \item Tweet ID
+  \item Classification label: 
+  \item Non-Traffic (Class 0): General tweets unrelated to traffic
+  \item Traffic Incident (Class 1): Reports of crashes, breakdowns, road closures
+  \item Traffic Conditions (Class 2): Congestion reports, traffic advisories, flow conditions
+  \item Tweet text content
+\end{itemize}
 
 Preprocessing: We haven't processed the Twitter data yet, but plan to rename variables and clean the text data to prepare it for our analysis and comparison with the collision records.
 
