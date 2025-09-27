@@ -189,7 +189,7 @@ axis(2, at = seq(0, ceiling(max(fivemost)/100000)*100000, by = 100000),
      las = 1,
      )
 @
-An overwhelming cause of accidents are due to driver distraction, more then 3 times the next most common.
+An overwhelming cause of accidents are due to driver distraction, more than 3 times the next most common.
 
 
 \subsection{Crashes by Time of Day}
