@@ -29,11 +29,13 @@ The predictors included in the model were the borough of occurrence, time of day
 
 \subsection{Code and Results}
 
-<<>>=
+<<echo=FALSE>>=
 library(dplyr)
 library(broom)
 library(lubridate)
+@
 
+<<>>=
 nyc <- read.csv(file = "data/Motor_Vehicle_Collisions_-_Crashes.csv")
 nyc$CRASH.DATE <- as.Date(nyc$CRASH.DATE, format = "%m/%d/%Y")
 nyc$BOROUGH <- factor(nyc$BOROUGH)
