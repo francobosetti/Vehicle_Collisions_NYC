@@ -1,3 +1,4 @@
-**/data/
-**/.DS_Store
-**/figure/
+*data
+*.DS_Store
+*figure
+*.RHistory
