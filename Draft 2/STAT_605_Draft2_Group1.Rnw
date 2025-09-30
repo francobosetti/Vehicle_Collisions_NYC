@@ -8,7 +8,7 @@
 \begin{titlepage}
     \centering
     
-    { \Huge \textbf{Final Project Report Draft 1} \par} 
+    { \Huge \textbf{Final Project Report Draft 2} \par} 
     \vspace{5mm}
     { \huge \textbf{Motor vehicle colisions in NYC} \par} 
     \vspace{3mm}
