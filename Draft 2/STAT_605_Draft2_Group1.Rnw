@@ -96,6 +96,14 @@ Preprocessing: We haven't processed the Twitter data yet, but plan to rename var
 
 Prepare the data for processing:
 
+<<echo=FALSE, message=FALSE, warning=FALSE>>=
+library(rcompanion)
+library(ggplot2)
+library(dplyr)
+library(broom)
+library(lubridate)
+@
+
 <<>>=
 nyc <- read.csv(file = "data/Motor_Vehicle_Collisions_-_Crashes.csv")
 nyc$CRASH.DATE <- as.Date(nyc$CRASH.DATE, format = "%m/%d/%Y")
@@ -317,10 +325,6 @@ While all boroughs have low fatal crash rates (around 0.1-0.16\%), Staten Island
 
 \subsubsection{Cramer’s V}
 
-<<echo=FALSE, message=FALSE, warning=FALSE>>=
-library(rcompanion)
-@
-
 <<>>=
 cramerV(borough_injury_table)
 @
@@ -328,7 +332,9 @@ cramerV(borough_injury_table)
 The chi-square test concluded that there is a statistically significant association between borough and crash severity. However, the effect size was very small (Cramer's V = 0.046), indicating that while borough differences are statistically detectable, they explain less than 1\% of the variation in crash severity. This suggests that factors other than borough location are much more important in determining crash outcomes.
 
 \subsection{Total Persons Injured vs Killed}
+
 This scatterplot examines the relationship between injuries and fatalities in NYC vehicle crashes.
+
 <<>>=
 injury_data <- nyc[nyc$NUMBER.OF.PERSONS.INJURED > 0 | 
                      nyc$NUMBER.OF.PERSONS.KILLED > 0, ]
@@ -350,6 +356,25 @@ abline(lm(injury_data$NUMBER.OF.PERSONS.KILLED ~
 The plot shows that most crashes result in injuries but no deaths which can be seen by the concentration of points along the bottom. Fatal crashes are rare and scattered across injury levels, with no clear correlation. The flat regression line shows that there is a minimal relationship between injuries and deaths, suggesting fatalities depend more on crash circumstances than the number of people involved.
 
 
+\subsection{Density of Injuries per Borough}
+
+This jitter plot is showing the distribution of the number of people injured per incident across different boroughs, while avoiding overplotting so patterns in the data density can be seen.
+
+<<>>=
+ggplot(nyc %>% filter(BOROUGH != "")) + 
+  aes(x=BOROUGH, y=NUMBER.OF.PERSONS.INJURED) + 
+  coord_cartesian(ylim = c(0, 10)) +
+  scale_y_continuous(breaks = seq(0, 10, 1)) +
+  labs(
+    x = "Borough",
+    y = "Number of Persons Injured",
+    title = "Density of Injuries per Borough"
+    ) +
+  geom_jitter(alpha = 1/25)
+@
+
+This jitter plot shows the distribution of the number of persons injured per crash across NYC boroughs. Most crashes result in 0–3 injuries (dark dense bands at the bottom). Brooklyn and Queens display more incidents with higher injury counts, indicating that crashes in these boroughs tend to involve more people. Manhattan, despite its high traffic, has relatively fewer multi-injury crashes compared to Brooklyn or the Bronx. Staten Island stands out with the least severe crashes (it is the least populated and least densely built borough), with most incidents involving very few or no injuries.
+
 
 \section{Preliminary Statistical Modeling \& Interpretation}
 
@@ -359,11 +384,6 @@ The predictors included in the model were the borough of occurrence, time of day
 
 \subsection{Code and Results}
 
-<<echo=FALSE, message=FALSE, warning=FALSE>>=
-library(dplyr)
-library(broom)
-library(lubridate)
-@
 
 Data cleansing and transformations:
 <<>>=
