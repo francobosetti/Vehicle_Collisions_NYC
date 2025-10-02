@@ -380,7 +380,7 @@ This jitter plot shows the distribution of the number of persons injured per cra
 
 To better understand the factors that influence the severity of motor vehicle collisions in New York City, we developed a preliminary statistical model using logistic regression. The outcome of interest is whether a crash was fatal (at least one person killed) or non-fatal. Logistic regression is appropriate in this context because the outcome is binary (fatal vs. non-fatal), and it allows us to estimate how different factors change the odds of a fatal crash while holding other conditions constant.
 
-The predictors included in the model were the borough of occurrence, time of day (day vs. night), vehicle type, and the primary contributing factor reported by police. By examining the estimated odds ratios and their statistical significance, we can identify which circumstances or behaviors are most strongly associated with fatal outcomes.
+In simple terms, the model compares patterns across thousands of crashes to estimate how likely a fatal outcome is under different conditions. For example, whether the crash happened at night or involved a motorcycle. The predictors we included were the borough of occurrence, time of day (day vs. night), vehicle type, and the primary contributing factor reported by police. By examining these, we can identify which circumstances or behaviors are most strongly associated with fatal outcomes.
 
 \subsection{Code and Results}
 
@@ -469,9 +469,15 @@ results_table
 @
 
 \subsection{Interpretation}
-The revised model confirms several strong predictors of fatal crashes. Compared to Staten Island, crashes in the Bronx, Queens, and Manhattan show significantly lower odds of being fatal, while Brooklyn is not statistically different. Nighttime crashes remain much riskier, with nearly 1.8 times higher odds of fatality compared to daytime. Vehicle type shows especially pronounced differences: motorcycle crashes are about 14 times more likely to be fatal than car/SUV crashes, while trucks and buses carry over 3 times the risk and bicycles/scooters nearly 3 times the risk.
+Our analysis highlights which circumstances make crashes most likely to be deadly. Location matters somewhat: crashes in Staten Island are more likely to be fatal than in the Bronx, Queens, or Manhattan. In spite of this, the bigger differences come from time of day, vehicle type, and driver behavior.
 
-Reported contributing factors highlight behaviors that dramatically elevate risk. Crashes linked to alcohol are almost 2 times more likely to result in death, while those involving drug use show odds 8–10 times higher than the baseline. Dangerous driving behaviors such as speeding, traffic signal violations, unsafe lane changes, and pedestrian/bicyclist error all significantly increase fatal crash likelihood, often by a factor of 4–5 or more. By contrast, mechanical defect categories (e.g., “brakes defective”) produce unstable estimates due to rare occurrences and should be interpreted cautiously.
+Time of day: Nighttime crashes are almost twice as likely to result in death compared to daytime crashes (about 1.8 times higher odds).
+
+Vehicle type: Motorcycles are especially dangerous. A crash involving a motorcycle is over 14 times as likely to be fatal compared to a crash involving a car or SUV. Trucks and buses are more than 3 times riskier, and crashes involving bicycles or scooters are nearly 3 times more likely to be fatal.
+
+Driver and pedestrian behaviors: Risky behaviors dramatically elevate danger. Alcohol-related crashes are about 2 times more likely to result in death, while drug-involved crashes are nearly 8–10 times more likely. Dangerous driving behaviors such as speeding, running red lights, or unsafe lane changes typically multiply the odds of a fatal crash by 4–5.
+
+By contrast, mechanical issues (like brake defects) appear much less often, so their effect is harder to measure reliably.
 
 Overall, these results suggest that time of day, vehicle type, and risky human behaviors are the dominant predictors of fatal outcomes in NYC crashes, while borough differences are smaller in magnitude.
 
