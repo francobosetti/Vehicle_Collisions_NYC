@@ -92,7 +92,7 @@ Preprocessing: We haven't processed the Twitter data yet, but plan to rename var
 \newpage
 
 
-\section{Visualizations}
+\section{Data Preparation}
 
 Prepare the data for processing:
 
@@ -122,6 +122,7 @@ nyc$round_location <- paste("(", round(nyc_lats, digits = 4), ", ", round(nyc_lo
 @
 
 \subsection{Secondary Datasets}
+While the New York Collisions dataset provides many useful columns on which to perform analysis, more insight can be gained when considering other forms of data. Below we import these auxillary datasets:
 
 <<>>=
 twitter_train <- read.csv("data/c3xvj5snvv-1/1_TrainingSet_3Class.csv", header=FALSE)
@@ -135,6 +136,8 @@ names(twitter_test) <- c("class", "tweet_id", "tweet_text")
 twitter <- rbind(twitter_train, twitter_test)
 @
 
+
+The VZV dataset on speed limits contains a map of city speed limits. Each speed limit is attached to a street or section of a street, specified by a sequence of coordinates. From this, spatial analysis can be performed related collisions to repsective speed limits.
 <<>>=
 sp_limits <- read.csv("data/VZV_Speed_Limits_20251002.csv", header=FALSE)
 
@@ -153,6 +156,8 @@ nyc_lats <- has_long_lat$LATITUDE
 has_long_lat$round_location <- paste("(", round(nyc_lats, digits = 4), ", ", round(nyc_longs, digits = 4), ")", sep = "")
 @
 
+
+The Motor Vehicle Collisions vehicle table contains details on each vehicle involved in a collision. Each row represents a particular vehicle with certain attributes. The collision ID of the main dataset is also present in this dataset, although values are no longer unique as multiple vehicles can contribute to one collision.
 <<>>=
 nyv <- read.csv(file = "data/Motor_Vehicle_Collisions_-_Vehicles_20250930.csv")
 nyv$CRASH_DATE <- as.Date(nyv$CRASH_DATE, format = "%m/%d/%Y")
@@ -184,6 +189,7 @@ nyc$AV_VEH_YEAR <- av_car_made[as.character(nyc$COLLISION_ID)]
 nyc$AV_VEH_AGE <-  as.numeric(nyc$YEAR) - nyc$AV_VEH_YEAR
 @
 
+\section{Visualizations}
 
 \subsection{Vehicle Collisions over Time}
 By grouping the collisions into each month in which they occured, we can plot a line graph showing the number of collisions over the past 13 years.
