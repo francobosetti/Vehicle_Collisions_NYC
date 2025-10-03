@@ -103,6 +103,11 @@ library(dplyr)
 library(broom)
 library(lubridate)
 library(readr)
+library(ggspatial)
+library(sf)
+library(prettymapr)
+library(raster)
+library(gridExtra)
 @
 
 <<>>=
@@ -111,6 +116,9 @@ nyc$CRASH.DATE <- as.Date(nyc$CRASH.DATE, format = "%m/%d/%Y")
 nyc$BOROUGH <- factor(nyc$BOROUGH)
 nyc$YEAR_MONTH <- format(nyc$CRASH.DATE, "%Y-%m")
 nyc$YEAR <- format(nyc$CRASH.DATE, "%Y")
+nyc_longs <- nyc$LONGITUDE
+nyc_lats <- nyc$LATITUDE
+nyc$round_location <- paste("(", round(nyc_lats, digits = 4), ", ", round(nyc_longs, digits = 4), ")", sep = "")
 @
 
 <<>>=
