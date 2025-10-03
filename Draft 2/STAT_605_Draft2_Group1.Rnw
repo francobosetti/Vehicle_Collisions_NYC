@@ -45,7 +45,7 @@
 
 \section{Introduction}
 
-Motor vehicle collisions are a major concern in major populated urban areas like New York City (NYC), where millions of people use diverse transportation systems every day. Understanding these incidents through data analysis can help us identify patterns and make safety improvements. On the other hand, social media platforms such as Twitter have become spaces where people share their real-time information about traffic incidents and congestion. This project will analyze motor vehicle collision data in NYC and explore the relationship between actual incidents and social media traffic discussions. 
+Motor vehicle collisions are a major concern in major populated urban areas like New York City (NYC), where millions of people use diverse transportation systems every day. Understanding these incidents through data analysis can help us identify patterns and make safety improvements. At the same time, social media platforms such as Twitter have become spaces where people share their real-time information about traffic incidents and congestion. This project will analyze NYC motor vehicle collision data alongside Twitter traffic discussions, while also incorporating roadway speed limit data and detailed vehicle-level records to examine how roadway conditions, vehicle characteristics, and public reporting intersect with officially documented traffic incidents.
 
 \section{Dataset Description}
 Primary Dataset: NYC Motor Vehicle Collisions 
@@ -87,7 +87,44 @@ Variables include:
   \item Tweet text content
 \end{itemize}
 
-Preprocessing: We haven't processed the Twitter data yet, but plan to rename variables and clean the text data to prepare it for our analysis and comparison with the collision records.
+
+Preprocessing: We combined the training and test datasets into one dataset since we don’t plan to run a classification model. We renamed variables for clarity and ensured consistency in column naming. Our next step is cleaning the dataset and the text data to prepare for sentiment analysis and linking patterns with NYC collision data.
+
+Tertiary Dataset: NYC Speed Limits (\url{https://data.cityofnewyork.us/Transportation/VZV_Speed-Limits/5mad-ntua/about_data}) 
+
+Our tertiary dataset provided posted speed limits across NYC streets, maintained under the Vision Zero initiative. This dataset will allow us to explore whether high-speed areas correlate with higher accident frequency and severity.
+
+
+Source: NYC OpenData (2025)
+
+
+Variables include:
+\begin{itemize}
+  \item Segment Geometry: street segment represented as geographic coordinates (longitude & latitude)
+  \item Posted Speed Limit: legal speed limit value for each street segment
+  \item Street Name
+  \item Borough
+\end{itemize}
+
+Preprocessing: We extracted latitude and longitude from the geometric strings and rounded them to 4 decimals to match with collision coordinates. This allowed us to link crash locations to nearby street segments. We also filtered roads with speed limits above 40 mph to compare crashes on high-speed vs. lower-speed roads. 
+
+Quaternary Dataset: Motor Vehicle Collisions - Vehicles (\url{https://data.cityofnewyork.us/Public-Safety/Motor-Vehicle-Collisions-Vehicles/bm4k-52h4/about_data}) 
+
+Our quaternary dataset gives vehicle-level details for each crash in NYC. Unlike the primary collisions dataset, where each row represents a crash, here each row represents a single vehicle involved. This will give us insights into how vehicle type, driver demographics, and pre-crash behavior contribute to accidents.
+
+Source: NYC OpenData (2025)
+
+
+Variables include:
+\begin{itemize}
+  \item Collision information 
+  \item Vehicle details 
+  \item Driver information
+  \item Crash circumstances 
+  \item Contributing factors 
+\end{itemize}
+
+Preprocessing: We plan to link this dataset with the primary collisions dataset using the 'collision_id' key. This will also expand our crash-level analysis with vehicle-level and driver-level details, such as identifying trends in which vehicle types are most frequently involved in accidents and which driver factors contribute most to severe outcomes.  
 
 \newpage
 
@@ -111,14 +148,47 @@ library(gridExtra)
 @
 
 <<>>=
+# NYC Motor Collisions Dataset
 nyc <- read.csv(file = "data/Motor_Vehicle_Collisions_-_Crashes.csv")
 nyc$CRASH.DATE <- as.Date(nyc$CRASH.DATE, format = "%m/%d/%Y")
 nyc$BOROUGH <- factor(nyc$BOROUGH)
 nyc$YEAR_MONTH <- format(nyc$CRASH.DATE, "%Y-%m")
 nyc$YEAR <- format(nyc$CRASH.DATE, "%Y")
+<<<<<<< HEAD
 nyc_longs <- nyc$LONGITUDE
 nyc_lats <- nyc$LATITUDE
 nyc$round_location <- paste("(", round(nyc_lats, digits = 4), ", ", round(nyc_longs, digits = 4), ")", sep = "")
+=======
+nyc$HOUR <- as.numeric(sub("\\:.*", "", nyc$CRASH.TIME))
+
+# Twitter Dataset
+twitter_train <- read.csv("data/c3xvj5snvv-1/1_TrainingSet_3Class.csv", header=FALSE)
+twitter_test <- read.csv("data/c3xvj5snvv-1/1_TestSet_3Class.csv", header=FALSE)
+
+names(twitter_train) <- c("class", "tweet_id", "tweet_text")
+names(twitter_test) <- c("class", "tweet_id", "tweet_text")
+
+twitter <- rbind(twitter_train, twitter_test)
+
+# Speed Limit Dataset
+
+sp_limits <- read.csv(file = "Project/data/speed_limits.csv")
+# Format the sp_limits latitude and longitude
+splitted <- strsplit(sp_limits$the_geom, " ")
+lats <- as.numeric(lapply(splitted, function(x) substr(x[3], 1, nchar(x[3])-1)))
+longs <- as.numeric(lapply(splitted, function(x) substr(x[2], 3, nchar(x[3]))))
+sp_limits$latitude <- lats
+sp_limits$longitude <- longs
+sp_limits$location <- paste("(", round(lats, digits = 4), ", ", round(longs, digits = 4), ")", sep = "")
+
+# Add a rounded location value to the nyc dataset
+has_long_lat <- nyc[!is.na(nyc$LONGITUDE) & !is.na(nyc$LATITUDE),]
+nyc_longs <- has_long_lat$LONGITUDE
+nyc_lats <- has_long_lat$LATITUDE
+has_long_lat$round_location <- paste("(", round(nyc_lats, digits = 4), ", ", round(nyc_longs, digits = 4), ")", sep = "")
+
+
+>>>>>>> ee0e2a9 (updated intro and dataset description)
 @
 
 \subsection{Secondary Datasets}
