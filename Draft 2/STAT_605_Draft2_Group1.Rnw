@@ -148,47 +148,14 @@ library(gridExtra)
 @
 
 <<>>=
-# NYC Motor Collisions Dataset
 nyc <- read.csv(file = "data/Motor_Vehicle_Collisions_-_Crashes.csv")
 nyc$CRASH.DATE <- as.Date(nyc$CRASH.DATE, format = "%m/%d/%Y")
 nyc$BOROUGH <- factor(nyc$BOROUGH)
 nyc$YEAR_MONTH <- format(nyc$CRASH.DATE, "%Y-%m")
 nyc$YEAR <- format(nyc$CRASH.DATE, "%Y")
-<<<<<<< HEAD
 nyc_longs <- nyc$LONGITUDE
 nyc_lats <- nyc$LATITUDE
 nyc$round_location <- paste("(", round(nyc_lats, digits = 4), ", ", round(nyc_longs, digits = 4), ")", sep = "")
-=======
-nyc$HOUR <- as.numeric(sub("\\:.*", "", nyc$CRASH.TIME))
-
-# Twitter Dataset
-twitter_train <- read.csv("data/c3xvj5snvv-1/1_TrainingSet_3Class.csv", header=FALSE)
-twitter_test <- read.csv("data/c3xvj5snvv-1/1_TestSet_3Class.csv", header=FALSE)
-
-names(twitter_train) <- c("class", "tweet_id", "tweet_text")
-names(twitter_test) <- c("class", "tweet_id", "tweet_text")
-
-twitter <- rbind(twitter_train, twitter_test)
-
-# Speed Limit Dataset
-
-sp_limits <- read.csv(file = "Project/data/speed_limits.csv")
-# Format the sp_limits latitude and longitude
-splitted <- strsplit(sp_limits$the_geom, " ")
-lats <- as.numeric(lapply(splitted, function(x) substr(x[3], 1, nchar(x[3])-1)))
-longs <- as.numeric(lapply(splitted, function(x) substr(x[2], 3, nchar(x[3]))))
-sp_limits$latitude <- lats
-sp_limits$longitude <- longs
-sp_limits$location <- paste("(", round(lats, digits = 4), ", ", round(longs, digits = 4), ")", sep = "")
-
-# Add a rounded location value to the nyc dataset
-has_long_lat <- nyc[!is.na(nyc$LONGITUDE) & !is.na(nyc$LATITUDE),]
-nyc_longs <- has_long_lat$LONGITUDE
-nyc_lats <- has_long_lat$LATITUDE
-has_long_lat$round_location <- paste("(", round(nyc_lats, digits = 4), ", ", round(nyc_longs, digits = 4), ")", sep = "")
-
-
->>>>>>> ee0e2a9 (updated intro and dataset description)
 @
 
 \subsection{Secondary Datasets}
