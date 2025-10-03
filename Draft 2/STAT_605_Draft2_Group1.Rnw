@@ -483,7 +483,7 @@ The plot shows that most crashes result in injuries but no deaths which can be s
 
 This jitter plot is showing the distribution of the number of people injured per incident across different boroughs, while avoiding overplotting so patterns in the data density can be seen.
 
-<<>>=
+<<warning=FALSE>>=
 ggplot(nyc %>% filter(BOROUGH != "")) + 
   aes(x=BOROUGH, y=NUMBER.OF.PERSONS.INJURED) + 
   coord_cartesian(ylim = c(0, 10)) +
@@ -532,7 +532,7 @@ Overall, the heatmap highlights how crash risk peaks during high-traffic commuti
 \subsection{Distribution of Vehicle Age Involved in Accidents}
 We explore the distribution of vehicle ages involved in collisions across each five boroughs. This data is extracted from one of the secondary datasets, linking the collision ID from the original dataset to the individual vehicles involved in each collision. The resulting histogram is plotted below.
 
-<<>>=
+<<warning=FALSE>>=
 ggplot(data=nyc[!is.na(nyc$AV_VEH_AGE) & nyc$BOROUGH !="", ]) +
     aes(AV_VEH_AGE, ..density.., fill = BOROUGH) +
     facet_grid(.~BOROUGH) + 
