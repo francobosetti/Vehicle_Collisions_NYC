@@ -100,7 +100,7 @@ Source: NYC OpenData (2025)
 
 Variables include:
 \begin{itemize}
-  \item Segment Geometry: street segment represented as geographic coordinates (longitude & latitude)
+  \item Segment Geometry: street segment represented as geographic coordinates (longitude \& latitude)
   \item Posted Speed Limit: legal speed limit value for each street segment
   \item Street Name
   \item Borough
@@ -124,7 +124,7 @@ Variables include:
   \item Contributing factors 
 \end{itemize}
 
-Preprocessing: We plan to link this dataset with the primary collisions dataset using the 'collision_id' key. This will also expand our crash-level analysis with vehicle-level and driver-level details, such as identifying trends in which vehicle types are most frequently involved in accidents and which driver factors contribute most to severe outcomes.  
+Preprocessing: We plan to link this dataset with the primary collisions dataset using the 'collision\_id' key. This will also expand our crash-level analysis with vehicle-level and driver-level details, such as identifying trends in which vehicle types are most frequently involved in accidents and which driver factors contribute most to severe outcomes.  
 
 \newpage
 
@@ -155,15 +155,17 @@ nyc$YEAR_MONTH <- format(nyc$CRASH.DATE, "%Y-%m")
 nyc$YEAR <- format(nyc$CRASH.DATE, "%Y")
 nyc_longs <- nyc$LONGITUDE
 nyc_lats <- nyc$LATITUDE
-nyc$round_location <- paste("(", round(nyc_lats, digits = 4), ", ", round(nyc_longs, digits = 4), ")", sep = "")
+nyc$round_location <- paste("(", round(nyc_lats, digits = 4), ", ", 
+                            round(nyc_longs, digits = 4), ")", sep = "")
+nyc$HOUR <- as.numeric(sub("\\:.*", "", nyc$CRASH.TIME))
 @
 
 \subsection{Secondary Datasets}
 While the New York Collisions dataset provides many useful columns on which to perform analysis, more insight can be gained when considering other forms of data. Below we import these auxillary datasets:
 
 <<>>=
-twitter_train <- read.csv("data/c3xvj5snvv-1/1_TrainingSet_3Class.csv", header=FALSE)
-twitter_test <- read.csv("data/c3xvj5snvv-1/1_TestSet_3Class.csv", header=FALSE)
+twitter_train <- read.csv("data/1_TrainingSet_3Class.csv", header=FALSE)
+twitter_test <- read.csv("data/1_TestSet_3Class.csv", header=FALSE)
 
 # add headers
 names(twitter_train) <- c("class", "tweet_id", "tweet_text")
@@ -176,7 +178,7 @@ twitter <- rbind(twitter_train, twitter_test)
 
 The VZV dataset on speed limits contains a map of city speed limits. Each speed limit is attached to a street or section of a street, specified by a sequence of coordinates. From this, spatial analysis can be performed related collisions to repsective speed limits.
 <<>>=
-sp_limits <- read.csv("data/VZV_Speed_Limits_20251002.csv", header=FALSE)
+sp_limits <- read.csv("data/VZV_Speed_Limits_20251002.csv")
 
 # Format the sp_limits latitude and longitude
 splitted <- strsplit(sp_limits$the_geom, " ")
@@ -184,19 +186,22 @@ lats <- as.numeric(lapply(splitted, function(x) substr(x[3], 1, nchar(x[3])-1)))
 longs <- as.numeric(lapply(splitted, function(x) substr(x[2], 3, nchar(x[3]))))
 sp_limits$latitude <- lats
 sp_limits$longitude <- longs
-sp_limits$location <- paste("(", round(lats, digits = 4), ", ", round(longs, digits = 4), ")", sep = "")
+sp_limits$location <- paste("(", round(lats, digits = 4), ", ", 
+                            round(longs, digits = 4), ")", sep = "")
 
 # Add a rounded location value to the nyc dataset
 has_long_lat <- nyc[!is.na(nyc$LONGITUDE) & !is.na(nyc$LATITUDE),]
 nyc_longs <- has_long_lat$LONGITUDE
 nyc_lats <- has_long_lat$LATITUDE
-has_long_lat$round_location <- paste("(", round(nyc_lats, digits = 4), ", ", round(nyc_longs, digits = 4), ")", sep = "")
+has_long_lat$round_location <- paste("(", round(nyc_lats, digits = 4), ", ", 
+                                     round(nyc_longs, digits = 4), ")", 
+                                     sep = "")
 @
 
 
 The Motor Vehicle Collisions vehicle table contains details on each vehicle involved in a collision. Each row represents a particular vehicle with certain attributes. The collision ID of the main dataset is also present in this dataset, although values are no longer unique as multiple vehicles can contribute to one collision.
 <<>>=
-nyv <- read.csv(file = "data/Motor_Vehicle_Collisions_-_Vehicles_20250930.csv")
+nyv <- read.csv(file = "data/Motor_Vehicle_Collisions_-_Vehicles_20251002.csv")
 nyv$CRASH_DATE <- as.Date(nyv$CRASH_DATE, format = "%m/%d/%Y")
 nyv$YEAR <- as.numeric(format(nyv$CRASH_DATE, "%Y"))
 
@@ -540,9 +545,9 @@ ggplot(data=nyc[!is.na(nyc$AV_VEH_AGE) & nyc$BOROUGH !="", ]) +
 @
 The distributions appear similar for each borough, with the notable exception of Manhattan, which appears to have a generally younger age of cars among collisions. This can be mostly attributed to the greater wealth found in Manhattan. To see real trends between car age and collisions the next step will be to compare against the overall frequency of cars on the road.
 
-\section{Accidents and speed limits on NYC map}
+\subsection{Accidents and speed limits on NYC map}
 
-\subsection{All Accidents}
+\subsubsection{All Accidents}
 
 There are two graphs plotted below. One superimposes a subset of the accidents on the map of NYC, color coded by borough, and the other superimposes a subset of the speed limits on the map of NYC. 
 
@@ -599,7 +604,7 @@ grid.arrange(accident_plot,speed_plot)
 
 The speed limit graph shows that there are high speed limits on the highways, around the 40-50mph range, and lower speed limits everywhere else, mostly in the 20-30mph range. We can visually inspect and see that a lot of the areas that did not have labels for their borough correspond with the higher speed limit lines, indicating that when an accident occurred on a highway, there was likely no borough provided. We can also see that a lot of the accidents are focused in the Manhattan area, with the most sparse area being Staten Island. This is likely because of the street density in Manhattan vs Staten Island.
 
-\subsection{Highway Accidents}
+\subsubsection{Highway Accidents}
 
 Below, we have a graph showing all of the accidents that occurred on roads where the speed limit is greater than 40 mph, mapped onto an image of NYC. This gives us a far clearer picture of the highway road mapping in NYC.
 
@@ -624,7 +629,7 @@ ggplot() +
 While this imaging doesn’t directly allow us to draw any conclusions, having this mapping of which car accidents occurred on higher speed roads allows us to do further interpretations of the data with relation to the speed limit, as we show in the next graphical comparison. 
 
 
-\section{Density Comparison of Times of Day for Car Accidents: Highway Vs Not Highway}
+\subsection{Density Comparison of Times of Day for Car Accidents: Highway Vs Not Highway}
 
 Here we combine our supplementary dataset with our main dataset to compare the car accidents that have occurred on higher speed roads vs those that have occurred on lower speed roads. The density plot is shown below.
 
