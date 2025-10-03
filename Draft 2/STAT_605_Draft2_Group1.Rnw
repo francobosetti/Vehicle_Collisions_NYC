@@ -409,6 +409,111 @@ In contrast, the overnight hours (midnight to 6 AM) consistently display the few
 Overall, the heatmap highlights how crash risk peaks during high-traffic commuting periods and social activity times, with Friday evenings being particularly hazardous in New York City.
 
 
+\section{Accidents and speed limits on NYC map}
+
+\subsection{All Accidents}
+
+There are two graphs plotted below. One superimposes a subset of the accidents on the map of NYC, color coded by borough, and the other superimposes a subset of the speed limits on the map of NYC. 
+
+<<>>=
+#plot the car crashes on the NYC map
+has_long_lat <- nyc[!is.na(nyc$LONGITUDE) & !is.na(nyc$LATITUDE),]
+no_outliers <- has_long_lat[
+  has_long_lat$LONGITUDE > -74.26 &
+    has_long_lat$LONGITUDE < -73.70 &
+    has_long_lat$LATITUDE > 40.49 &
+    has_long_lat$LATITUDE < 40.92, ]
+
+small_sample <- no_outliers[sample(nrow(no_outliers), 3000),]
+boroughs <- small_sample$BOROUGH
+small_sample_sf <- st_as_sf(small_sample, coords = c("LONGITUDE", "LATITUDE"), crs = 4326)
+small_sample_sf <- st_transform(small_sample_sf, 3857)
+nyc_bbox <- st_bbox(small_sample_sf)
+
+accident_plot <- ggplot() +
+  annotation_map_tile(type = "cartolight", zoom = 11) +
+  aes(color = boroughs) +
+  geom_sf(data = small_sample_sf, size = 1) +
+  coord_sf(xlim = c(nyc_bbox["xmin"], nyc_bbox["xmax"]),
+           ylim = c(nyc_bbox["ymin"], nyc_bbox["ymax"]),
+           expand = FALSE) +
+  labs(title = "NYC Accident Mapping by Borough")
+
+
+# plot the speed limits on the NYC map
+no_outliers_sp <- sp_limits[
+  sp_limits$longitude > -74.26 &
+    sp_limits$longitude < -73.70 &
+    sp_limits$latitude > 40.49 &
+    sp_limits$latitude < 40.92, ]
+small_sp_sample <- no_outliers_sp[sample(nrow(no_outliers_sp), 8000),]
+speeds <- small_sp_sample$postvz_sl
+small_sp_sample_sf <- st_as_sf(small_sp_sample, coords = c("longitude", "latitude"), crs = 4326)
+small_sp_sample_sf <- st_transform(small_sp_sample_sf, 3857)
+speed_plot <- ggplot()+
+  annotation_map_tile(type = "cartolight", zoom = 11) +
+  aes(color = speeds) +
+  geom_sf(data = small_sp_sample_sf, size = 1) +
+  coord_sf(xlim = c(nyc_bbox["xmin"], nyc_bbox["xmax"]),
+           ylim = c(nyc_bbox["ymin"], nyc_bbox["ymax"]),
+           expand = FALSE) +
+  labs(title = "NYC Speed Limit Mapping") +
+  scale_color_gradient(low = "green", high = "red")
+
+
+# Display plots side by side
+require(gridExtra)
+grid.arrange(accident_plot,speed_plot)
+@
+
+The speed limit graph shows that there are high speed limits on the highways, around the 40-50mph range, and lower speed limits everywhere else, mostly in the 20-30mph range. We can visually inspect and see that a lot of the areas that did not have labels for their borough correspond with the higher speed limit lines, indicating that when an accident occurred on a highway, there was likely no borough provided. We can also see that a lot of the accidents are focused in the Manhattan area, with the most sparse area being Staten Island. This is likely because of the street density in Manhattan vs Staten Island.
+
+\subsection{Highway Accidents}
+
+Below, we have a graph showing all of the accidents that occurred on roads where the speed limit is greater than 40 mph, mapped onto an image of NYC. This gives us a far clearer picture of the highway road mapping in NYC.
+
+<<>>=
+# Find the accidents that occurred on high speed roads
+highways <- sp_limits[sp_limits$postvz_sl > 40, ]
+nyc$HIGHWAY <- nyc$round_location %in% highways$location
+hwy_accidents <- nyc[nyc$HIGHWAY == TRUE, ]
+hwy_accidents_sf <- st_as_sf(hwy_accidents, coords = c("LONGITUDE", "LATITUDE"), crs = 4326)
+hwy_accidents_sf <- st_transform(hwy_accidents_sf, 3857)
+nyc_bbox <- st_bbox(hwy_accidents_sf)
+
+ggplot() +
+  annotation_map_tile(type = "cartolight", zoom = 11) +
+  geom_sf(data = hwy_accidents_sf, size = 1) +
+  coord_sf(xlim = c(nyc_bbox["xmin"], nyc_bbox["xmax"]),
+           ylim = c(nyc_bbox["ymin"], nyc_bbox["ymax"]),
+           expand = FALSE) +
+  labs(title = "Car accidents on high speed roads (>40mph)")
+@
+
+While this imaging doesn’t directly allow us to draw any conclusions, having this mapping of which car accidents occurred on higher speed roads allows us to do further interpretations of the data with relation to the speed limit, as we show in the next graphical comparison. 
+
+
+\section{Density Comparison of Times of Day for Car Accidents: Highway Vs Not Highway}
+
+Here we combine our supplementary dataset with our main dataset to compare the car accidents that have occurred on higher speed roads vs those that have occurred on lower speed roads. The density plot is shown below.
+
+<<>>=
+# plot the hours vs the hours
+
+hwy_accidents <- nyc[nyc$HIGHWAY == TRUE, ]
+nyc_sample <- nyc[sample(nrow(nyc), nrow(hwy_accidents)),]
+
+combined <- rbind(nyc_sample, hwy_accidents)
+ggplot(combined, aes(x = HOUR, fill = HIGHWAY)) +
+  geom_density(position = "identity", alpha = 0.5) +
+  scale_x_discrete(labels=c("custom", "label")) +
+  scale_x_continuous(breaks = c(0, 3, 6, 9, 12, 15, 18, 21), labels = c("Midnight", "3:00AM", "6:00AM","9:00AM", "Noon", "3:00PM", "6:00PM", "9:00PM"))+
+  scale_fill_discrete(labels = c('Low speed road (<40 mph)', 'High speed road (>40 mph)')) +
+  xlab("time of day") + ggtitle("comparison of densities of times of car accidents on highways vs streets")
+@
+
+We can see from this density plot that the accidents that have occurred on highways have more significant peaks at around 8:00AM and 4:00PM, during people’s work commutes in and out of the city. The accidents that have occurred on regular roads are less predictable, with more occurrences in the middle of the day during traditional working hours.
+
 
 \section{Preliminary Statistical Modeling \& Interpretation}
 
