@@ -121,6 +121,8 @@ nyc_lats <- nyc$LATITUDE
 nyc$round_location <- paste("(", round(nyc_lats, digits = 4), ", ", round(nyc_longs, digits = 4), ")", sep = "")
 @
 
+\subsection{Secondary Datasets}
+
 <<>>=
 twitter_train <- read.csv("data/c3xvj5snvv-1/1_TrainingSet_3Class.csv", header=FALSE)
 twitter_test <- read.csv("data/c3xvj5snvv-1/1_TestSet_3Class.csv", header=FALSE)
@@ -150,6 +152,38 @@ nyc_longs <- has_long_lat$LONGITUDE
 nyc_lats <- has_long_lat$LATITUDE
 has_long_lat$round_location <- paste("(", round(nyc_lats, digits = 4), ", ", round(nyc_longs, digits = 4), ")", sep = "")
 @
+
+<<>>=
+nyv <- read.csv(file = "data/Motor_Vehicle_Collisions_-_Vehicles_20250930.csv")
+nyv$CRASH_DATE <- as.Date(nyv$CRASH_DATE, format = "%m/%d/%Y")
+nyv$YEAR <- as.numeric(format(nyv$CRASH_DATE, "%Y"))
+
+veh_per_col <- tapply(nyv$COLLISION_ID, nyv$COLLISION_ID, length)
+nyc$VEHICLE_COUNT <- veh_per_col[as.character(nyc$COLLISION_ID)]
+
+#rows where vehicle occupants is not NA, 
+#not 0 and not above 60 (capacity of New York Bus)
+ex_pas_move <- (!is.na(nyv$VEHICLE_OCCUPANTS))&(nyv$VEHICLE_OCCUPANTS %in% 1:60) 
+pass_per_veh <- tapply(nyv$VEHICLE_OCCUPANTS[ex_pas_move],
+                       nyv$COLLISION_ID[ex_pas_move],
+                       mean)
+nyc$AV_PASSENGERS <- pass_per_veh[as.character(nyc$COLLISION_ID)]
+
+#Select only vehicle year models from 1920-2025 to clean the data
+ex_veh_year <- (!is.na(nyv$VEHICLE_YEAR))&
+               (nyv$VEHICLE_YEAR %in% 1920:2025) &
+               (nyv$VEHICLE_YEAR <= nyv$YEAR)
+               
+av_car_made <- tapply(nyv$VEHICLE_YEAR[ex_veh_year],
+                      nyv$COLLISION_ID[ex_veh_year],
+                      mean)
+nyc$AV_VEH_YEAR <- av_car_made[as.character(nyc$COLLISION_ID)]
+
+#Add average vehicle age column.
+#Note that vehicles year sometimes given as year rounded up.
+nyc$AV_VEH_AGE <-  as.numeric(nyc$YEAR) - nyc$AV_VEH_YEAR
+@
+
 
 \subsection{Vehicle Collisions over Time}
 By grouping the collisions into each month in which they occured, we can plot a line graph showing the number of collisions over the past 13 years.
@@ -417,7 +451,7 @@ ggplot(nyc %>% filter(BOROUGH != "")) +
 This jitter plot shows the distribution of the number of persons injured per crash across NYC boroughs. Most crashes result in 0–3 injuries (dark dense bands at the bottom). Brooklyn and Queens display more incidents with higher injury counts, indicating that crashes in these boroughs tend to involve more people. Manhattan, despite its high traffic, has relatively fewer multi-injury crashes compared to Brooklyn or the Bronx. Staten Island stands out with the least severe crashes (it is the least populated and least densely built borough), with most incidents involving very few or no injuries.
 
 
-\section{Crash Frequency by Hour and Day of Week}
+\subsection{Crash Frequency by Hour and Day of Week}
 
 To explore when crashes are most likely to occur, we created a heatmap of crash counts by hour of the day and day of the week. Each tile represents the total number of crashes in that time slot, with brighter colors indicating more frequent crashes.
 
@@ -447,6 +481,21 @@ In contrast, the overnight hours (midnight to 6 AM) consistently display the few
 
 Overall, the heatmap highlights how crash risk peaks during high-traffic commuting periods and social activity times, with Friday evenings being particularly hazardous in New York City.
 
+\subsection{Distribution of Vehicle Age Involved in Accidents}
+We explore the distribution of vehicle ages involved in collisions across each five boroughs. This data is extracted from one of the secondary datasets, linking the collision ID from the original dataset to the individual vehicles involved in each collision. The resulting histogram is plotted below.
+
+<<>>=
+ggplot(data=nyc[!is.na(nyc$AV_VEH_AGE) & nyc$BOROUGH !="", ]) +
+    aes(AV_VEH_AGE, ..density.., fill = BOROUGH) +
+    facet_grid(.~BOROUGH) + 
+    geom_histogram(color = "black", alpha = 0.7) + 
+    xlim(c(0,30)) +
+    labs(title = "Distribution of Vehicle Age by Borough",
+         x = "Average Vehicle Age (Years)",
+         y = "Density") +
+    theme(legend.position = "none")
+@
+The distributions appear similar for each borough, with the notable exception of Manhattan, which appears to have a generally younger age of cars among collisions. This can be mostly attributed to the greater wealth found in Manhattan. To see real trends between car age and collisions the next step will be to compare against the overall frequency of cars on the road.
 
 \section{Accidents and speed limits on NYC map}
 
