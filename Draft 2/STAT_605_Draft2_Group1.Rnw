@@ -651,6 +651,41 @@ ggplot(combined, aes(x = HOUR, fill = HIGHWAY)) +
 We can see from this density plot that the accidents that have occurred on highways have more significant peaks at around 8:00AM and 4:00PM, during people’s work commutes in and out of the city. The accidents that have occurred on regular roads are less predictable, with more occurrences in the middle of the day during traditional working hours.
 
 
+\subsection{Time of Day vs. Fatality Rate}
+
+This scatterplot examines the relationship between the hour of day (0-23, military time) and the fatality rate, measured as deaths per 1,000 crashes. Each point represents one hour of the day, calculated across all crashes in the NYC dataset from 2012-2025. The blue line is the linear regression model, and the gray shaded area is the 95\% confidence interval.
+
+<<>>=
+# Fatality rate by hour
+crashes_per_hour <- table(nyc$HOUR)
+fatalities_per_hour <- tapply(nyc$NUMBER.OF.PERSONS.KILLED, nyc$HOUR, sum, na.rm = TRUE)
+
+hourly_summary <- data.frame(
+  HOUR = as.numeric(names(crashes_per_hour)),
+  total_crashes = as.numeric(crashes_per_hour),
+  total_fatalities = as.numeric(fatalities_per_hour)
+)
+hourly_summary
+
+# Normalization 
+# how many people die per 1,000 crashes at each hour
+hourly_summary$fatality_rate <- (hourly_summary$total_fatalities / hourly_summary$total_crashes) * 1000
+
+ggplot(data = hourly_summary) +
+  aes(x = HOUR, y = fatality_rate) +
+  geom_point(size = 3) +
+  geom_smooth(method = "lm") +
+  labs(title = "Fatality Rate by Hour of Day",
+       subtitle = "Are nighttime crashes deadlier?",
+       x = "Hour of Day (0 = Midnight, 23 = 11 PM)",
+       y = "Fatalities per 1,000 Crashes")
+@
+
+The scatterplot shows that nighttime crashes are significantly deadlier than daytime crashes. Early morning hours (2-4 AM) show fatality rates of 4.5-6.5 deaths per 1,000 crashes, about 6 times higher than midday rates (~1 per 1,000). The negative linear trend also shows that fatality risk decreases consistently throughout the day, where it reaches its lowest point during morning and afternoon hours (7 AM-2 PM), then begins to rise again after 9 PM.
+
+While Histogram 3.3 (Total Number of Accidents per Time of Day) showed that most crashes occur during daytime hours, this scatterplot shows that crash severity peaks at night. 
+
+
 \section{Preliminary Statistical Modeling \& Interpretation}
 
 To better understand the factors that influence the severity of motor vehicle collisions in New York City, we developed a preliminary statistical model using logistic regression. The outcome of interest is whether a crash was fatal (at least one person killed) or non-fatal. Logistic regression is appropriate in this context because the outcome is binary (fatal vs. non-fatal), and it allows us to estimate how different factors change the odds of a fatal crash while holding other conditions constant.
