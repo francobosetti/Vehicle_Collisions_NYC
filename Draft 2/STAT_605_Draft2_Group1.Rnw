@@ -190,7 +190,9 @@ abline(v = xticks, col = "gray", lty = "dotted")
 Each borough follows very similar shapes in their respective line. Further analysis to normalize by some factor, e.g. by population or road network density may provide more insight.
 
 \subsection{Causes of Collisions}
+
 In the dataset every entry has up to 5 `contributing factors'. Below, We see these results aggregated and the top 5 most prevalent causes displayed in a bar chart.
+
 <<>>=
 cfs <- unique(nyc$CONTRIBUTING.FACTOR.VEHICLE.1)
 cont_fact <- c()
@@ -374,6 +376,38 @@ ggplot(nyc %>% filter(BOROUGH != "")) +
 @
 
 This jitter plot shows the distribution of the number of persons injured per crash across NYC boroughs. Most crashes result in 0–3 injuries (dark dense bands at the bottom). Brooklyn and Queens display more incidents with higher injury counts, indicating that crashes in these boroughs tend to involve more people. Manhattan, despite its high traffic, has relatively fewer multi-injury crashes compared to Brooklyn or the Bronx. Staten Island stands out with the least severe crashes (it is the least populated and least densely built borough), with most incidents involving very few or no injuries.
+
+
+\section{Crash Frequency by Hour and Day of Week}
+
+To explore when crashes are most likely to occur, we created a heatmap of crash counts by hour of the day and day of the week. Each tile represents the total number of crashes in that time slot, with brighter colors indicating more frequent crashes.
+
+<<>>=
+nyc %>%
+  mutate(
+    hour = hour(hm(CRASH.TIME)),
+    date = ymd(CRASH.DATE),
+    weekday = wday(date, label = TRUE, abbr = FALSE)
+  ) %>%
+  count(hour, weekday) %>%
+  ggplot(aes(x = hour, y = weekday, fill = n)) +
+  geom_tile(color = "white") +
+  scale_fill_viridis_c(option = "C") +
+  labs(
+    title = "Crash Frequency by Hour and Day of Week",
+    x = "Hour of Day",
+    y = "Day of Week",
+    fill = "Number of Crashes"
+  ) +
+  theme_minimal()
+@
+
+The heatmap shows a clear concentration of crashes during daytime and evening hours, especially between 8 AM and 7 PM across all weekdays. Friday stands out with the highest crash intensity, particularly in the late afternoon and early evening, likely reflecting a mix of rush-hour traffic and increased social activity at the end of the work week.
+
+In contrast, the overnight hours (midnight to 6 AM) consistently display the fewest crashes across all days, reflecting lower traffic volumes during those times. Sundays appear somewhat less intense overall compared to weekdays, with a broader distribution of crashes throughout the afternoon.
+
+Overall, the heatmap highlights how crash risk peaks during high-traffic commuting periods and social activity times, with Friday evenings being particularly hazardous in New York City.
+
 
 
 \section{Preliminary Statistical Modeling \& Interpretation}
