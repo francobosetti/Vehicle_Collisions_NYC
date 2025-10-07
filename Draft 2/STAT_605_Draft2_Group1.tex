@@ -632,9 +632,7 @@ This jitter plot is showing the distribution of the number of people injured per
     \hldef{)} \hlopt{+}
   \hlkwd{geom_jitter}\hldef{(}\hlkwc{alpha} \hldef{=} \hlnum{1}\hlopt{/}\hlnum{25}\hldef{)}
 \end{alltt}
-
-
-{\ttfamily\noindent\color{warningcolor}{\#\# Warning: Removed 11 rows containing missing values or values outside the scale range\\\#\# (`geom\_point()`).}}\end{kframe}
+\end{kframe}
 \includegraphics[width=\maxwidth]{figure/unnamed-chunk-16-1} 
 \end{knitrout}
 
@@ -694,13 +692,7 @@ We explore the distribution of vehicle ages involved in collisions across each f
 \end{alltt}
 
 
-{\ttfamily\noindent\color{warningcolor}{\#\# Warning: The dot-dot notation (`..density..`) was deprecated in ggplot2 3.4.0.\\\#\# i Please use `after\_stat(density)` instead.\\\#\# This warning is displayed once every 8 hours.\\\#\# Call `lifecycle::last\_lifecycle\_warnings()` to see where this warning was\\\#\# generated.}}
-
-{\ttfamily\noindent\itshape\color{messagecolor}{\#\# `stat\_bin()` using `bins = 30`. Pick better value `binwidth`.}}
-
-{\ttfamily\noindent\color{warningcolor}{\#\# Warning: Removed 575 rows containing non-finite outside the scale range (`stat\_bin()`).}}
-
-{\ttfamily\noindent\color{warningcolor}{\#\# Warning: Removed 10 rows containing missing values or values outside the scale range\\\#\# (`geom\_bar()`).}}\end{kframe}
+{\ttfamily\noindent\itshape\color{messagecolor}{\#\# `stat\_bin()` using `bins = 30`. Pick better value `binwidth`.}}\end{kframe}
 \includegraphics[width=\maxwidth]{figure/unnamed-chunk-18-1} 
 \end{knitrout}
 The distributions appear similar for each borough, with the notable exception of Manhattan, which appears to have a generally younger age of cars among collisions. This can be mostly attributed to the greater wealth found in Manhattan. To see real trends between car age and collisions the next step will be to compare against the overall frequency of cars on the road.
@@ -830,6 +822,76 @@ Here we combine our supplementary dataset with our main dataset to compare the c
 \end{knitrout}
 
 We can see from this density plot that the accidents that have occurred on highways have more significant peaks at around 8:00AM and 4:00PM, during people’s work commutes in and out of the city. The accidents that have occurred on regular roads are less predictable, with more occurrences in the middle of the day during traditional working hours.
+
+
+\subsection{Time of Day vs. Fatality Rate}
+
+This scatterplot examines the relationship between the hour of day (0-23, military time) and the fatality rate, measured as deaths per 1,000 crashes. Each point represents one hour of the day, calculated across all crashes in the NYC dataset from 2012-2025. The blue line is the linear regression model, and the gray shaded area is the 95\% confidence interval.
+
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlcom{# Fatality rate by hour}
+\hldef{crashes_per_hour} \hlkwb{<-} \hlkwd{table}\hldef{(nyc}\hlopt{$}\hldef{HOUR)}
+\hldef{fatalities_per_hour} \hlkwb{<-} \hlkwd{tapply}\hldef{(nyc}\hlopt{$}\hldef{NUMBER.OF.PERSONS.KILLED, nyc}\hlopt{$}\hldef{HOUR, sum,} \hlkwc{na.rm} \hldef{=} \hlnum{TRUE}\hldef{)}
+
+\hldef{hourly_summary} \hlkwb{<-} \hlkwd{data.frame}\hldef{(}
+  \hlkwc{HOUR} \hldef{=} \hlkwd{as.numeric}\hldef{(}\hlkwd{names}\hldef{(crashes_per_hour)),}
+  \hlkwc{total_crashes} \hldef{=} \hlkwd{as.numeric}\hldef{(crashes_per_hour),}
+  \hlkwc{total_fatalities} \hldef{=} \hlkwd{as.numeric}\hldef{(fatalities_per_hour)}
+\hldef{)}
+\hldef{hourly_summary}
+\end{alltt}
+\begin{verbatim}
+##    HOUR total_crashes total_fatalities
+## 1     0         72818              182
+## 2     1         39098              141
+## 3     2         30106              132
+## 4     3         26577              156
+## 5     4         30115              188
+## 6     5         32574              145
+## 7     6         49791              147
+## 8     7         68011               89
+## 9     8        120837              104
+## 10    9        115988               98
+## 11   10        108416              122
+## 12   11        113117              107
+## 13   12        120369              116
+## 14   13        126160              126
+## 15   14        145721              122
+## 16   15        137305              124
+## 17   16        157496              129
+## 18   17        154292              178
+## 19   18        135772              184
+## 20   19        112062              172
+## 21   20         93934              171
+## 22   21         80277              187
+## 23   22         73116              173
+## 24   23         61666              185
+\end{verbatim}
+\begin{alltt}
+\hlcom{# Normalization }
+\hlcom{# how many people die per 1,000 crashes at each hour}
+\hldef{hourly_summary}\hlopt{$}\hldef{fatality_rate} \hlkwb{<-} \hldef{(hourly_summary}\hlopt{$}\hldef{total_fatalities} \hlopt{/} \hldef{hourly_summary}\hlopt{$}\hldef{total_crashes)} \hlopt{*} \hlnum{1000}
+
+\hlkwd{ggplot}\hldef{(}\hlkwc{data} \hldef{= hourly_summary)} \hlopt{+}
+  \hlkwd{aes}\hldef{(}\hlkwc{x} \hldef{= HOUR,} \hlkwc{y} \hldef{= fatality_rate)} \hlopt{+}
+  \hlkwd{geom_point}\hldef{(}\hlkwc{size} \hldef{=} \hlnum{3}\hldef{)} \hlopt{+}
+  \hlkwd{geom_smooth}\hldef{(}\hlkwc{method} \hldef{=} \hlsng{"lm"}\hldef{)} \hlopt{+}
+  \hlkwd{labs}\hldef{(}\hlkwc{title} \hldef{=} \hlsng{"Fatality Rate by Hour of Day"}\hldef{,}
+       \hlkwc{subtitle} \hldef{=} \hlsng{"Are nighttime crashes deadlier?"}\hldef{,}
+       \hlkwc{x} \hldef{=} \hlsng{"Hour of Day (0 = Midnight, 23 = 11 PM)"}\hldef{,}
+       \hlkwc{y} \hldef{=} \hlsng{"Fatalities per 1,000 Crashes"}\hldef{)}
+\end{alltt}
+
+
+{\ttfamily\noindent\itshape\color{messagecolor}{\#\# `geom\_smooth()` using formula = 'y \textasciitilde{} x'}}\end{kframe}
+\includegraphics[width=\maxwidth]{figure/unnamed-chunk-22-1} 
+\end{knitrout}
+
+The scatterplot shows that nighttime crashes are significantly deadlier than daytime crashes. Early morning hours (2-4 AM) show fatality rates of 4.5-6.5 deaths per 1,000 crashes, about 6 times higher than midday rates (~1 per 1,000). The negative linear trend also shows that fatality risk decreases consistently throughout the day, where it reaches its lowest point during morning and afternoon hours (7 AM-2 PM), then begins to rise again after 9 PM.
+
+While Histogram 3.3 (Total Number of Accidents per Time of Day) showed that most crashes occur during daytime hours, this scatterplot shows that crash severity peaks at night. 
 
 
 \section{Preliminary Statistical Modeling \& Interpretation}
