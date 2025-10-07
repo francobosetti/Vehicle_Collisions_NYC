@@ -147,7 +147,7 @@ library(raster)
 library(gridExtra)
 @
 
-<<>>=
+<<echo=FALSE, message=FALSE, warning=FALSE>>=
 nyc <- read.csv(file = "data/Motor_Vehicle_Collisions_-_Crashes.csv")
 nyc$CRASH.DATE <- as.Date(nyc$CRASH.DATE, format = "%m/%d/%Y")
 nyc$BOROUGH <- factor(nyc$BOROUGH)
@@ -163,7 +163,7 @@ nyc$HOUR <- as.numeric(sub("\\:.*", "", nyc$CRASH.TIME))
 \subsection{Secondary Datasets}
 While the New York Collisions dataset provides many useful columns on which to perform analysis, more insight can be gained when considering other forms of data. Below we import these auxillary datasets:
 
-<<>>=
+<<echo=FALSE, message=FALSE, warning=FALSE>>=
 twitter_train <- read.csv("data/1_TrainingSet_3Class.csv", header=FALSE)
 twitter_test <- read.csv("data/1_TestSet_3Class.csv", header=FALSE)
 
@@ -177,7 +177,7 @@ twitter <- rbind(twitter_train, twitter_test)
 
 
 The VZV dataset on speed limits contains a map of city speed limits. Each speed limit is attached to a street or section of a street, specified by a sequence of coordinates. From this, spatial analysis can be performed related collisions to repsective speed limits.
-<<>>=
+<<echo=FALSE, message=FALSE, warning=FALSE>>=
 sp_limits <- read.csv("data/VZV_Speed_Limits_20251002.csv")
 
 # Format the sp_limits latitude and longitude
@@ -200,7 +200,7 @@ has_long_lat$round_location <- paste("(", round(nyc_lats, digits = 4), ", ",
 
 
 The Motor Vehicle Collisions vehicle table contains details on each vehicle involved in a collision. Each row represents a particular vehicle with certain attributes. The collision ID of the main dataset is also present in this dataset, although values are no longer unique as multiple vehicles can contribute to one collision.
-<<>>=
+<<echo=FALSE, message=FALSE, warning=FALSE>>=
 nyv <- read.csv(file = "data/Motor_Vehicle_Collisions_-_Vehicles_20251002.csv")
 nyv$CRASH_DATE <- as.Date(nyv$CRASH_DATE, format = "%m/%d/%Y")
 nyv$YEAR <- as.numeric(format(nyv$CRASH_DATE, "%Y"))
@@ -235,7 +235,7 @@ nyc$AV_VEH_AGE <-  as.numeric(nyc$YEAR) - nyc$AV_VEH_YEAR
 
 \subsection{Vehicle Collisions over Time}
 By grouping the collisions into each month in which they occured, we can plot a line graph showing the number of collisions over the past 13 years.
-<<>>=
+<<echo=FALSE, message=FALSE, warning=FALSE>>=
 monthly_counts <- table(nyc$YEAR_MONTH)
 months <- names(monthly_counts)
 colspermonth <- as.numeric(monthly_counts)
@@ -262,7 +262,7 @@ abline(v = xticks, col = "gray", lty = "dotted")
 A notable trend is the sudden drop in collisions at the beginning of 2020. This is clearly due to the Covid-19 pandemic, which limited the time people spent outside their homes. What is more notable is how the number of collisions seems to even out to a much lower level than pre-pandemic. More research is needed into why we see this pattern.
 \\ \\
 Next, we explore the number of collisions over time within each borough. Note that a large quantity of entries from the dataset do not have a location attached, so those results are not considered for this analysis.
-<<>>=
+<<echo=FALSE, message=FALSE, warning=FALSE>>=
 borough <- levels(nyc$BOROUGH)
 borough <- borough[borough != ""]
 colors = c("red", "blue", "darkgreen", "purple", "orange")
@@ -314,7 +314,7 @@ Each borough follows very similar shapes in their respective line. Further analy
 
 In the dataset every entry has up to 5 `contributing factors'. Below, We see these results aggregated and the top 5 most prevalent causes displayed in a bar chart.
 
-<<>>=
+<<echo=FALSE, message=FALSE, warning=FALSE>>=
 cfs <- unique(nyc$CONTRIBUTING.FACTOR.VEHICLE.1)
 cont_fact <- c()
 for (f in cfs){
@@ -357,7 +357,7 @@ An overwhelming cause of accidents are due to driver distraction, more than 3 ti
 
 The histogram below shows the total number of accidents in the dataset for each time of day. 
 
-<<>>=
+<<echo=FALSE, message=FALSE, warning=FALSE>>=
 layout(mat = 1)
 times <- nyc$CRASH.TIME
 hours <- as.numeric(sub("\\:.*", "", times))
@@ -380,7 +380,7 @@ We can see that most of the accidents occur during the daytime, with a semi-cont
 
 This series of box plots focuses on collisions that resulted in at least 10 total injuries. We compare the total number of people injured with the amounts of people injured of different types: pedestrians, motorists, and cyclists.
 
-<<>>=
+<<echo=FALSE, message=FALSE, warning=FALSE>>=
 people_injured <- nyc$NUMBER.OF.PERSONS.INJURED
 pedestrians_injured <- nyc$NUMBER.OF.PEDESTRIANS.INJURED
 motorists_injured <- nyc$NUMBER.OF.MOTORIST.INJURED
@@ -413,7 +413,7 @@ The vast majority of these collisions resulted in motorists being the main affec
 
 This contingency table examines whether crash severity (fatal, injury, or no injury) varies across NYC boroughs.
 
-<<>>=
+<<echo=FALSE, message=FALSE, warning=FALSE>>=
 nyc$injury_severity <- ifelse(nyc$NUMBER.OF.CYCLIST.KILLED > 0, 
                               "FATAL/DIED",
                        ifelse(nyc$NUMBER.OF.PERSONS.INJURED > 0, 
@@ -428,7 +428,7 @@ borough_injury_data <- nyc[!is.na(nyc$BOROUGH) & !is.na(nyc$injury_severity), ]
                                borough_injury_data$injury_severity))
 @
 
-<<>>=
+<<echo=FALSE, message=FALSE, warning=FALSE>>=
 # Chi-square test
 (chi_test1 <- chisq.test(borough_injury_table))
 @
@@ -439,7 +439,7 @@ Since p-value < alpha = 0.05, we reject the null hypothesis and conclude that we
 \subsubsection{Barplot of Row Proportions (by Borough)}
 This barplot shows crash severity proportions within each borough.
 
-<<>>=
+<<echo=FALSE, message=FALSE, warning=FALSE>>=
 (prop_table1 <- prop.table(borough_injury_table, margin = 1))
 barplot(prop_table1)
 @
@@ -448,7 +448,7 @@ While all boroughs have low fatal crash rates (around 0.1-0.16\%), Staten Island
 
 \subsubsection{Cramer’s V}
 
-<<>>=
+<<echo=FALSE, message=FALSE, warning=FALSE>>=
 cramerV(borough_injury_table)
 @
 
@@ -458,7 +458,7 @@ The chi-square test concluded that there is a statistically significant associat
 
 This scatterplot examines the relationship between injuries and fatalities in NYC vehicle crashes.
 
-<<>>=
+<<echo=FALSE, message=FALSE, warning=FALSE>>=
 injury_data <- nyc[nyc$NUMBER.OF.PERSONS.INJURED > 0 | 
                      nyc$NUMBER.OF.PERSONS.KILLED > 0, ]
 
@@ -503,7 +503,7 @@ This jitter plot shows the distribution of the number of persons injured per cra
 
 To explore when crashes are most likely to occur, we created a heatmap of crash counts by hour of the day and day of the week. Each tile represents the total number of crashes in that time slot, with brighter colors indicating more frequent crashes.
 
-<<>>=
+<<echo=FALSE, message=FALSE, warning=FALSE>>=
 nyc %>%
   mutate(
     hour = hour(hm(CRASH.TIME)),
@@ -551,7 +551,7 @@ The distributions appear similar for each borough, with the notable exception of
 
 There are two graphs plotted below. One superimposes a subset of the accidents on the map of NYC, color coded by borough, and the other superimposes a subset of the speed limits on the map of NYC. 
 
-<<>>=
+<<echo=FALSE, message=FALSE, warning=FALSE>>=
 #plot the car crashes on the NYC map
 has_long_lat <- nyc[!is.na(nyc$LONGITUDE) & !is.na(nyc$LATITUDE),]
 no_outliers <- has_long_lat[
@@ -608,7 +608,7 @@ The speed limit graph shows that there are high speed limits on the highways, ar
 
 Below, we have a graph showing all of the accidents that occurred on roads where the speed limit is greater than 40 mph, mapped onto an image of NYC. This gives us a far clearer picture of the highway road mapping in NYC.
 
-<<>>=
+<<echo=FALSE, message=FALSE, warning=FALSE>>=
 # Find the accidents that occurred on high speed roads
 highways <- sp_limits[sp_limits$postvz_sl > 40, ]
 nyc$HIGHWAY <- nyc$round_location %in% highways$location
@@ -633,7 +633,7 @@ While this imaging doesn’t directly allow us to draw any conclusions, having t
 
 Here we combine our supplementary dataset with our main dataset to compare the car accidents that have occurred on higher speed roads vs those that have occurred on lower speed roads. The density plot is shown below.
 
-<<>>=
+<<echo=FALSE, message=FALSE, warning=FALSE>>=
 # plot the hours vs the hours
 
 hwy_accidents <- nyc[nyc$HIGHWAY == TRUE, ]
@@ -655,7 +655,7 @@ We can see from this density plot that the accidents that have occurred on highw
 
 This scatterplot examines the relationship between the hour of day (0-23, military time) and the fatality rate, measured as deaths per 1,000 crashes. Each point represents one hour of the day, calculated across all crashes in the NYC dataset from 2012-2025. The blue line is the linear regression model, and the gray shaded area is the 95\% confidence interval.
 
-<<>>=
+<<echo=FALSE, message=FALSE, warning=FALSE>>=
 # Fatality rate by hour
 crashes_per_hour <- table(nyc$HOUR)
 fatalities_per_hour <- tapply(nyc$NUMBER.OF.PERSONS.KILLED, nyc$HOUR, sum, na.rm = TRUE)
@@ -696,7 +696,7 @@ In simple terms, the model compares patterns across thousands of crashes to esti
 
 
 Data cleansing and transformations:
-<<>>=
+<<echo=FALSE, message=FALSE, warning=FALSE>>=
 nyc_small <- nyc %>%
   filter(BOROUGH != "" &
            CONTRIBUTING.FACTOR.VEHICLE.1 != "" &
@@ -738,7 +738,7 @@ nyc_small$contributing_factor <- relevel(
 @
 
 Creating the logistic regression model:
-<<>>=
+<<echo=FALSE, message=FALSE, warning=FALSE>>=
 model <- glm(is_fatal ~ borough + tod + vehicle_cat + contributing_factor,
              data = nyc_small,
              family = binomial)
