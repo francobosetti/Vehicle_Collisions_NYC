@@ -145,6 +145,8 @@ library(sf)
 library(prettymapr)
 library(raster)
 library(gridExtra)
+library(ggeffects)
+library(forcats)
 @
 
 <<echo=FALSE, message=FALSE, warning=FALSE>>=
@@ -686,17 +688,17 @@ The scatterplot shows that nighttime crashes are significantly deadlier than day
 While Histogram 3.3 (Total Number of Accidents per Time of Day) showed that most crashes occur during daytime hours, this scatterplot shows that crash severity peaks at night. 
 
 
-\section{Preliminary Statistical Modeling \& Interpretation}
+\section{Statistical Modeling \& Interpretation}
 
 To better understand the factors that influence the severity of motor vehicle collisions in New York City, we developed a preliminary statistical model using logistic regression. The outcome of interest is whether a crash was fatal (at least one person killed) or non-fatal. Logistic regression is appropriate in this context because the outcome is binary (fatal vs. non-fatal), and it allows us to estimate how different factors change the odds of a fatal crash while holding other conditions constant.
 
 In simple terms, the model compares patterns across thousands of crashes to estimate how likely a fatal outcome is under different conditions. For example, whether the crash happened at night or involved a motorcycle. The predictors we included were the borough of occurrence, time of day (day vs. night), vehicle type, and the primary contributing factor reported by police. By examining these, we can identify which circumstances or behaviors are most strongly associated with fatal outcomes.
 
-\subsection{Code and Results}
+\subsection{Visualizations}
 
-
-Data cleansing and transformations:
 <<echo=FALSE, message=FALSE, warning=FALSE>>=
+
+#Data cleansing and transformations:
 nyc_small <- nyc %>%
   filter(BOROUGH != "" &
            CONTRIBUTING.FACTOR.VEHICLE.1 != "" &
@@ -737,8 +739,9 @@ nyc_small$contributing_factor <- relevel(
 
 @
 
-Creating the logistic regression model:
 <<echo=FALSE, message=FALSE, warning=FALSE>>=
+
+# Creating the logistic regression model:
 model <- glm(is_fatal ~ borough + tod + vehicle_cat + contributing_factor,
              data = nyc_small,
              family = binomial)
@@ -766,17 +769,71 @@ results_table <- data.frame(
 # filter out the intercept/baseline to keep table cleaner
 results_table <- results_table[results_table$term != "(Intercept)", ]
 
-results_table$term <- gsub("vehicle_cat", "Vehicle: ", 
+results_table$term <- gsub("vehicle_cat", "V: ", 
                            results_table$term)
-results_table$term <- gsub("borough", "Borough: ", 
+results_table$term <- gsub("borough", "B: ", 
                            results_table$term)
-results_table$term <- gsub("tod", "Time of Day: ", 
+results_table$term <- gsub("tod", "ToD: ", 
                            results_table$term)
-results_table$term <- gsub("contributing_factor", "Contributing Factor: ", 
+results_table$term <- gsub("contributing_factor", "CF: ", 
                            results_table$term)
 
-results_table
 @
+
+<<echo=FALSE, message=FALSE, warning=FALSE>>=
+results_table %>%
+  filter(significant == "yes") %>%
+  mutate(term = fct_reorder(term, odds_ratio)) %>%
+  ggplot(aes(x = term, y = odds_ratio, color = significant)) +
+  geom_point(size = 3) +
+  geom_errorbar(aes(ymin = ci_low, ymax = ci_high), width = 0.2) +
+  coord_flip() +
+  scale_color_manual(values = c("no" = "gray60", "yes" = "#E69F00")) +
+  geom_hline(yintercept = 1, linetype = "dashed", color = "black") +
+  labs(
+    title = "Factors Increasing the Odds of a Fatal Motor Vehicle Collision in NYC",
+    x = NULL,
+    y = "Odds Ratio (log scale)",
+    caption = "Values above 1 indicate higher odds of a fatal outcome",
+    color = "Significant"
+  ) +
+  scale_y_log10() +
+  theme_minimal(base_size = 12)
+@
+
+The forest plot clearly highlights which predictors have a statistically significant association with fatal motor vehicle collisions in NYC. Most notably, crashes involving motorcycles stand out with the highest odds of fatality, followed by those related to drug or alcohol involvement, unsafe speed, and pedestrian or bicyclist confusion—each showing odds ratios well above 1 and confidence intervals that do not cross the null line. Nighttime crashes also significantly increase fatal risk compared to daytime. In contrast, factors such as borough or minor driving errors (e.g., backing unsafely, turning improperly) show odds ratios close to 1 and wide confidence intervals, indicating no statistically significant effect. Overall, the most significant predictors are those linked to risky behaviors and vulnerable vehicle types, underscoring the human and situational nature of fatal crash risk.
+
+<<echo=FALSE, message=FALSE, warning=FALSE>>=
+pred <- ggpredict(model, terms = c("vehicle_cat", "tod"))
+plot(pred) + 
+  labs(
+    title = "Predicted Probability of a Fatal Crash by Vehicle Type and Time of Day",
+    y = "Predicted Probability of Fatal Outcome",
+    x = "Vehicle Type",
+    color = "Time of Day"
+  )
+@
+
+The plot illustrates how the predicted probability of a fatal crash varies by vehicle type and time of day, offering a more intuitive view of the logistic regression model’s results. Fatal crashes are exceedingly rare for cars and SUVs, remaining below 0.2\% even at night. However, the probability increases substantially for motorcycles, exceeding 2\% at night (an order of magnitude higher than for any other vehicle type). Trucks and buses also show elevated fatality risk, roughly double that of cars, while bicycles and scooters occupy an intermediate range. Across all vehicle types, nighttime crashes consistently show higher fatal probabilities than daytime ones, suggesting that reduced visibility, fatigue, or riskier nighttime behavior may compound the inherent dangers of certain vehicles. Overall, the visualization reinforces that motorcycles and nighttime driving represent the most critical risk combination for fatal outcomes.
+
+<<echo=FALSE, message=FALSE, warning=FALSE>>=
+key_terms <- results_table %>%
+  filter(grepl("V|ToD|CF", term), significant == "yes") %>%
+  mutate(term = fct_reorder(term, odds_ratio))
+
+ggplot(key_terms, aes(x = term, y = odds_ratio, fill = term)) +
+  geom_col(show.legend = FALSE) +
+  geom_text(aes(label = sprintf("%.1fx", odds_ratio)), hjust = -0.1, size = 3.5) +
+  coord_flip() +
+  labs(
+    title = "Relative Likelihood of Fatal Crash by Key Factors",
+    subtitle = "Compared to baseline: Car/SUV during daytime with unspecified cause",
+    y = "Odds Ratio", x = NULL
+  ) +
+  theme_minimal(base_size = 12)
+@
+
+This bar chart summarizes the relative likelihood of a fatal crash across key factors, making the model’s results easily interpretable. It shows that crashes involving motorcycles are the most lethal; over 14 times more likely to result in death than the baseline (a daytime car or SUV crash with no specified cause). Other high-risk circumstances include driver illness, drug involvement, tinted windows, and traffic control violations, all of which multiply fatality odds by 5–13 times. Nighttime driving and alcohol involvement roughly double the risk, confirming their significant yet smaller effects compared to vehicle type or severe impairments. On the opposite end, factors like distraction, minor infractions, or mechanical issues are associated with odds ratios below 1, indicating little to no increase in fatality risk.
 
 \subsection{Interpretation}
 Our analysis highlights which circumstances make crashes most likely to be deadly. Location matters somewhat: crashes in Staten Island are more likely to be fatal than in the Bronx, Queens, or Manhattan. In spite of this, the bigger differences come from time of day, vehicle type, and driver behavior.
