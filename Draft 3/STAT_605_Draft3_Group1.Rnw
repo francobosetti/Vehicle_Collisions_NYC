@@ -497,19 +497,6 @@ This scatterplot examines the relationship between injuries and fatalities in NY
 injury_data <- nyc[nyc$NUMBER.OF.PERSONS.INJURED > 0 | 
                      nyc$NUMBER.OF.PERSONS.KILLED > 0, ]
 
-plot(injury_data$NUMBER.OF.PERSONS.INJURED, 
-     injury_data$NUMBER.OF.PERSONS.KILLED,
-     main = "Relationship Between Injuries and Fatalities in NYC Crashes",
-     xlab = "Number of Persons Injured",
-     ylab = "Number of Persons Killed",
-     pch = 16,
-     col = "darkblue",
-     cex = 0.6)
-
-abline(lm(injury_data$NUMBER.OF.PERSONS.KILLED ~ 
-            injury_data$NUMBER.OF.PERSONS.INJURED), 
-       col = "red", lwd = 2)
-
 crash_summary <- injury_data %>%
   mutate(
     crash_type = case_when(
