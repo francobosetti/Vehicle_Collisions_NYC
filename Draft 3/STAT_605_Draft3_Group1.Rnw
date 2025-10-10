@@ -739,14 +739,6 @@ Our Twitter dataset contained 798 NYC traffic-related tweets. We classified each
 
 <<echo=FALSE, message=FALSE, warning=FALSE>>=
 # preprocessing 1
-twitter_train <- read.csv("~/Documents/STAT405_605/STAT605_Project/c3xvj5snvv-1/1_TrainingSet_3Class.csv", header=FALSE)
-twitter_test <- read.csv("~/Documents/STAT405_605/STAT605_Project/c3xvj5snvv-1/1_TestSet_3Class.csv", header=FALSE)
-
-names(twitter_train) <- c("class", "tweet_id", "tweet_text")
-names(twitter_test) <- c("class", "tweet_id", "tweet_text")
-
-twitter <- rbind(twitter_train, twitter_test)
-
 twitter$tweet_id <- gsub("^s", "", twitter$tweet_id)
 
 borough_keywords <- c("Manhattan", "Brooklyn", "Queens", "Bronx", "Staten Island")
