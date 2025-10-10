@@ -88,7 +88,7 @@ Variables include:
 \end{itemize}
 
 
-Preprocessing: We combined the training and test datasets into one dataset since we don’t plan to run a classification model. We renamed variables for clarity and ensured consistency in column naming. Our next step is cleaning the dataset and the text data to prepare for sentiment analysis and linking patterns with NYC collision data.
+Preprocessing: We combined the training and test datasets into one dataset since we don’t plan to run a classification model. We renamed variables for clarity and ensured consistency in column naming. Using keyword matching with word boundaries, we extracted location information and classified tweets by content type (transit vs. vehicle). This multi-stage filtering process reduced the dataset from 51,178 total tweets to 798 NYC traffic-related tweets, and finally to 66 vehicle crash tweets.
 
 Tertiary Dataset: NYC Speed Limits (\url{https://data.cityofnewyork.us/Transportation/VZV_Speed-Limits/5mad-ntua/about_data}) 
 
@@ -425,7 +425,7 @@ The vast majority of these collisions resulted in motorists being the main affec
 This contingency table examines whether crash severity (fatal, injury, or no injury) varies across NYC boroughs.
 
 <<echo=FALSE, message=FALSE, warning=FALSE>>=
-nyc$injury_severity <- ifelse(nyc$NUMBER.OF.CYCLIST.KILLED > 0, 
+nyc$injury_severity <- ifelse(nyc$NUMBER.OF.PERSONS.KILLED > 0, 
                               "FATAL/DIED",
                        ifelse(nyc$NUMBER.OF.PERSONS.INJURED > 0, 
                               "INJURY", "NO INJURY"))
@@ -451,8 +451,32 @@ Since p-value < alpha = 0.05, we reject the null hypothesis and conclude that we
 This barplot shows crash severity proportions within each borough.
 
 <<echo=FALSE, message=FALSE, warning=FALSE>>=
-(prop_table1 <- prop.table(borough_injury_table, margin = 1))
-barplot(prop_table1)
+prop_df <- as.data.frame(prop_table1)
+names(prop_df) <- c("Borough", "Severity", "Proportion")
+
+ggplot(data = prop_df) + 
+  aes(x = Borough, y = Proportion, fill = Severity) + 
+  geom_bar(stat = "identity", position = "stack") + 
+  geom_text(aes(label = paste0(round(Proportion * 100, 1), "%")), 
+            position = position_stack(vjust = 0.5), 
+            size = 3, 
+            color = "gray30") +
+  labs( 
+    title = "Crash Severity Distribution by Borough", 
+    subtitle = "Proportion of crashes by injury outcome", 
+    x = "Borough", 
+    y = "Proportion", 
+    fill = "Severity" 
+  ) + 
+  scale_fill_manual(values = c("FATAL/DIED" = "#2D3748",   
+                                "INJURY" = "#718096",        
+                                "NO INJURY" = "#CBD5E0")) +  
+  theme_minimal() + 
+  theme( 
+    axis.text.x = element_text(angle = 45, hjust = 1), 
+    plot.title = element_text(face = "bold", size = 13), 
+    legend.position = "right" 
+  )
 @
 
 While all boroughs have low fatal crash rates (around 0.1-0.16\%), Staten Island has the highest fatality rate at 0.159\%, followed by Brooklyn at 0.142\%. Manhattan appears to be the safest borough with the lowest rates of both fatal (0.107\%) and injury crashes (18.9\%). Brooklyn and the Bronx have the highest injury rates at 26.1\% and 25.3\% respectively, while Manhattan has significantly more no injury crashes (80.1\%) compared to other boroughs.
@@ -485,6 +509,40 @@ plot(injury_data$NUMBER.OF.PERSONS.INJURED,
 abline(lm(injury_data$NUMBER.OF.PERSONS.KILLED ~ 
             injury_data$NUMBER.OF.PERSONS.INJURED), 
        col = "red", lwd = 2)
+
+crash_summary <- injury_data %>%
+  mutate(
+    crash_type = case_when(
+      NUMBER.OF.PERSONS.KILLED > 0 & NUMBER.OF.PERSONS.INJURED > 0 ~ "Fatal & Injury",
+      NUMBER.OF.PERSONS.KILLED > 0 & NUMBER.OF.PERSONS.INJURED == 0 ~ "Fatal Only",
+      NUMBER.OF.PERSONS.KILLED == 0 & NUMBER.OF.PERSONS.INJURED > 0 ~ "Injury Only",
+      TRUE ~ "No Casualties"
+    )
+  ) %>%
+  count(crash_type) %>%
+  mutate(percentage = round(100 * n / sum(n), 1))
+
+ggplot(data = crash_summary) +
+  aes(x = n, y = reorder(crash_type, n), fill = crash_type) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = paste0(format(n, big.mark = ","), " (", percentage, "%)")),
+            hjust = -0.1, size = 4, fontface = "bold") +
+  labs(
+    title = "Distribution of NYC Crashes by Casualty Type",
+    y = "",
+    x = "Number of Crashes"
+  ) +
+  scale_fill_manual(values = c("Fatal Only" = "#2D3748",
+                               "Fatal & Injury" = "#4A5568",
+                               "Injury Only" = "#718096")) +
+  scale_x_continuous(labels = scales::comma, 
+                     limits = c(0, max(crash_summary$n) * 1.15)) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold", size = 13),
+    legend.position = "none",
+    axis.text.y = element_text(size = 11)
+  )
 @
 
 The plot shows that most crashes result in injuries but no deaths which can be seen by the concentration of points along the bottom. Fatal crashes are rare and scattered across injury levels, with no clear correlation. The flat regression line shows that there is a minimal relationship between injuries and deaths, suggesting fatalities depend more on crash circumstances than the number of people involved.
@@ -683,6 +741,250 @@ ggplot(data = hourly_summary) +
 The scatterplot shows that nighttime crashes are significantly deadlier than daytime crashes. Early morning hours (2-4 AM) show fatality rates of 4.5-6.5 deaths per 1,000 crashes, about 6 times higher than midday rates (~1 per 1,000). The negative linear trend also shows that fatality risk decreases consistently throughout the day, where it reaches its lowest point during morning and afternoon hours (7 AM-2 PM), then begins to rise again after 9 PM.
 
 While Histogram 3.3 (Total Number of Accidents per Time of Day) showed that most crashes occur during daytime hours, this scatterplot shows that crash severity peaks at night. 
+
+\subsection{Social Media Crash Reportings vs. Actual Crash Reportings : Twitter Analysis}
+
+\subsubsection{Transit vs. Vehicle Crashes Distribution}
+
+Social media platforms like Twitter have become sources of real-time traffic information. To investigate whether social media accurately reflects actual crash patterns, we analyzed traffic-related tweets and compared their geographic and content distributions to official NYC crash records.
+
+Our Twitter dataset contained 798 NYC traffic-related tweets. We classified each tweet based on whether it mentioned public transit (subway, train, bus) or vehicle-related incidents (car, crash, highway).
+
+<<echo=FALSE, message=FALSE, warning=FALSE>>=
+# preprocessing 1
+twitter_train <- read.csv("~/Documents/STAT405_605/STAT605_Project/c3xvj5snvv-1/1_TrainingSet_3Class.csv", header=FALSE)
+twitter_test <- read.csv("~/Documents/STAT405_605/STAT605_Project/c3xvj5snvv-1/1_TestSet_3Class.csv", header=FALSE)
+
+names(twitter_train) <- c("class", "tweet_id", "tweet_text")
+names(twitter_test) <- c("class", "tweet_id", "tweet_text")
+
+twitter <- rbind(twitter_train, twitter_test)
+
+twitter$tweet_id <- gsub("^s", "", twitter$tweet_id)
+
+borough_keywords <- c("Manhattan", "Brooklyn", "Queens", "Bronx", "Staten Island")
+city_keywords <- c("NYC", "New York City", "New York")
+
+extract_location <- function(text) {
+  text_lower <- tolower(text)
+  
+  # Check boroughs 
+  for(borough in borough_keywords) {
+    # Use word boundary to avoid matching "Bronx" in "Bronxville" etc.
+    if(str_detect(text_lower, paste0("\\b", tolower(borough), "\\b"))) {
+      return(borough)
+    }
+  }
+  
+  # Check for general NYC 
+  for(city in city_keywords) {
+    if(str_detect(text_lower, tolower(city))) {
+      return("NYC (unspecified)")
+    }
+  }
+  
+  return(NA)  # No NYC mention found
+}
+
+twitter_nyc <- twitter %>%
+  filter(class %in% c(1, 2)) %>%  # Only traffic-related
+  mutate(location = sapply(tweet_text, extract_location)) %>%
+  filter(!is.na(location))  # Keep only tweets mentioning NYC
+
+# nrow(twitter_nyc) # 798
+@
+
+<<echo=FALSE, message=FALSE, warning=FALSE>>=
+# preprocessing 2
+# transit vs vehicle tweets
+twitter_nyc <- twitter_nyc %>%
+  mutate(
+    is_transit = str_detect(tolower(tweet_text), 
+                            "subway|train|#.*line|station|mta|bus"),
+    is_vehicle = str_detect(tolower(tweet_text), 
+                            "car|vehicle|crash|accident|collision|highway|road|traffic")
+  )
+
+table(twitter_nyc$is_transit)
+table(twitter_nyc$is_vehicle)
+
+# extracting vehicle specific crash tweets
+twitter_vehicle <- twitter_nyc %>%
+  mutate(
+    is_real_crash = str_detect(tolower(tweet_text), 
+                               "accident|crash|collision|wreck") &
+      !str_detect(tolower(tweet_text), 
+                  "subway|train|#.*line|station"),
+    is_road_incident = str_detect(tolower(tweet_text),
+                                  "highway|parkway|expressway|west side|fdr") &
+      !str_detect(tolower(tweet_text), "station")
+  ) %>%
+  filter(is_real_crash | is_road_incident)
+
+# nrow(twitter_vehicle) # 66
+@
+
+<<echo=FALSE, message=FALSE, warning=FALSE>>=
+# Transit vs Vehicle Content Distribution
+tweet_type_summary <- data.frame(
+  Type = c("Public Transit", "Vehicle Crashes", "Other"),
+  Count = c(
+    sum(twitter_nyc$is_transit & !twitter_nyc$is_vehicle),
+    nrow(twitter_vehicle),
+    nrow(twitter_nyc) - sum(twitter_nyc$is_transit & !twitter_nyc$is_vehicle) - nrow(twitter_vehicle)
+  )
+) %>%
+  mutate(Percentage = round(100 * Count / sum(Count), 1))
+
+ggplot(data = tweet_type_summary) +
+  aes(x = reorder(Type, -Count), y = Count, fill = Type) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = paste0(Count, "\n(", Percentage, "%)")), 
+            vjust = 1.5, size = 3) +
+  labs(
+    title = "NYC Traffic Tweet Content Distribution",
+    x = "Content Type",
+    y = "Number of Tweets"
+  ) +
+  scale_fill_manual(values = c("Public Transit" = "grey",
+                               "Vehicle Crashes" = "#718096", 
+                               "Other" = "#CBD5E0")) +
+  theme_minimal() +
+  theme(legend.position = "none")
+@
+
+This distribution shows that social media traffic discussions are dominated by transit updates rather than vehicle crashes, revealing a key sampling bias when using Twitter for traffic safety research.
+
+\subsubsection{Text Mining Analysis}
+
+To identify key locations and incident types mentioned in vehicle crash tweets, we conducted a text mining analysis. The 66 vehicle-related tweets were tokenized into individual words, with common stop words (e.g., “the,” “and,” “is”) and generic traffic terms removed to focus on meaningful content.
+
+<<echo=FALSE, message=FALSE, warning=FALSE>>=
+# Word Frequency Analysis
+data(stop_words)
+
+# tokenize tweets and clean
+vehicle_words <- twitter_vehicle %>%
+  # Break tweets into individual words
+  unnest_tokens(word, tweet_text) %>%
+  # Remove stop words
+  anti_join(stop_words, by = "word") %>%
+  # Clean up the words
+  filter(
+    !str_detect(word, "^\\d+$"), # Remove pure numbers (like "95", "278")
+    !word %in% c("nyc", "new", "york", "updated", "incident", "cleared",
+                 "directions", "construction", "highway", "exit", "amp")
+    # Remove traffic-specific common words that don't add meaning
+  )
+
+ggplot(data = top_words) +
+  aes(x = reorder(word, n), y = n) +
+  geom_col(fill = "steelblue") +
+  coord_flip() +
+  labs(
+    title = "Most Common Words in Vehicle Incident Tweets",
+    x = "Word",
+    y = "Frequency"
+  ) +
+  theme_minimal()
+@
+
+This vocabulary pattern suggests that vehicle crash tweets are primarily navigational updates about highway incidents rather than detailed crash reports.
+
+\subsubsection{Twitter Dataset vs. NYC Vechile Collision Crashes Dataset}
+
+We compared the borough distribution of vehicle crash tweets to our primary dataset's 2018 crash records (n=149,234) to see whether social media reporting reflects actual crash patterns.
+
+<<echo=FALSE, message=FALSE, warning=FALSE>>=
+nyc2018 <- nyc %>%
+  filter(year(CRASH.DATE) == 2018, BOROUGH != "")
+# nrow(nyc2018) # 149234
+
+twitter_borough <- twitter_vehicle %>%
+  filter(location != "NYC (unspecified)") %>%
+  # Convert to uppercase to match NYC data (BRONX → Bronx)
+  mutate(location = toupper(location)) %>%
+  count(location, name = "twitter_reports")
+
+nyc_borough <- nyc2018 %>%
+  count(BOROUGH, name = "nyc_crashes")
+
+borough_comparison <- full_join(
+  twitter_borough, 
+  nyc_borough, 
+  by = c("location" = "BOROUGH")
+) %>%
+  mutate(
+    # If a value is NA, replace it with 0
+    twitter_reports = ifelse(is.na(twitter_reports), 0, twitter_reports),
+    nyc_crashes = ifelse(is.na(nyc_crashes), 0, nyc_crashes),
+    
+    # percentages of each borough's count
+    twitter_pct = round(100 * twitter_reports / sum(twitter_reports), 1),
+    nyc_pct = round(100 * nyc_crashes / sum(nyc_crashes), 1),
+    
+    # gap between twitter % and actual crash % (positive = over-reported on Twitter)
+    difference = twitter_pct - nyc_pct
+  ) %>%
+  arrange(desc(nyc_pct))
+
+borough_comparison
+
+# reshaping data for ggplot
+borough_comparison_long <- borough_comparison %>%
+  select(location, twitter_pct, nyc_pct) %>%
+  pivot_longer(
+    cols = c(twitter_pct, nyc_pct),
+    names_to = "source",
+    values_to = "percentage"
+  ) %>%
+  mutate(
+    source = case_when(
+      source == "twitter_pct" ~ "Twitter Reports (n=66)",
+      source == "nyc_pct" ~ "NYC Crashes (n=149K+)"
+    ),
+    
+    location = str_to_title(location)
+  )
+
+ggplot(data = borough_comparison_long) +
+  aes(x = reorder(location, -percentage), y = percentage, fill = source) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.7) +
+  geom_text(
+    aes(label = paste0(round(percentage, 1), "%")),
+    position = position_dodge(width = 0.7),
+    vjust = -0.5,
+    size = 3
+  ) +
+  labs(
+    title = "Social Media Reporting vs. NYC Motor Collision Crash Data by Borough",
+    subtitle = "(2018 Data)",
+    x = "",
+    y = "Percentage",
+    fill = ""
+  ) +
+  scale_fill_manual(values = c("Twitter Reports (n=66)" = "steelblue", 
+                               "NYC Crashes (n=149K+)" = "grey")) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(size = 11),
+    legend.position = "bottom",
+    plot.title = element_text(face = "bold", size = 13),
+    plot.subtitle = element_text(size = 10),
+    panel.grid.major.x = element_blank()
+  ) +
+  ylim(0, max(comparison_long$percentage) * 1.15)
+@
+
+The comparison reveals substantial borough bias:
+\begin{itemize}
+\item \textbf{Bronx}: Over-represented (34.0\% of tweets vs. 15.5\% of crashes, +18.5pp)
+\item \textbf{Brooklyn}: Under-represented (22.6\% vs. 31.7\%, -9.1pp)
+\item \textbf{Queens}: Under-represented (18.9\% vs. 27.7\%, -8.8pp)
+\item \textbf{Staten Island}: Completely absent (0\% vs. 4.1\%, -4.1pp)
+\end{itemize}
+
+These discrepancies indicate that social media reporting is influenced by factors beyond crash frequency. With only 66 vehicle crash tweets compared to the 149,000+ crashes from our primary dataset (0.04\% coverage), social media is not a reliable source for crash surveillance. Transit disruptions draw immediate online attention, while most crashes go unmentioned unless particularly notable. 
 
 
 \section{Statistical Modeling \& Interpretation}
