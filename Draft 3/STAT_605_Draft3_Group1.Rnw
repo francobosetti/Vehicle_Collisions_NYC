@@ -640,7 +640,8 @@ ggplot(combined)+ aes(HOUR, fill = SPEED.LIMIT > 40) +
   scale_x_discrete(labels=c("custom", "label")) +
   scale_x_continuous(breaks = c(0, 3, 6, 9, 12, 15, 18, 21), labels = c("Midnight", "3:00AM", "6:00AM","9:00AM", "Noon", "3:00PM", "6:00PM", "9:00PM"))+
   scale_fill_discrete(labels = c('Low speed road (<40 mph)', 'High speed road (>40 mph)')) +
-  xlab("time of day") + ggtitle("comparison of densities of times of car accidents on highways vs streets")
+  xlab("time of day") + ggtitle("comparison of densities of times of car accidents on highways vs streets") + 
+  labs(fill = "Speed limit of the road")
 
 @
 
