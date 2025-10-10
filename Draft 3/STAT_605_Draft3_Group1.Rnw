@@ -178,26 +178,35 @@ twitter <- rbind(twitter_train, twitter_test)
 @
 
 
-The VZV dataset on speed limits contains a map of city speed limits. Each speed limit is attached to a street or section of a street, specified by a sequence of coordinates. From this, spatial analysis can be performed related collisions to repsective speed limits.
+The VZV dataset on speed limits contains a map of city speed limits. Each speed limit is attached to a street or section of a street, specified by a sequence of coordinates. We can use those coordinates to map this dataset to our original nyc dataset to create a combined dataframe containing all the values of the nyc dataset, but with a new column representing the speed limit. To avoid any duplicated values caused by many-to-many matching, we first pre-process the speed limits dataset to ensure that for each location value there is only one speed limit value, taking the maximum if there are multiple options. 
 <<echo=FALSE, message=FALSE, warning=FALSE>>=
 sp_limits <- read.csv("data/VZV_Speed_Limits_20251002.csv")
 
 # Format the sp_limits latitude and longitude
-splitted <- strsplit(sp_limits$the_geom, " ")
-lats <- as.numeric(lapply(splitted, function(x) substr(x[3], 1, nchar(x[3])-1)))
-longs <- as.numeric(lapply(splitted, function(x) substr(x[2], 3, nchar(x[3]))))
-sp_limits$latitude <- lats
-sp_limits$longitude <- longs
-sp_limits$location <- paste("(", round(lats, digits = 4), ", ", 
-                            round(longs, digits = 4), ")", sep = "")
+# Pre-process the speed limit data
+library(dplyr)
+lats <- strsplit(sp_limits$the_geom, " ") %>%
+  lapply(FUN=function(x) substr(x[3], 1, nchar(x[3])-1)) %>%
+  as.numeric()
+longs <- strsplit(sp_limits$the_geom, " ") %>%
+  lapply(FUN=function(x) substr(x[2], 3, nchar(x[3]))) %>%
+  as.numeric()
+loc<- paste("(", round(lats, digits = 4), ", ", round(longs, digits = 4), ")", sep = "")
+sp_lim_proc <- mutate(sp_limits, latitude = lats, longitude = longs, ROUND.LOCATION =loc) %>%
+  rename(SPEED.LIMIT = postvz_sl)
 
-# Add a rounded location value to the nyc dataset
-has_long_lat <- nyc[!is.na(nyc$LONGITUDE) & !is.na(nyc$LATITUDE),]
-nyc_longs <- has_long_lat$LONGITUDE
-nyc_lats <- has_long_lat$LATITUDE
-has_long_lat$round_location <- paste("(", round(nyc_lats, digits = 4), ", ", 
-                                     round(nyc_longs, digits = 4), ")", 
-                                     sep = "")
+sp_limits_filt <- sp_lim_proc %>%
+  group_by(ROUND.LOCATION) %>%
+  slice_max(order_by = SPEED.LIMIT, n=1, with_ties = FALSE) %>%
+  ungroup()
+  
+
+# Create dataframe of the speed limits combined with the rest of the data
+combined <- # add speed limit data to nyc dataset
+  mutate(nyc, ROUND.LOCATION = paste("(", round(LATITUDE, digits = 4), ", ", 
+                                     round(LONGITUDE, digits = 4), ")", sep = "")) %>%
+  filter(!is.na(LATITUDE), !is.na(LONGITUDE)) %>%
+  inner_join(dplyr::select(sp_limits_filt, SPEED.LIMIT, ROUND.LOCATION), by="ROUND.LOCATION")
 @
 
 
@@ -555,48 +564,40 @@ There are two graphs plotted below. One superimposes a subset of the accidents o
 
 <<echo=FALSE, message=FALSE, warning=FALSE>>=
 #plot the car crashes on the NYC map
-has_long_lat <- nyc[!is.na(nyc$LONGITUDE) & !is.na(nyc$LATITUDE),]
-no_outliers <- has_long_lat[
-  has_long_lat$LONGITUDE > -74.26 &
-    has_long_lat$LONGITUDE < -73.70 &
-    has_long_lat$LATITUDE > 40.49 &
-    has_long_lat$LATITUDE < 40.92, ]
+small_sample_sf <- filter(combined, between(LONGITUDE, -74.26, -73.70) & 
+                        between(LATITUDE, 40.49, 40.92)) %>%
+  sample_n(3000) %>%
+  st_as_sf(coords = c("LONGITUDE", "LATITUDE"), crs = 4326) %>%
+  st_transform(3857)
 
-small_sample <- no_outliers[sample(nrow(no_outliers), 3000),]
-boroughs <- small_sample$BOROUGH
-small_sample_sf <- st_as_sf(small_sample, coords = c("LONGITUDE", "LATITUDE"), crs = 4326)
-small_sample_sf <- st_transform(small_sample_sf, 3857)
 nyc_bbox <- st_bbox(small_sample_sf)
-
-accident_plot <- ggplot() +
+accident_plot <- 
+  ggplot(small_sample_sf) +
   annotation_map_tile(type = "cartolight", zoom = 11) +
-  aes(color = boroughs) +
-  geom_sf(data = small_sample_sf, size = 1) +
+  aes(color = BOROUGH, alpha = .3) + geom_sf( size = 1) +
   coord_sf(xlim = c(nyc_bbox["xmin"], nyc_bbox["xmax"]),
            ylim = c(nyc_bbox["ymin"], nyc_bbox["ymax"]),
            expand = FALSE) +
-  labs(title = "NYC Accident Mapping by Borough")
+  labs(title = "NYC Accident Mapping by Borough") +
+  guides(alpha = "none")
 
-
+  
 # plot the speed limits on the NYC map
-no_outliers_sp <- sp_limits[
-  sp_limits$longitude > -74.26 &
-    sp_limits$longitude < -73.70 &
-    sp_limits$latitude > 40.49 &
-    sp_limits$latitude < 40.92, ]
-small_sp_sample <- no_outliers_sp[sample(nrow(no_outliers_sp), 8000),]
-speeds <- small_sp_sample$postvz_sl
-small_sp_sample_sf <- st_as_sf(small_sp_sample, coords = c("longitude", "latitude"), crs = 4326)
-small_sp_sample_sf <- st_transform(small_sp_sample_sf, 3857)
-speed_plot <- ggplot()+
+speed_plot <-
+  sp_lim_proc %>%
+  sample_n(5000) %>%
+  st_as_sf(coords = c("longitude", "latitude"), crs = 4326) %>%
+  st_transform(3857) %>%
+  ggplot()+
   annotation_map_tile(type = "cartolight", zoom = 11) +
-  aes(color = speeds) +
-  geom_sf(data = small_sp_sample_sf, size = 1) +
+  aes(color = SPEED.LIMIT, alpha = .3) +
+  geom_sf(size = 1) +
   coord_sf(xlim = c(nyc_bbox["xmin"], nyc_bbox["xmax"]),
            ylim = c(nyc_bbox["ymin"], nyc_bbox["ymax"]),
            expand = FALSE) +
   labs(title = "NYC Speed Limit Mapping") +
-  scale_color_gradient(low = "green", high = "red")
+  scale_color_gradient(low = "green", high = "red") +
+  guides(alpha = "none")
 
 
 # Display plots side by side
@@ -612,16 +613,14 @@ Below, we have a graph showing all of the accidents that occurred on roads where
 
 <<echo=FALSE, message=FALSE, warning=FALSE>>=
 # Find the accidents that occurred on high speed roads
-highways <- sp_limits[sp_limits$postvz_sl > 40, ]
-nyc$HIGHWAY <- nyc$round_location %in% highways$location
-hwy_accidents <- nyc[nyc$HIGHWAY == TRUE, ]
-hwy_accidents_sf <- st_as_sf(hwy_accidents, coords = c("LONGITUDE", "LATITUDE"), crs = 4326)
-hwy_accidents_sf <- st_transform(hwy_accidents_sf, 3857)
-nyc_bbox <- st_bbox(hwy_accidents_sf)
-
-ggplot() +
+filter(combined, between(LONGITUDE, -74.26, -73.70) & 
+                            between(LATITUDE, 40.49, 40.92), SPEED.LIMIT > 40) %>%
+  sample_n(3000) %>%
+  st_as_sf(coords = c("LONGITUDE", "LATITUDE"), crs = 4326) %>%
+  st_transform(3857) %>%
+  ggplot() +
   annotation_map_tile(type = "cartolight", zoom = 11) +
-  geom_sf(data = hwy_accidents_sf, size = 1) +
+  geom_sf( size = 1) +
   coord_sf(xlim = c(nyc_bbox["xmin"], nyc_bbox["xmax"]),
            ylim = c(nyc_bbox["ymin"], nyc_bbox["ymax"]),
            expand = FALSE) +
@@ -638,16 +637,14 @@ Here we combine our supplementary dataset with our main dataset to compare the c
 <<echo=FALSE, message=FALSE, warning=FALSE>>=
 # plot the hours vs the hours
 
-hwy_accidents <- nyc[nyc$HIGHWAY == TRUE, ]
-nyc_sample <- nyc[sample(nrow(nyc), nrow(hwy_accidents)),]
-
-combined <- rbind(nyc_sample, hwy_accidents)
-ggplot(combined, aes(x = HOUR, fill = HIGHWAY)) +
-  geom_density(position = "identity", alpha = 0.5) +
+ggplot(combined)+ aes(HOUR, fill = SPEED.LIMIT > 40) +
+  geom_density(position = "identity", alpha = 0.5, bw = 1) +
   scale_x_discrete(labels=c("custom", "label")) +
   scale_x_continuous(breaks = c(0, 3, 6, 9, 12, 15, 18, 21), labels = c("Midnight", "3:00AM", "6:00AM","9:00AM", "Noon", "3:00PM", "6:00PM", "9:00PM"))+
   scale_fill_discrete(labels = c('Low speed road (<40 mph)', 'High speed road (>40 mph)')) +
-  xlab("time of day") + ggtitle("comparison of densities of times of car accidents on highways vs streets")
+  xlab("time of day") + ggtitle("comparison of densities of times of car accidents on highways vs streets") + 
+  labs(fill = "Speed limit of the road")
+
 @
 
 We can see from this density plot that the accidents that have occurred on highways have more significant peaks at around 8:00AM and 4:00PM, during people’s work commutes in and out of the city. The accidents that have occurred on regular roads are less predictable, with more occurrences in the middle of the day during traditional working hours.
