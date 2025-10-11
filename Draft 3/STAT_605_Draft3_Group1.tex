@@ -200,34 +200,7 @@ The VZV dataset on speed limits contains a map of city speed limits. Each speed 
 
 
 The Motor Vehicle Collisions vehicle table contains details on each vehicle involved in a collision. Each row represents a particular vehicle with certain attributes. The collision ID of the main dataset is also present in this dataset, although values are no longer unique as multiple vehicles can contribute to one collision.
-\begin{knitrout}
-\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
 
-
-{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error in file(file, "{}rt"{}): cannot open the connection}}
-
-{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error: object 'nyv' not found}}
-
-{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error: object 'nyv' not found}}
-
-{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error: object 'nyv' not found}}
-
-{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error: object 'veh\_per\_col' not found}}
-
-{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error: object 'nyv' not found}}
-
-{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error: object 'nyv' not found}}
-
-{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error: object 'pass\_per\_veh' not found}}
-
-{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error: object 'nyv' not found}}
-
-{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error: object 'nyv' not found}}
-
-{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error: object 'av\_car\_made' not found}}
-
-{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error in `\$<-.data.frame`(`*tmp*`, AV\_VEH\_AGE, value = numeric(0)): replacement has 0 rows, data has 2205618}}\end{kframe}
-\end{knitrout}
 
 
 
@@ -237,7 +210,12 @@ The Motor Vehicle Collisions vehicle table contains details on each vehicle invo
 By grouping the collisions into each month in which they occured, we can plot a line graph showing the number of collisions over the past 13 years.
 \begin{knitrout}
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
-\includegraphics[width=\maxwidth]{figure/unnamed-chunk-7-1} 
+
+{\centering \includegraphics[width=\maxwidth]{figure/unnamed-chunk-7-1} 
+
+}
+
+
 \end{knitrout}
 A notable trend is the sudden drop in collisions at the beginning of 2020. This is clearly due to the Covid-19 pandemic, which limited the time people spent outside their homes. What is more notable is how the number of collisions seems to even out to a much lower level than pre-pandemic. More research is needed into why we see this pattern.
 \\ \\
@@ -285,7 +263,12 @@ Next, we plot both the injuries and fatalities caused by collisions. This is dis
 
 \begin{knitrout}
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
-\includegraphics[width=\maxwidth]{figure/unnamed-chunk-12-1} 
+
+{\centering \includegraphics[width=\maxwidth]{figure/unnamed-chunk-12-1} 
+
+}
+
+
 \end{knitrout}
 Both Brooklyn and Queens see the most injuries, with motorists being the most common among those injured. A noticeable decline in injuries can be seen from 2020 onward, after the beginning of the Covid pandemic. Note that 2012 data is lower due to the dates beginning in July 2012. 
 
@@ -293,7 +276,12 @@ Both Brooklyn and Queens see the most injuries, with motorists being the most co
 Next, we plot the fatalities:
 \begin{knitrout}
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
-\includegraphics[width=\maxwidth]{figure/unnamed-chunk-13-1} 
+
+{\centering \includegraphics[width=\maxwidth]{figure/unnamed-chunk-13-1} 
+
+}
+
+
 \end{knitrout}
 Interestingly, this does not match the distribution of the injuries. A noticeable difference is with the year 2016, where deaths were spread equally among Brooklyn, Manhattan and Queens.
 
@@ -338,13 +326,18 @@ This barplot shows crash severity proportions within each borough.
 
 \begin{knitrout}
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
-
-
-{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error in h(simpleError(msg, call)): error in evaluating the argument 'x' in selecting a method for function 'as.data.frame': object 'prop\_table1' not found}}
-
-{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error: object 'prop\_df' not found}}
-
-{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error: object 'prop\_df' not found}}\end{kframe}
+\begin{verbatim}
+##                
+##                  FATAL/DIED      INJURY   NO INJURY
+##                 0.001948978 0.251946763 0.746104259
+##   BRONX         0.001347453 0.252287356 0.746365191
+##   BROOKLYN      0.001418011 0.260846557 0.737735433
+##   MANHATTAN     0.001071299 0.188675514 0.810253187
+##   QUEENS        0.001342577 0.237338281 0.761319143
+##   STATEN ISLAND 0.001592978 0.218238041 0.780168981
+\end{verbatim}
+\end{kframe}
+\includegraphics[width=\maxwidth]{figure/unnamed-chunk-16-1} 
 \end{knitrout}
 
 While all boroughs have low fatal crash rates (around 0.1-0.16\%), Staten Island has the highest fatality rate at 0.159\%, followed by Brooklyn at 0.142\%. Manhattan appears to be the safest borough with the lowest rates of both fatal (0.107\%) and injury crashes (18.9\%). Brooklyn and the Bronx have the highest injury rates at 26.1\% and 25.3\% respectively, while Manhattan has significantly more no injury crashes (80.1\%) compared to other boroughs.
@@ -379,20 +372,7 @@ The plot shows that most crashes result in injuries but no deaths which can be s
 This jitter plot is showing the distribution of the number of people injured per incident across different boroughs, while avoiding overplotting so patterns in the data density can be seen.
 
 \begin{knitrout}
-\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
-\begin{alltt}
-\hlkwd{ggplot}\hldef{(nyc} \hlopt{%>%} \hlkwd{filter}\hldef{(BOROUGH} \hlopt{!=} \hlsng{""}\hldef{))} \hlopt{+}
-  \hlkwd{aes}\hldef{(}\hlkwc{x}\hldef{=BOROUGH,} \hlkwc{y}\hldef{=NUMBER.OF.PERSONS.INJURED)} \hlopt{+}
-  \hlkwd{coord_cartesian}\hldef{(}\hlkwc{ylim} \hldef{=} \hlkwd{c}\hldef{(}\hlnum{0}\hldef{,} \hlnum{10}\hldef{))} \hlopt{+}
-  \hlkwd{scale_y_continuous}\hldef{(}\hlkwc{breaks} \hldef{=} \hlkwd{seq}\hldef{(}\hlnum{0}\hldef{,} \hlnum{10}\hldef{,} \hlnum{1}\hldef{))} \hlopt{+}
-  \hlkwd{labs}\hldef{(}
-    \hlkwc{x} \hldef{=} \hlsng{"Borough"}\hldef{,}
-    \hlkwc{y} \hldef{=} \hlsng{"Number of Persons Injured"}\hldef{,}
-    \hlkwc{title} \hldef{=} \hlsng{"Density of Injuries per Borough"}
-    \hldef{)} \hlopt{+}
-  \hlkwd{geom_jitter}\hldef{(}\hlkwc{alpha} \hldef{=} \hlnum{1}\hlopt{/}\hlnum{25}\hldef{)}
-\end{alltt}
-\end{kframe}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
 \includegraphics[width=\maxwidth]{figure/unnamed-chunk-19-1} 
 \end{knitrout}
 
@@ -418,21 +398,8 @@ Overall, the heatmap highlights how crash risk peaks during high-traffic commuti
 We explore the distribution of vehicle ages involved in collisions across each five boroughs. This data is extracted from one of the secondary datasets, linking the collision ID from the original dataset to the individual vehicles involved in each collision. The resulting histogram is plotted below.
 
 \begin{knitrout}
-\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
-\begin{alltt}
-\hlkwd{ggplot}\hldef{(}\hlkwc{data}\hldef{=nyc[}\hlopt{!}\hlkwd{is.na}\hldef{(nyc}\hlopt{$}\hldef{AV_VEH_AGE)} \hlopt{&} \hldef{nyc}\hlopt{$}\hldef{BOROUGH} \hlopt{!=}\hlsng{""}\hldef{, ])} \hlopt{+}
-    \hlkwd{aes}\hldef{(AV_VEH_AGE, ..density..,} \hlkwc{fill} \hldef{= BOROUGH)} \hlopt{+}
-    \hlkwd{facet_grid}\hldef{(.}\hlopt{~}\hldef{BOROUGH)} \hlopt{+}
-    \hlkwd{geom_histogram}\hldef{(}\hlkwc{color} \hldef{=} \hlsng{"black"}\hldef{,} \hlkwc{alpha} \hldef{=} \hlnum{0.7}\hldef{)} \hlopt{+}
-    \hlkwd{xlim}\hldef{(}\hlkwd{c}\hldef{(}\hlnum{0}\hldef{,}\hlnum{30}\hldef{))} \hlopt{+}
-    \hlkwd{labs}\hldef{(}\hlkwc{title} \hldef{=} \hlsng{"Distribution of Vehicle Age by Borough"}\hldef{,}
-         \hlkwc{x} \hldef{=} \hlsng{"Average Vehicle Age (Years)"}\hldef{,}
-         \hlkwc{y} \hldef{=} \hlsng{"Density"}\hldef{)} \hlopt{+}
-    \hlkwd{theme}\hldef{(}\hlkwc{legend.position} \hldef{=} \hlsng{"none"}\hldef{)}
-\end{alltt}
-
-
-{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error in `combine\_vars()`:\\\#\# ! Faceting variables must have at least one value.}}\end{kframe}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+\includegraphics[width=\maxwidth]{figure/unnamed-chunk-21-1} 
 \end{knitrout}
 The distributions appear similar for each borough, with the notable exception of Manhattan, which appears to have a generally younger age of cars among collisions. This can be mostly attributed to the greater wealth found in Manhattan. To see real trends between car age and collisions the next step will be to compare against the overall frequency of cars on the road.
 
@@ -443,11 +410,7 @@ The distributions appear similar for each borough, with the notable exception of
 There are two graphs plotted below. One superimposes a subset of the accidents on the map of NYC, color coded by borough, and the other superimposes a subset of the speed limits on the map of NYC. 
 
 \begin{knitrout}
-\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
-\begin{verbatim}
-##   |                                                                              |                                                                      |   0%  |                                                                              |====                                                                  |   6%  |                                                                              |=========                                                             |  12%  |                                                                              |=============                                                         |  19%  |                                                                              |==================                                                    |  25%  |                                                                              |======================                                                |  31%  |                                                                              |==========================                                            |  38%  |                                                                              |===============================                                       |  44%  |                                                                              |===================================                                   |  50%  |                                                                              |=======================================                               |  56%  |                                                                              |============================================                          |  62%  |                                                                              |================================================                      |  69%  |                                                                              |====================================================                  |  75%  |                                                                              |=========================================================             |  81%  |                                                                              |=============================================================         |  88%  |                                                                              |==================================================================    |  94%  |                                                                              |======================================================================| 100%
-\end{verbatim}
-\end{kframe}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
 \includegraphics[width=\maxwidth]{figure/unnamed-chunk-22-1} 
 \end{knitrout}
 
@@ -526,33 +489,24 @@ Social media platforms like Twitter have become sources of real-time traffic inf
 
 Our Twitter dataset contained 798 NYC traffic-related tweets. We classified each tweet based on whether it mentioned public transit (subway, train, bus) or vehicle-related incidents (car, crash, highway).
 
+
+
 \begin{knitrout}
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
-
-
-{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error in `mutate()`:\\\#\# i In argument: `location = sapply(tweet\_text, extract\_location)`.\\\#\# Caused by error in `str\_detect()`:\\\#\# ! could not find function "{}str\_detect"{}}}\end{kframe}
+\begin{verbatim}
+## 
+## FALSE  TRUE 
+##   148   650
+## 
+## FALSE  TRUE 
+##   637   161
+\end{verbatim}
+\end{kframe}
 \end{knitrout}
 
 \begin{knitrout}
-\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
-
-
-{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error: object 'twitter\_nyc' not found}}
-
-{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error: object 'twitter\_nyc' not found}}
-
-{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error: object 'twitter\_nyc' not found}}
-
-{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error: object 'twitter\_nyc' not found}}\end{kframe}
-\end{knitrout}
-
-\begin{knitrout}
-\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
-
-
-{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error: object 'twitter\_nyc' not found}}
-
-{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error: object 'tweet\_type\_summary' not found}}\end{kframe}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+\includegraphics[width=\maxwidth]{figure/unnamed-chunk-28-1} 
 \end{knitrout}
 
 This distribution shows that social media traffic discussions are dominated by transit updates rather than vehicle crashes, revealing a key sampling bias when using Twitter for traffic safety research.
@@ -562,12 +516,8 @@ This distribution shows that social media traffic discussions are dominated by t
 To identify key locations and incident types mentioned in vehicle crash tweets, we conducted a text mining analysis. The 66 vehicle-related tweets were tokenized into individual words, with common stop words (e.g., “the,” “and,” “is”) and generic traffic terms removed to focus on meaningful content.
 
 \begin{knitrout}
-\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
-
-
-{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error in unnest\_tokens(., word, tweet\_text): could not find function "{}unnest\_tokens"{}}}
-
-{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error: object 'top\_words' not found}}\end{kframe}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+\includegraphics[width=\maxwidth]{figure/unnamed-chunk-29-1} 
 \end{knitrout}
 
 This vocabulary pattern suggests that vehicle crash tweets are primarily navigational updates about highway incidents rather than detailed crash reports.
@@ -578,17 +528,16 @@ We compared the borough distribution of vehicle crash tweets to our primary data
 
 \begin{knitrout}
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
-
-
-{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error: object 'twitter\_vehicle' not found}}
-
-{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error: object 'twitter\_borough' not found}}
-
-{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error: object 'borough\_comparison' not found}}
-
-{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error in h(simpleError(msg, call)): error in evaluating the argument 'x' in selecting a method for function 'select': object 'borough\_comparison' not found}}
-
-{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error: object 'borough\_comparison\_long' not found}}\end{kframe}
+\begin{verbatim}
+##        location twitter_reports nyc_crashes twitter_pct nyc_pct difference
+## 1      BROOKLYN              12       47313        22.6    31.7       -9.1
+## 2        QUEENS              10       41278        18.9    27.7       -8.8
+## 3     MANHATTAN              13       31412        24.5    21.0        3.5
+## 4         BRONX              18       23060        34.0    15.5       18.5
+## 5 STATEN ISLAND               0        6171         0.0     4.1       -4.1
+\end{verbatim}
+\end{kframe}
+\includegraphics[width=\maxwidth]{figure/unnamed-chunk-30-1} 
 \end{knitrout}
 
 The comparison reveals substantial borough bias:
@@ -616,7 +565,12 @@ In simple terms, the model compares patterns across thousands of crashes to esti
 
 \begin{knitrout}
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
-\includegraphics[width=\maxwidth]{figure/unnamed-chunk-33-1} 
+
+{\centering \includegraphics[width=\maxwidth]{figure/unnamed-chunk-33-1} 
+
+}
+
+
 \end{knitrout}
 
 The forest plot clearly highlights which predictors have a statistically significant association with fatal motor vehicle collisions in NYC. Most notably, crashes involving motorcycles stand out with the highest odds of fatality, followed by those related to drug or alcohol involvement, unsafe speed, and pedestrian or bicyclist confusion—each showing odds ratios well above 1 and confidence intervals that do not cross the null line. Nighttime crashes also significantly increase fatal risk compared to daytime. In contrast, factors such as borough or minor driving errors (e.g., backing unsafely, turning improperly) show odds ratios close to 1 and wide confidence intervals, indicating no statistically significant effect. Overall, the most significant predictors are those linked to risky behaviors and vulnerable vehicle types, underscoring the human and situational nature of fatal crash risk.
@@ -630,7 +584,12 @@ The plot illustrates how the predicted probability of a fatal crash varies by ve
 
 \begin{knitrout}
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
-\includegraphics[width=\maxwidth]{figure/unnamed-chunk-35-1} 
+
+{\centering \includegraphics[width=\maxwidth]{figure/unnamed-chunk-35-1} 
+
+}
+
+
 \end{knitrout}
 
 This bar chart summarizes the relative likelihood of a fatal crash across key factors, making the model’s results easily interpretable. It shows that crashes involving motorcycles are the most lethal; over 14 times more likely to result in death than the baseline (a daytime car or SUV crash with no specified cause). Other high-risk circumstances include driver illness, drug involvement, tinted windows, and traffic control violations, all of which multiply fatality odds by 5–13 times. Nighttime driving and alcohol involvement roughly double the risk, confirming their significant yet smaller effects compared to vehicle type or severe impairments. On the opposite end, factors like distraction, minor infractions, or mechanical issues are associated with odds ratios below 1, indicating little to no increase in fatality risk.

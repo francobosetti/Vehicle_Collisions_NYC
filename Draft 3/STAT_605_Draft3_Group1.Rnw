@@ -147,6 +147,8 @@ library(raster)
 library(gridExtra)
 library(ggeffects)
 library(forcats)
+library(stringr)
+library(tidytext)
 @
 
 
@@ -280,7 +282,7 @@ nyc$AV_VEH_AGE <-  as.numeric(nyc$YEAR) - nyc$AV_VEH_YEAR
 
 \subsection{Vehicle Collisions over Time}
 By grouping the collisions into each month in which they occured, we can plot a line graph showing the number of collisions over the past 13 years.
-<<echo=FALSE, message=FALSE, warning=FALSE>>=
+<<echo=FALSE, message=FALSE, warning=FALSE, fig.height=13, fig.width=11, fig.align='center'>>=
 monthly_counts <- table(nyc$YEAR_MONTH)
 months <- names(monthly_counts)
 colspermonth <- as.numeric(monthly_counts)
@@ -462,7 +464,7 @@ The vast majority of these collisions resulted in motorists being the main affec
 
 Next, we plot both the injuries and fatalities caused by collisions. This is displayed as bar plots on a year to year basis, and compares the frequency in each borough. The injuries/fatalities to motorists, pedestrians, and cyclists are separated for a more visual breakdown. The plot for injuries can be seen below:
 
-<<echo=FALSE, message=FALSE, warning=FALSE, fig.height=15, fig.width=11>>=
+<<echo=FALSE, message=FALSE, warning=FALSE, fig.height=13, fig.width=11, fig.align='center'>>=
 # First reshape the data to long format for stacking
 # First reshape the data to long format for stacking
 library(tidyr)
@@ -517,7 +519,7 @@ Both Brooklyn and Queens see the most injuries, with motorists being the most co
 
 
 Next, we plot the fatalities:
-<<echo=FALSE, message=FALSE, warning=FALSE, fig.height=15, fig.width=11>>=
+<<echo=FALSE, message=FALSE, warning=FALSE, fig.height=13, fig.width=11, fig.align='center'>>=
 fatalities_summarized <- nyc_long %>%
   filter(BOROUGH != "", grepl("_Killed", injury_type)) %>%
   group_by(YEAR, BOROUGH, injury_type) %>%
@@ -579,6 +581,7 @@ Since p-value < alpha = 0.05, we reject the null hypothesis and conclude that we
 This barplot shows crash severity proportions within each borough.
 
 <<echo=FALSE, message=FALSE, warning=FALSE>>=
+(prop_table1 <- prop.table(borough_injury_table, margin = 1))
 prop_df <- as.data.frame(prop_table1)
 names(prop_df) <- c("Borough", "Severity", "Proportion")
 
@@ -667,7 +670,7 @@ The plot shows that most crashes result in injuries but no deaths which can be s
 
 This jitter plot is showing the distribution of the number of people injured per incident across different boroughs, while avoiding overplotting so patterns in the data density can be seen.
 
-<<warning=FALSE>>=
+<<echo=FALSE, message=FALSE, warning=FALSE>>=
 ggplot(nyc %>% filter(BOROUGH != "")) + 
   aes(x=BOROUGH, y=NUMBER.OF.PERSONS.INJURED) + 
   coord_cartesian(ylim = c(0, 10)) +
@@ -716,7 +719,7 @@ Overall, the heatmap highlights how crash risk peaks during high-traffic commuti
 \subsection{Distribution of Vehicle Age Involved in Accidents}
 We explore the distribution of vehicle ages involved in collisions across each five boroughs. This data is extracted from one of the secondary datasets, linking the collision ID from the original dataset to the individual vehicles involved in each collision. The resulting histogram is plotted below.
 
-<<warning=FALSE>>=
+<<echo=FALSE, message=FALSE, warning=FALSE>>=
 ggplot(data=nyc[!is.na(nyc$AV_VEH_AGE) & nyc$BOROUGH !="", ]) +
     aes(AV_VEH_AGE, ..density.., fill = BOROUGH) +
     facet_grid(.~BOROUGH) + 
@@ -984,6 +987,10 @@ vehicle_words <- twitter_vehicle %>%
     # Remove traffic-specific common words that don't add meaning
   )
 
+top_words <- vehicle_words %>%
+  count(word, sort = TRUE) %>%
+  head(15)
+
 ggplot(data = top_words) +
   aes(x = reorder(word, n), y = n) +
   geom_col(fill = "steelblue") +
@@ -1039,7 +1046,7 @@ borough_comparison
 
 # reshaping data for ggplot
 borough_comparison_long <- borough_comparison %>%
-  select(location, twitter_pct, nyc_pct) %>%
+  dplyr::select(location, twitter_pct, nyc_pct) %>%
   pivot_longer(
     cols = c(twitter_pct, nyc_pct),
     names_to = "source",
@@ -1080,7 +1087,7 @@ ggplot(data = borough_comparison_long) +
     plot.subtitle = element_text(size = 10),
     panel.grid.major.x = element_blank()
   ) +
-  ylim(0, max(comparison_long$percentage) * 1.15)
+  ylim(0, max(borough_comparison_long$percentage) * 1.15)
 @
 
 The comparison reveals substantial borough bias:
@@ -1186,7 +1193,7 @@ results_table$term <- gsub("contributing_factor", "CF: ",
 
 @
 
-<<echo=FALSE, message=FALSE, warning=FALSE>>=
+<<echo=FALSE, message=FALSE, warning=FALSE, fig.height=13, fig.width=11, fig.align='center'>>=
 results_table %>%
   filter(significant == "yes") %>%
   mutate(term = fct_reorder(term, odds_ratio)) %>%
@@ -1222,7 +1229,7 @@ plot(pred) +
 
 The plot illustrates how the predicted probability of a fatal crash varies by vehicle type and time of day, offering a more intuitive view of the logistic regression model’s results. Fatal crashes are exceedingly rare for cars and SUVs, remaining below 0.2\% even at night. However, the probability increases substantially for motorcycles, exceeding 2\% at night (an order of magnitude higher than for any other vehicle type). Trucks and buses also show elevated fatality risk, roughly double that of cars, while bicycles and scooters occupy an intermediate range. Across all vehicle types, nighttime crashes consistently show higher fatal probabilities than daytime ones, suggesting that reduced visibility, fatigue, or riskier nighttime behavior may compound the inherent dangers of certain vehicles. Overall, the visualization reinforces that motorcycles and nighttime driving represent the most critical risk combination for fatal outcomes.
 
-<<echo=FALSE, message=FALSE, warning=FALSE>>=
+<<echo=FALSE, message=FALSE, warning=FALSE, fig.height=13, fig.width=11, fig.align='center'>>=
 key_terms <- results_table %>%
   filter(grepl("V|ToD|CF", term), significant == "yes") %>%
   mutate(term = fct_reorder(term, odds_ratio))
