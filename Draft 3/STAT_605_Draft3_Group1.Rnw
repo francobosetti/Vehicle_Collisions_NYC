@@ -215,7 +215,7 @@ combined <- # add speed limit data to nyc dataset
 
 The Motor Vehicle Collisions vehicle table contains details on each vehicle involved in a collision. Each row represents a particular vehicle with certain attributes. The collision ID of the main dataset is also present in this dataset, although values are no longer unique as multiple vehicles can contribute to one collision.
 <<echo=FALSE, message=FALSE, warning=FALSE>>=
-nyv <- read.csv(file = "data/Motor_Vehicle_Collisions_-_Vehicles_20250930.csv")
+nyv <- read.csv(file = "data/Motor_Vehicle_Collisions_-_Vehicles_20251002.csv")
 nyv$CRASH_DATE <- as.Date(nyv$CRASH_DATE, format = "%m/%d/%Y")
 nyv$YEAR <- as.numeric(format(nyv$CRASH_DATE, "%Y"))
 

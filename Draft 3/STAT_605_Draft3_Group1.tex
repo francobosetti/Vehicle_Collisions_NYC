@@ -1,0 +1,651 @@
+\documentclass[10pt]{article}\usepackage[]{graphicx}\usepackage[]{xcolor}
+% maxwidth is the original width if it is less than linewidth
+% otherwise use linewidth (to make sure the graphics do not exceed the margin)
+\makeatletter
+\def\maxwidth{ %
+  \ifdim\Gin@nat@width>\linewidth
+    \linewidth
+  \else
+    \Gin@nat@width
+  \fi
+}
+\makeatother
+
+\definecolor{fgcolor}{rgb}{0.345, 0.345, 0.345}
+\newcommand{\hlnum}[1]{\textcolor[rgb]{0.686,0.059,0.569}{#1}}%
+\newcommand{\hlsng}[1]{\textcolor[rgb]{0.192,0.494,0.8}{#1}}%
+\newcommand{\hlcom}[1]{\textcolor[rgb]{0.678,0.584,0.686}{\textit{#1}}}%
+\newcommand{\hlopt}[1]{\textcolor[rgb]{0,0,0}{#1}}%
+\newcommand{\hldef}[1]{\textcolor[rgb]{0.345,0.345,0.345}{#1}}%
+\newcommand{\hlkwa}[1]{\textcolor[rgb]{0.161,0.373,0.58}{\textbf{#1}}}%
+\newcommand{\hlkwb}[1]{\textcolor[rgb]{0.69,0.353,0.396}{#1}}%
+\newcommand{\hlkwc}[1]{\textcolor[rgb]{0.333,0.667,0.333}{#1}}%
+\newcommand{\hlkwd}[1]{\textcolor[rgb]{0.737,0.353,0.396}{\textbf{#1}}}%
+\let\hlipl\hlkwb
+
+\usepackage{framed}
+\makeatletter
+\newenvironment{kframe}{%
+ \def\at@end@of@kframe{}%
+ \ifinner\ifhmode%
+  \def\at@end@of@kframe{\end{minipage}}%
+  \begin{minipage}{\columnwidth}%
+ \fi\fi%
+ \def\FrameCommand##1{\hskip\@totalleftmargin \hskip-\fboxsep
+ \colorbox{shadecolor}{##1}\hskip-\fboxsep
+     % There is no \\@totalrightmargin, so:
+     \hskip-\linewidth \hskip-\@totalleftmargin \hskip\columnwidth}%
+ \MakeFramed {\advance\hsize-\width
+   \@totalleftmargin\z@ \linewidth\hsize
+   \@setminipage}}%
+ {\par\unskip\endMakeFramed%
+ \at@end@of@kframe}
+\makeatother
+
+\definecolor{shadecolor}{rgb}{.97, .97, .97}
+\definecolor{messagecolor}{rgb}{0, 0, 0}
+\definecolor{warningcolor}{rgb}{1, 0, 1}
+\definecolor{errorcolor}{rgb}{1, 0, 0}
+\newenvironment{knitrout}{}{} % an empty environment to be redefined in TeX
+
+\usepackage{alltt}
+\usepackage[left=1in,right=1in,top=1in,bottom=1in]{geometry}
+\usepackage{amsmath}
+\usepackage{hyperref}
+%\SweaveOpts[concordance=TRUE]
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\begin{document}
+
+\begin{titlepage}
+    \centering
+    
+    { \Huge \textbf{Final Project Report Draft 3} \par} 
+    \vspace{5mm}
+    { \huge \textbf{Motor vehicle colisions in NYC} \par} 
+    \vspace{3mm}
+    { \Large Group 1 (STAT 605 - S1)\par}  
+    
+    \vspace{5mm}
+    \begin{center}
+    \line(1,0){425}
+    \end{center}
+    
+    \vspace{5mm}
+
+    \vspace{15mm}
+    { \large Authors: \par }
+      \vspace{3mm}
+    { \Large \textbf{Astha Singh} - \texttt{as677@rice.edu} \par}
+    { \Large \textbf{Franco Bosetti} - \texttt{fb57@rice.edu}\par}
+    { \Large \textbf{Louis Clarke} - \texttt{lc160@rice.edu}\par}
+    { \Large \textbf{Lindsey Russ} - \texttt{ltr1@rice.edu}\par}
+    
+    
+    \vspace{5mm}
+    
+    \vspace{5mm}
+
+\end{titlepage}
+
+\newpage
+
+
+\tableofcontents
+
+\newpage
+
+\section{Introduction}
+
+Motor vehicle collisions are a major concern in major populated urban areas like New York City (NYC), where millions of people use diverse transportation systems every day. Understanding these incidents through data analysis can help us identify patterns and make safety improvements. At the same time, social media platforms such as Twitter have become spaces where people share their real-time information about traffic incidents and congestion. This project will analyze NYC motor vehicle collision data alongside Twitter traffic discussions, while also incorporating roadway speed limit data and detailed vehicle-level records to examine how roadway conditions, vehicle characteristics, and public reporting intersect with officially documented traffic incidents.
+
+\section{Dataset Description}
+Primary Dataset: NYC Motor Vehicle Collisions 
+
+(\url{https://data.cityofnewyork.us/Public-Safety/Motor-Vehicle-Collisions-Crashes/h9gi-nx95/about_data})
+
+Our primary dataset contains police-reported motor vehicle collision records from New York City, maintained by the NYPD through their TrafficStat initiative. The dataset includes 2.21 million collision records with 29 variables.
+
+
+Source: NYC OpenData (2025)
+
+
+Key variables include:
+\begin{itemize}
+  \item Location \& Time: Borough, coordinates (latitude \& longitude), street names, zip codes, crash date/time
+  \item Casualties: Injuries and fatalities by category (pedestrians, cyclists, motorists)
+  \item Contributing Factors: Up to five causal factors per collision
+  \item Vehicle Types: Vehicle type classifications (ATV, bicycle, car/SUV, e-bike, e-scooter, truck/bus, motorcycle, other) for each vehicle involved
+\end{itemize}
+
+
+Preprocessing: We prepared the dataset for analysis by converting crash dates to a standard date format, organizing borough names as categorical variables, and creating additional time-based variables to explore patterns across years and months. 
+
+Secondary Dataset: Twitter Traffic Classifications (\url{https://data.mendeley.com/datasets/c3xvj5snvv/1})
+
+Our secondary dataset contains classified tweets collected from Twitter's API, with each tweet categorized by its traffic-related content.
+
+
+Source: Research dataset by Sina Dabiri (2018)
+
+
+Variables include:
+\begin{itemize}
+  \item Tweet ID
+  \item Classification label: 
+  \item Non-Traffic (Class 0): General tweets unrelated to traffic
+  \item Traffic Incident (Class 1): Reports of crashes, breakdowns, road closures
+  \item Traffic Conditions (Class 2): Congestion reports, traffic advisories, flow conditions
+  \item Tweet text content
+\end{itemize}
+
+
+Preprocessing: We combined the training and test datasets into one dataset since we don’t plan to run a classification model. We renamed variables for clarity and ensured consistency in column naming. Using keyword matching with word boundaries, we extracted location information and classified tweets by content type (transit vs. vehicle). This multi-stage filtering process reduced the dataset from 51,178 total tweets to 798 NYC traffic-related tweets, and finally to 66 vehicle crash tweets.
+
+Tertiary Dataset: NYC Speed Limits (\url{https://data.cityofnewyork.us/Transportation/VZV_Speed-Limits/5mad-ntua/about_data}) 
+
+Our tertiary dataset provided posted speed limits across NYC streets, maintained under the Vision Zero initiative. This dataset will allow us to explore whether high-speed areas correlate with higher accident frequency and severity.
+
+
+Source: NYC OpenData (2025)
+
+
+Variables include:
+\begin{itemize}
+  \item Segment Geometry: street segment represented as geographic coordinates (longitude \& latitude)
+  \item Posted Speed Limit: legal speed limit value for each street segment
+  \item Street Name
+  \item Borough
+\end{itemize}
+
+Preprocessing: We extracted latitude and longitude from the geometric strings and rounded them to 4 decimals to match with collision coordinates. This allowed us to link crash locations to nearby street segments. We also filtered roads with speed limits above 40 mph to compare crashes on high-speed vs. lower-speed roads. 
+
+Quaternary Dataset: Motor Vehicle Collisions - Vehicles (\url{https://data.cityofnewyork.us/Public-Safety/Motor-Vehicle-Collisions-Vehicles/bm4k-52h4/about_data}) 
+
+Our quaternary dataset gives vehicle-level details for each crash in NYC. Unlike the primary collisions dataset, where each row represents a crash, here each row represents a single vehicle involved. This will give us insights into how vehicle type, driver demographics, and pre-crash behavior contribute to accidents.
+
+Source: NYC OpenData (2025)
+
+
+Variables include:
+\begin{itemize}
+  \item Collision information 
+  \item Vehicle details 
+  \item Driver information
+  \item Crash circumstances 
+  \item Contributing factors 
+\end{itemize}
+
+Preprocessing: We plan to link this dataset with the primary collisions dataset using the 'collision\_id' key. This will also expand our crash-level analysis with vehicle-level and driver-level details, such as identifying trends in which vehicle types are most frequently involved in accidents and which driver factors contribute most to severe outcomes.  
+
+\newpage
+
+
+\section{Data Preparation}
+
+Prepare the data for processing:
+
+
+
+
+
+
+\subsection{Secondary Datasets}
+While the New York Collisions dataset provides many useful columns on which to perform analysis, more insight can be gained when considering other forms of data. Below we import these auxillary datasets:
+
+
+
+
+The VZV dataset on speed limits contains a map of city speed limits. Each speed limit is attached to a street or section of a street, specified by a sequence of coordinates. We can use those coordinates to map this dataset to our original nyc dataset to create a combined dataframe containing all the values of the nyc dataset, but with a new column representing the speed limit. To avoid any duplicated values caused by many-to-many matching, we first pre-process the speed limits dataset to ensure that for each location value there is only one speed limit value, taking the maximum if there are multiple options. 
+
+
+
+The Motor Vehicle Collisions vehicle table contains details on each vehicle involved in a collision. Each row represents a particular vehicle with certain attributes. The collision ID of the main dataset is also present in this dataset, although values are no longer unique as multiple vehicles can contribute to one collision.
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+
+
+{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error in file(file, "{}rt"{}): cannot open the connection}}
+
+{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error: object 'nyv' not found}}
+
+{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error: object 'nyv' not found}}
+
+{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error: object 'nyv' not found}}
+
+{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error: object 'veh\_per\_col' not found}}
+
+{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error: object 'nyv' not found}}
+
+{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error: object 'nyv' not found}}
+
+{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error: object 'pass\_per\_veh' not found}}
+
+{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error: object 'nyv' not found}}
+
+{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error: object 'nyv' not found}}
+
+{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error: object 'av\_car\_made' not found}}
+
+{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error in `\$<-.data.frame`(`*tmp*`, AV\_VEH\_AGE, value = numeric(0)): replacement has 0 rows, data has 2205618}}\end{kframe}
+\end{knitrout}
+
+
+
+\section{Visualizations}
+
+\subsection{Vehicle Collisions over Time}
+By grouping the collisions into each month in which they occured, we can plot a line graph showing the number of collisions over the past 13 years.
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+\includegraphics[width=\maxwidth]{figure/unnamed-chunk-7-1} 
+\end{knitrout}
+A notable trend is the sudden drop in collisions at the beginning of 2020. This is clearly due to the Covid-19 pandemic, which limited the time people spent outside their homes. What is more notable is how the number of collisions seems to even out to a much lower level than pre-pandemic. More research is needed into why we see this pattern.
+\\ \\
+Next, we explore the number of collisions over time within each borough. Note that a large quantity of entries from the dataset do not have a location attached, so those results are not considered for this analysis.
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+\includegraphics[width=\maxwidth]{figure/unnamed-chunk-8-1} 
+\end{knitrout}
+Each borough follows very similar shapes in their respective line. Further analysis to normalize by some factor, e.g. by population or road network density may provide more insight.
+
+\subsection{Causes of Collisions}
+
+In the dataset every entry has up to 5 `contributing factors'. Below, We see these results aggregated and the top 5 most prevalent causes displayed in a bar chart.
+
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+\includegraphics[width=\maxwidth]{figure/unnamed-chunk-9-1} 
+\end{knitrout}
+An overwhelming cause of accidents are due to driver distraction, more than 3 times the next most common.
+
+
+\subsection{Crashes by Time of Day}
+
+The histogram below shows the total number of accidents in the dataset for each time of day. 
+
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+\includegraphics[width=\maxwidth]{figure/unnamed-chunk-10-1} 
+\end{knitrout}
+
+We can see that most of the accidents occur during the daytime, with a semi-continuous increasing and decreasing structure. The distribution reaches its lowest value at 3:00AM, and peaks around 4:00PM. There are slight spikes around 8-9AM, when people would be driving to work, and also around 4-5:00PM, when people would be leaving work. There is also a small spike around midnight.
+
+\subsection{Injuries by Person Type}
+
+This series of box plots focuses on collisions that resulted in at least 10 total injuries. We compare the total number of people injured with the amounts of people injured of different types: pedestrians, motorists, and cyclists.
+
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+\includegraphics[width=\maxwidth]{figure/unnamed-chunk-11-1} 
+\end{knitrout}
+
+The vast majority of these collisions resulted in motorists being the main affected group. This is unsurprising, as every collision must involve motorists, but the other possible parties may not even be present. Pedestrians were mostly uninjured by these collisions, with some exceptions that result in the amount of pedestrian injuries to go into the 20s. Cyclists were the most unaffected by these mass injury collisions, with a couple of collisions injuring one cyclist, but otherwise 0 cyclists were injured in any of the other collisions. 
+
+Next, we plot both the injuries and fatalities caused by collisions. This is displayed as bar plots on a year to year basis, and compares the frequency in each borough. The injuries/fatalities to motorists, pedestrians, and cyclists are separated for a more visual breakdown. The plot for injuries can be seen below:
+
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+\includegraphics[width=\maxwidth]{figure/unnamed-chunk-12-1} 
+\end{knitrout}
+Both Brooklyn and Queens see the most injuries, with motorists being the most common among those injured. A noticeable decline in injuries can be seen from 2020 onward, after the beginning of the Covid pandemic. Note that 2012 data is lower due to the dates beginning in July 2012. 
+
+
+Next, we plot the fatalities:
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+\includegraphics[width=\maxwidth]{figure/unnamed-chunk-13-1} 
+\end{knitrout}
+Interestingly, this does not match the distribution of the injuries. A noticeable difference is with the year 2016, where deaths were spread equally among Brooklyn, Manhattan and Queens.
+
+\subsection{Borough VS Injury Severity}
+
+\subsubsection{Contingency Table}
+
+This contingency table examines whether crash severity (fatal, injury, or no injury) varies across NYC boroughs.
+
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{verbatim}
+##                
+##                 FATAL/DIED INJURY NO INJURY
+##                       1320 170638    505320
+##   BRONX                305  57106    168942
+##   BROOKLYN             694 127663    361061
+##   MANHATTAN            363  63931    274547
+##   QUEENS               550  97228    311882
+##   STATEN ISLAND        102  13974     49955
+\end{verbatim}
+\end{kframe}
+\end{knitrout}
+
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{verbatim}
+## 
+## 	Pearson's Chi-squared test
+## 
+## data:  borough_injury_table
+## X-squared = 7118.4, df = 10, p-value < 2.2e-16
+\end{verbatim}
+\end{kframe}
+\end{knitrout}
+
+Since p-value < alpha = 0.05, we reject the null hypothesis and conclude that we have sufficient evidence to prove the true population of boroughs are not evenly distributed or in other words, that the distribution of fatal, injury, and property-damage-only crashes varies significantly across NYC boroughs (Chi-square, df=8, p-value < 0.0001). Furthermore, there is a massive test statistic of $X^2$ = 6377.3 which shows the huge differences between what we'd expect if boroughs were all the same vs. what we actually observe.
+
+
+\subsubsection{Barplot of Row Proportions (by Borough)}
+This barplot shows crash severity proportions within each borough.
+
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+
+
+{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error in h(simpleError(msg, call)): error in evaluating the argument 'x' in selecting a method for function 'as.data.frame': object 'prop\_table1' not found}}
+
+{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error: object 'prop\_df' not found}}
+
+{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error: object 'prop\_df' not found}}\end{kframe}
+\end{knitrout}
+
+While all boroughs have low fatal crash rates (around 0.1-0.16\%), Staten Island has the highest fatality rate at 0.159\%, followed by Brooklyn at 0.142\%. Manhattan appears to be the safest borough with the lowest rates of both fatal (0.107\%) and injury crashes (18.9\%). Brooklyn and the Bronx have the highest injury rates at 26.1\% and 25.3\% respectively, while Manhattan has significantly more no injury crashes (80.1\%) compared to other boroughs.
+
+\subsubsection{Cramer’s V}
+
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{verbatim}
+## Cramer V 
+##  0.04017
+\end{verbatim}
+\end{kframe}
+\end{knitrout}
+
+The chi-square test concluded that there is a statistically significant association between borough and crash severity. However, the effect size was very small (Cramer's V = 0.046), indicating that while borough differences are statistically detectable, they explain less than 1\% of the variation in crash severity. This suggests that factors other than borough location are much more important in determining crash outcomes.
+
+\subsection{Total Persons Injured vs Killed}
+
+This scatterplot examines the relationship between injuries and fatalities in NYC vehicle crashes.
+
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+\includegraphics[width=\maxwidth]{figure/unnamed-chunk-18-1} 
+\end{knitrout}
+
+The plot shows that most crashes result in injuries but no deaths which can be seen by the concentration of points along the bottom. Fatal crashes are rare and scattered across injury levels, with no clear correlation. The flat regression line shows that there is a minimal relationship between injuries and deaths, suggesting fatalities depend more on crash circumstances than the number of people involved.
+
+
+\subsection{Density of Injuries per Borough}
+
+This jitter plot is showing the distribution of the number of people injured per incident across different boroughs, while avoiding overplotting so patterns in the data density can be seen.
+
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlkwd{ggplot}\hldef{(nyc} \hlopt{%>%} \hlkwd{filter}\hldef{(BOROUGH} \hlopt{!=} \hlsng{""}\hldef{))} \hlopt{+}
+  \hlkwd{aes}\hldef{(}\hlkwc{x}\hldef{=BOROUGH,} \hlkwc{y}\hldef{=NUMBER.OF.PERSONS.INJURED)} \hlopt{+}
+  \hlkwd{coord_cartesian}\hldef{(}\hlkwc{ylim} \hldef{=} \hlkwd{c}\hldef{(}\hlnum{0}\hldef{,} \hlnum{10}\hldef{))} \hlopt{+}
+  \hlkwd{scale_y_continuous}\hldef{(}\hlkwc{breaks} \hldef{=} \hlkwd{seq}\hldef{(}\hlnum{0}\hldef{,} \hlnum{10}\hldef{,} \hlnum{1}\hldef{))} \hlopt{+}
+  \hlkwd{labs}\hldef{(}
+    \hlkwc{x} \hldef{=} \hlsng{"Borough"}\hldef{,}
+    \hlkwc{y} \hldef{=} \hlsng{"Number of Persons Injured"}\hldef{,}
+    \hlkwc{title} \hldef{=} \hlsng{"Density of Injuries per Borough"}
+    \hldef{)} \hlopt{+}
+  \hlkwd{geom_jitter}\hldef{(}\hlkwc{alpha} \hldef{=} \hlnum{1}\hlopt{/}\hlnum{25}\hldef{)}
+\end{alltt}
+\end{kframe}
+\includegraphics[width=\maxwidth]{figure/unnamed-chunk-19-1} 
+\end{knitrout}
+
+This jitter plot shows the distribution of the number of persons injured per crash across NYC boroughs. Most crashes result in 0–3 injuries (dark dense bands at the bottom). Brooklyn and Queens display more incidents with higher injury counts, indicating that crashes in these boroughs tend to involve more people. Manhattan, despite its high traffic, has relatively fewer multi-injury crashes compared to Brooklyn or the Bronx. Staten Island stands out with the least severe crashes (it is the least populated and least densely built borough), with most incidents involving very few or no injuries.
+
+
+\subsection{Crash Frequency by Hour and Day of Week}
+
+To explore when crashes are most likely to occur, we created a heatmap of crash counts by hour of the day and day of the week. Each tile represents the total number of crashes in that time slot, with brighter colors indicating more frequent crashes.
+
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+\includegraphics[width=\maxwidth]{figure/unnamed-chunk-20-1} 
+\end{knitrout}
+
+The heatmap shows a clear concentration of crashes during daytime and evening hours, especially between 8 AM and 7 PM across all weekdays. Friday stands out with the highest crash intensity, particularly in the late afternoon and early evening, likely reflecting a mix of rush-hour traffic and increased social activity at the end of the work week.
+
+In contrast, the overnight hours (midnight to 6 AM) consistently display the fewest crashes across all days, reflecting lower traffic volumes during those times. Sundays appear somewhat less intense overall compared to weekdays, with a broader distribution of crashes throughout the afternoon.
+
+Overall, the heatmap highlights how crash risk peaks during high-traffic commuting periods and social activity times, with Friday evenings being particularly hazardous in New York City.
+
+\subsection{Distribution of Vehicle Age Involved in Accidents}
+We explore the distribution of vehicle ages involved in collisions across each five boroughs. This data is extracted from one of the secondary datasets, linking the collision ID from the original dataset to the individual vehicles involved in each collision. The resulting histogram is plotted below.
+
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlkwd{ggplot}\hldef{(}\hlkwc{data}\hldef{=nyc[}\hlopt{!}\hlkwd{is.na}\hldef{(nyc}\hlopt{$}\hldef{AV_VEH_AGE)} \hlopt{&} \hldef{nyc}\hlopt{$}\hldef{BOROUGH} \hlopt{!=}\hlsng{""}\hldef{, ])} \hlopt{+}
+    \hlkwd{aes}\hldef{(AV_VEH_AGE, ..density..,} \hlkwc{fill} \hldef{= BOROUGH)} \hlopt{+}
+    \hlkwd{facet_grid}\hldef{(.}\hlopt{~}\hldef{BOROUGH)} \hlopt{+}
+    \hlkwd{geom_histogram}\hldef{(}\hlkwc{color} \hldef{=} \hlsng{"black"}\hldef{,} \hlkwc{alpha} \hldef{=} \hlnum{0.7}\hldef{)} \hlopt{+}
+    \hlkwd{xlim}\hldef{(}\hlkwd{c}\hldef{(}\hlnum{0}\hldef{,}\hlnum{30}\hldef{))} \hlopt{+}
+    \hlkwd{labs}\hldef{(}\hlkwc{title} \hldef{=} \hlsng{"Distribution of Vehicle Age by Borough"}\hldef{,}
+         \hlkwc{x} \hldef{=} \hlsng{"Average Vehicle Age (Years)"}\hldef{,}
+         \hlkwc{y} \hldef{=} \hlsng{"Density"}\hldef{)} \hlopt{+}
+    \hlkwd{theme}\hldef{(}\hlkwc{legend.position} \hldef{=} \hlsng{"none"}\hldef{)}
+\end{alltt}
+
+
+{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error in `combine\_vars()`:\\\#\# ! Faceting variables must have at least one value.}}\end{kframe}
+\end{knitrout}
+The distributions appear similar for each borough, with the notable exception of Manhattan, which appears to have a generally younger age of cars among collisions. This can be mostly attributed to the greater wealth found in Manhattan. To see real trends between car age and collisions the next step will be to compare against the overall frequency of cars on the road.
+
+\subsection{Accidents and speed limits on NYC map}
+
+\subsubsection{All Accidents}
+
+There are two graphs plotted below. One superimposes a subset of the accidents on the map of NYC, color coded by borough, and the other superimposes a subset of the speed limits on the map of NYC. 
+
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{verbatim}
+##   |                                                                              |                                                                      |   0%  |                                                                              |====                                                                  |   6%  |                                                                              |=========                                                             |  12%  |                                                                              |=============                                                         |  19%  |                                                                              |==================                                                    |  25%  |                                                                              |======================                                                |  31%  |                                                                              |==========================                                            |  38%  |                                                                              |===============================                                       |  44%  |                                                                              |===================================                                   |  50%  |                                                                              |=======================================                               |  56%  |                                                                              |============================================                          |  62%  |                                                                              |================================================                      |  69%  |                                                                              |====================================================                  |  75%  |                                                                              |=========================================================             |  81%  |                                                                              |=============================================================         |  88%  |                                                                              |==================================================================    |  94%  |                                                                              |======================================================================| 100%
+\end{verbatim}
+\end{kframe}
+\includegraphics[width=\maxwidth]{figure/unnamed-chunk-22-1} 
+\end{knitrout}
+
+The speed limit graph shows that there are high speed limits on the highways, around the 40-50mph range, and lower speed limits everywhere else, mostly in the 20-30mph range. We can visually inspect and see that a lot of the areas that did not have labels for their borough correspond with the higher speed limit lines, indicating that when an accident occurred on a highway, there was likely no borough provided. We can also see that a lot of the accidents are focused in the Manhattan area, with the most sparse area being Staten Island. This is likely because of the street density in Manhattan vs Staten Island.
+
+\subsubsection{Highway Accidents}
+
+Below, we have a graph showing all of the accidents that occurred on roads where the speed limit is greater than 40 mph, mapped onto an image of NYC. This gives us a far clearer picture of the highway road mapping in NYC.
+
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+\includegraphics[width=\maxwidth]{figure/unnamed-chunk-23-1} 
+\end{knitrout}
+
+While this imaging doesn’t directly allow us to draw any conclusions, having this mapping of which car accidents occurred on higher speed roads allows us to do further interpretations of the data with relation to the speed limit, as we show in the next graphical comparison. 
+
+
+\subsection{Density Comparison of Times of Day for Car Accidents: Highway Vs Not Highway}
+
+Here we combine our supplementary dataset with our main dataset to compare the car accidents that have occurred on higher speed roads vs those that have occurred on lower speed roads. The density plot is shown below.
+
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+\includegraphics[width=\maxwidth]{figure/unnamed-chunk-24-1} 
+\end{knitrout}
+
+We can see from this density plot that the accidents that have occurred on highways have more significant peaks at around 8:00AM and 4:00PM, during people’s work commutes in and out of the city. The accidents that have occurred on regular roads are less predictable, with more occurrences in the middle of the day during traditional working hours.
+
+
+\subsection{Time of Day vs. Fatality Rate}
+
+This scatterplot examines the relationship between the hour of day (0-23, military time) and the fatality rate, measured as deaths per 1,000 crashes. Each point represents one hour of the day, calculated across all crashes in the NYC dataset from 2012-2025. The blue line is the linear regression model, and the gray shaded area is the 95\% confidence interval.
+
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{verbatim}
+##    HOUR total_crashes total_fatalities
+## 1     0         72818              182
+## 2     1         39098              141
+## 3     2         30106              132
+## 4     3         26577              156
+## 5     4         30115              188
+## 6     5         32574              145
+## 7     6         49791              147
+## 8     7         68011               89
+## 9     8        120837              104
+## 10    9        115988               98
+## 11   10        108416              122
+## 12   11        113117              107
+## 13   12        120369              116
+## 14   13        126160              126
+## 15   14        145721              122
+## 16   15        137305              124
+## 17   16        157496              129
+## 18   17        154292              178
+## 19   18        135772              184
+## 20   19        112062              172
+## 21   20         93934              171
+## 22   21         80277              187
+## 23   22         73116              173
+## 24   23         61666              185
+\end{verbatim}
+\end{kframe}
+\includegraphics[width=\maxwidth]{figure/unnamed-chunk-25-1} 
+\end{knitrout}
+
+The scatterplot shows that nighttime crashes are significantly deadlier than daytime crashes. Early morning hours (2-4 AM) show fatality rates of 4.5-6.5 deaths per 1,000 crashes, about 6 times higher than midday rates (~1 per 1,000). The negative linear trend also shows that fatality risk decreases consistently throughout the day, where it reaches its lowest point during morning and afternoon hours (7 AM-2 PM), then begins to rise again after 9 PM.
+
+While Histogram 3.3 (Total Number of Accidents per Time of Day) showed that most crashes occur during daytime hours, this scatterplot shows that crash severity peaks at night. 
+
+\subsection{Social Media Crash Reportings vs. Actual Crash Reportings : Twitter Analysis}
+
+\subsubsection{Transit vs. Vehicle Crashes Distribution}
+
+Social media platforms like Twitter have become sources of real-time traffic information. To investigate whether social media accurately reflects actual crash patterns, we analyzed traffic-related tweets and compared their geographic and content distributions to official NYC crash records.
+
+Our Twitter dataset contained 798 NYC traffic-related tweets. We classified each tweet based on whether it mentioned public transit (subway, train, bus) or vehicle-related incidents (car, crash, highway).
+
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+
+
+{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error in `mutate()`:\\\#\# i In argument: `location = sapply(tweet\_text, extract\_location)`.\\\#\# Caused by error in `str\_detect()`:\\\#\# ! could not find function "{}str\_detect"{}}}\end{kframe}
+\end{knitrout}
+
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+
+
+{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error: object 'twitter\_nyc' not found}}
+
+{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error: object 'twitter\_nyc' not found}}
+
+{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error: object 'twitter\_nyc' not found}}
+
+{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error: object 'twitter\_nyc' not found}}\end{kframe}
+\end{knitrout}
+
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+
+
+{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error: object 'twitter\_nyc' not found}}
+
+{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error: object 'tweet\_type\_summary' not found}}\end{kframe}
+\end{knitrout}
+
+This distribution shows that social media traffic discussions are dominated by transit updates rather than vehicle crashes, revealing a key sampling bias when using Twitter for traffic safety research.
+
+\subsubsection{Text Mining Analysis}
+
+To identify key locations and incident types mentioned in vehicle crash tweets, we conducted a text mining analysis. The 66 vehicle-related tweets were tokenized into individual words, with common stop words (e.g., “the,” “and,” “is”) and generic traffic terms removed to focus on meaningful content.
+
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+
+
+{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error in unnest\_tokens(., word, tweet\_text): could not find function "{}unnest\_tokens"{}}}
+
+{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error: object 'top\_words' not found}}\end{kframe}
+\end{knitrout}
+
+This vocabulary pattern suggests that vehicle crash tweets are primarily navigational updates about highway incidents rather than detailed crash reports.
+
+\subsubsection{Twitter Dataset vs. NYC Vechile Collision Crashes Dataset}
+
+We compared the borough distribution of vehicle crash tweets to our primary dataset's 2018 crash records (n=149,234) to see whether social media reporting reflects actual crash patterns.
+
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+
+
+{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error: object 'twitter\_vehicle' not found}}
+
+{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error: object 'twitter\_borough' not found}}
+
+{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error: object 'borough\_comparison' not found}}
+
+{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error in h(simpleError(msg, call)): error in evaluating the argument 'x' in selecting a method for function 'select': object 'borough\_comparison' not found}}
+
+{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error: object 'borough\_comparison\_long' not found}}\end{kframe}
+\end{knitrout}
+
+The comparison reveals substantial borough bias:
+\begin{itemize}
+\item \textbf{Bronx}: Over-represented (34.0\% of tweets vs. 15.5\% of crashes, +18.5pp)
+\item \textbf{Brooklyn}: Under-represented (22.6\% vs. 31.7\%, -9.1pp)
+\item \textbf{Queens}: Under-represented (18.9\% vs. 27.7\%, -8.8pp)
+\item \textbf{Staten Island}: Completely absent (0\% vs. 4.1\%, -4.1pp)
+\end{itemize}
+
+These discrepancies indicate that social media reporting is influenced by factors beyond crash frequency. With only 66 vehicle crash tweets compared to the 149,000+ crashes from our primary dataset (0.04\% coverage), social media is not a reliable source for crash surveillance. Transit disruptions draw immediate online attention, while most crashes go unmentioned unless particularly notable. 
+
+
+\section{Statistical Modeling \& Interpretation}
+
+To better understand the factors that influence the severity of motor vehicle collisions in New York City, we developed a preliminary statistical model using logistic regression. The outcome of interest is whether a crash was fatal (at least one person killed) or non-fatal. Logistic regression is appropriate in this context because the outcome is binary (fatal vs. non-fatal), and it allows us to estimate how different factors change the odds of a fatal crash while holding other conditions constant.
+
+In simple terms, the model compares patterns across thousands of crashes to estimate how likely a fatal outcome is under different conditions. For example, whether the crash happened at night or involved a motorcycle. The predictors we included were the borough of occurrence, time of day (day vs. night), vehicle type, and the primary contributing factor reported by police. By examining these, we can identify which circumstances or behaviors are most strongly associated with fatal outcomes.
+
+\subsection{Visualizations}
+
+
+
+
+
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+\includegraphics[width=\maxwidth]{figure/unnamed-chunk-33-1} 
+\end{knitrout}
+
+The forest plot clearly highlights which predictors have a statistically significant association with fatal motor vehicle collisions in NYC. Most notably, crashes involving motorcycles stand out with the highest odds of fatality, followed by those related to drug or alcohol involvement, unsafe speed, and pedestrian or bicyclist confusion—each showing odds ratios well above 1 and confidence intervals that do not cross the null line. Nighttime crashes also significantly increase fatal risk compared to daytime. In contrast, factors such as borough or minor driving errors (e.g., backing unsafely, turning improperly) show odds ratios close to 1 and wide confidence intervals, indicating no statistically significant effect. Overall, the most significant predictors are those linked to risky behaviors and vulnerable vehicle types, underscoring the human and situational nature of fatal crash risk.
+
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+\includegraphics[width=\maxwidth]{figure/unnamed-chunk-34-1} 
+\end{knitrout}
+
+The plot illustrates how the predicted probability of a fatal crash varies by vehicle type and time of day, offering a more intuitive view of the logistic regression model’s results. Fatal crashes are exceedingly rare for cars and SUVs, remaining below 0.2\% even at night. However, the probability increases substantially for motorcycles, exceeding 2\% at night (an order of magnitude higher than for any other vehicle type). Trucks and buses also show elevated fatality risk, roughly double that of cars, while bicycles and scooters occupy an intermediate range. Across all vehicle types, nighttime crashes consistently show higher fatal probabilities than daytime ones, suggesting that reduced visibility, fatigue, or riskier nighttime behavior may compound the inherent dangers of certain vehicles. Overall, the visualization reinforces that motorcycles and nighttime driving represent the most critical risk combination for fatal outcomes.
+
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+\includegraphics[width=\maxwidth]{figure/unnamed-chunk-35-1} 
+\end{knitrout}
+
+This bar chart summarizes the relative likelihood of a fatal crash across key factors, making the model’s results easily interpretable. It shows that crashes involving motorcycles are the most lethal; over 14 times more likely to result in death than the baseline (a daytime car or SUV crash with no specified cause). Other high-risk circumstances include driver illness, drug involvement, tinted windows, and traffic control violations, all of which multiply fatality odds by 5–13 times. Nighttime driving and alcohol involvement roughly double the risk, confirming their significant yet smaller effects compared to vehicle type or severe impairments. On the opposite end, factors like distraction, minor infractions, or mechanical issues are associated with odds ratios below 1, indicating little to no increase in fatality risk.
+
+\subsection{Interpretation}
+Our analysis highlights which circumstances make crashes most likely to be deadly. Location matters somewhat: crashes in Staten Island are more likely to be fatal than in the Bronx, Queens, or Manhattan. In spite of this, the bigger differences come from time of day, vehicle type, and driver behavior.
+
+Time of day: Nighttime crashes are almost twice as likely to result in death compared to daytime crashes (about 1.8 times higher odds).
+
+Vehicle type: Motorcycles are especially dangerous. A crash involving a motorcycle is over 14 times as likely to be fatal compared to a crash involving a car or SUV. Trucks and buses are more than 3 times riskier, and crashes involving bicycles or scooters are nearly 3 times more likely to be fatal.
+
+Driver and pedestrian behaviors: Risky behaviors dramatically elevate danger. Alcohol-related crashes are about 2 times more likely to result in death, while drug-involved crashes are nearly 8–10 times more likely. Dangerous driving behaviors such as speeding, running red lights, or unsafe lane changes typically multiply the odds of a fatal crash by 4–5.
+
+By contrast, mechanical issues (like brake defects) appear much less often, so their effect is harder to measure reliably.
+
+Overall, these results suggest that time of day, vehicle type, and risky human behaviors are the dominant predictors of fatal outcomes in NYC crashes, while borough differences are smaller in magnitude.
+
+\end{document}
