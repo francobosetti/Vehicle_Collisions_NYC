@@ -149,17 +149,17 @@ library(ggeffects)
 library(forcats)
 @
 
+
 <<echo=FALSE, message=FALSE, warning=FALSE>>=
-nyc <- read.csv(file = "data/Motor_Vehicle_Collisions_-_Crashes.csv")
-nyc$CRASH.DATE <- as.Date(nyc$CRASH.DATE, format = "%m/%d/%Y")
-nyc$BOROUGH <- factor(nyc$BOROUGH)
-nyc$YEAR_MONTH <- format(nyc$CRASH.DATE, "%Y-%m")
-nyc$YEAR <- format(nyc$CRASH.DATE, "%Y")
-nyc_longs <- nyc$LONGITUDE
-nyc_lats <- nyc$LATITUDE
-nyc$round_location <- paste("(", round(nyc_lats, digits = 4), ", ", 
-                            round(nyc_longs, digits = 4), ")", sep = "")
-nyc$HOUR <- as.numeric(sub("\\:.*", "", nyc$CRASH.TIME))
+read.csv(file = "data/Motor_Vehicle_Collisions_-_Crashes.csv") %>%
+mutate(CRASH.DATE=as.Date(CRASH.DATE, format = "%m/%d/%Y"),
+       BOROUGH=factor(BOROUGH),
+       YEAR_MONTH=format(CRASH.DATE, "%Y-%m"),
+       YEAR=format(CRASH.DATE, "%Y"),
+       round_location=paste("(", round(LATITUDE, digits = 4), ", ", 
+                            round(LONGITUDE, digits = 4), ")", sep = ""),
+       HOUR=as.numeric(sub("\\:.*", "", CRASH.TIME))) -> nyc
+
 @
 
 \subsection{Secondary Datasets}
@@ -174,7 +174,10 @@ names(twitter_train) <- c("class", "tweet_id", "tweet_text")
 names(twitter_test) <- c("class", "tweet_id", "tweet_text")
 
 # Combine 
-twitter <- rbind(twitter_train, twitter_test)
+#twitter <- rbind(twitter_train, twitter_test) old method, no deplyr
+bind_rows(twitter_train, twitter_test) %>%
+mutate(clean_tweet_id=gsub("^s", "", tweet_id)) -> twitter
+
 @
 
 
@@ -212,7 +215,7 @@ combined <- # add speed limit data to nyc dataset
 
 The Motor Vehicle Collisions vehicle table contains details on each vehicle involved in a collision. Each row represents a particular vehicle with certain attributes. The collision ID of the main dataset is also present in this dataset, although values are no longer unique as multiple vehicles can contribute to one collision.
 <<echo=FALSE, message=FALSE, warning=FALSE>>=
-nyv <- read.csv(file = "data/Motor_Vehicle_Collisions_-_Vehicles_20251002.csv")
+nyv <- read.csv(file = "data/Motor_Vehicle_Collisions_-_Vehicles_20250930.csv")
 nyv$CRASH_DATE <- as.Date(nyv$CRASH_DATE, format = "%m/%d/%Y")
 nyv$YEAR <- as.numeric(format(nyv$CRASH_DATE, "%Y"))
 
@@ -242,6 +245,37 @@ nyc$AV_VEH_YEAR <- av_car_made[as.character(nyc$COLLISION_ID)]
 nyc$AV_VEH_AGE <-  as.numeric(nyc$YEAR) - nyc$AV_VEH_YEAR
 @
 
+<<echo=FALSE, message=FALSE, warning=FALSE>>=
+#CHANGE DATE TO CURRENT FILE
+
+#This Deplyr method appears to be slower than the original method
+
+# read.csv(file = "data/Motor_Vehicle_Collisions_-_Vehicles_20250930.csv") %>%
+# mutate(CRASH_DATE=as.Date(CRASH_DATE, format = "%m/%d/%Y"),
+#        YEAR=as.numeric(format(CRASH_DATE, "%Y"))) -> nyv
+#        
+#        
+# nyv %>%
+# group_by(COLLISION_ID) %>%
+# summarise(
+#     VEHICLE_COUNT = n(),
+#     AV_PASSENGERS = mean(VEHICLE_OCCUPANTS[VEHICLE_OCCUPANTS %in% 1:60], 
+#                          na.rm = TRUE),
+#     AV_VEH_YEAR = mean(VEHICLE_YEAR[VEHICLE_YEAR %in% 1920:2025 &
+#                                     VEHICLE_YEAR <= YEAR], 
+#                        na.rm = TRUE),
+#     .groups = 'drop') %>%
+#   mutate(
+#     AV_PASSENGERS = ifelse(is.nan(AV_PASSENGERS), NA, AV_PASSENGERS),
+#     AV_VEH_YEAR = ifelse(is.nan(AV_VEH_YEAR), NA, AV_VEH_YEAR)
+#   ) -> nyv_agg
+# 
+# # Join the aggregated data to the existing nyc dataframe
+# nyc %>%
+# left_join(nyv_agg, by = "COLLISION_ID") %>%
+# mutate(AV_VEH_AGE = as.numeric(YEAR) - as.numeric(AV_VEH_YEAR)) -> nyc
+@
+
 \section{Visualizations}
 
 \subsection{Vehicle Collisions over Time}
@@ -269,6 +303,9 @@ axis.Date(1, at = xticks,
           format = "%b\n%Y", cex.axis = 0.6)
 axis(2, at = seq(0, max(colspermonth)+1000, by = 1000), cex.axis = 0.7, las=1) 
 abline(v = xticks, col = "gray", lty = "dotted")
+abline(v=as.Date("2020-03-17"), col="red", lwd=1.5, lty=5)
+text(x=as.Date("2020-03-17"), y=max(colspermonth)*0.9, 
+     labels="Beginning of COVID lockdown", pos=4, col="red", cex=0.8)
 @
 A notable trend is the sudden drop in collisions at the beginning of 2020. This is clearly due to the Covid-19 pandemic, which limited the time people spent outside their homes. What is more notable is how the number of collisions seems to even out to a much lower level than pre-pandemic. More research is needed into why we see this pattern.
 \\ \\
@@ -310,7 +347,8 @@ for (i in 2:(length(borough))){
 legend("topright", 
        legend = borough,
        col = colors,
-       lty = 1)
+       lty = 1,
+       cex=0.9)
 
 
 xticks <- seq(min_dat, max_dat+365, by = "6 months")
@@ -318,6 +356,9 @@ axis.Date(1, at = xticks,
           format = "%b\n%Y", cex.axis = 0.6)
 axis(2, at = seq(0, max_col+1000, by = 1000), cex.axis = 0.7, las=1) 
 abline(v = xticks, col = "gray", lty = "dotted")
+abline(v=as.Date("2020-03-17"), col="black", lwd=1.5, lty=5)
+text(x=as.Date("2020-03-17"), y=max_col*0.7, 
+     labels="Beginning of COVID lockdown", pos=4, col="black", cex=0.8)
 @
 Each borough follows very similar shapes in their respective line. Further analysis to normalize by some factor, e.g. by population or road network density may provide more insight.
 
@@ -341,16 +382,18 @@ fivemost <- sort(cont_fact, decreasing=TRUE)[3:7]
 #1st and 2nd are unspecified or null
 
 par(mar = c(10, 5, 4, 2))
-barplot(fivemost, 
+bp <- barplot(fivemost, 
         main = "Top Contributing Factors",
         col = c("darkseagreen4", "darkseagreen", "darkseagreen3", 
                 "darkseagreen2", "darkseagreen1"),
         las = 2,
         cex.names = 0.8,
+        xaxt="n",
         yaxt = "n",
         ylim = c(0,ceiling(max(fivemost)/100000)*100000)
         )
 
+text(bp, -max(fivemost)*0.05, names(fivemost), srt = 45, xpd = TRUE, adj = 1, cex = 0.8)
 title(ylab = "Number of Cases", line=4)
 
 axis(2, at = seq(0, ceiling(max(fivemost)/100000)*100000, by = 100000), 
@@ -416,6 +459,88 @@ boxplot(cyclists_injured_mass, main = "cyclists injured",
 @
 
 The vast majority of these collisions resulted in motorists being the main affected group. This is unsurprising, as every collision must involve motorists, but the other possible parties may not even be present. Pedestrians were mostly uninjured by these collisions, with some exceptions that result in the amount of pedestrian injuries to go into the 20s. Cyclists were the most unaffected by these mass injury collisions, with a couple of collisions injuring one cyclist, but otherwise 0 cyclists were injured in any of the other collisions. 
+
+<<echo=FALSE, message=FALSE, warning=FALSE, fig.height=15, fig.width=11>>=
+# First reshape the data to long format for stacking
+# First reshape the data to long format for stacking
+library(tidyr)
+nyc_long <- nyc %>%
+  dplyr::select(YEAR, BOROUGH, 
+         Pedestrian_Injured = NUMBER.OF.PEDESTRIANS.INJURED,
+         Pedestrian_Killed = NUMBER.OF.PEDESTRIANS.KILLED,
+         Cyclist_Injured = NUMBER.OF.CYCLIST.INJURED,
+         Cyclist_Killed = NUMBER.OF.CYCLIST.KILLED,
+         Motorist_Injured = NUMBER.OF.MOTORIST.INJURED,
+         Motorist_Killed = NUMBER.OF.MOTORIST.KILLED) %>%
+  pivot_longer(cols = c(Pedestrian_Injured, Pedestrian_Killed,
+                       Cyclist_Injured, Cyclist_Killed,
+                       Motorist_Injured, Motorist_Killed),
+               names_to = "injury_type", 
+               values_to = "count")
+
+nyc_summarized <- nyc_long %>%
+  filter(BOROUGH != "") %>%
+  group_by(YEAR, BOROUGH, injury_type) %>%
+  summarise(total_count = sum(count, na.rm = TRUE)) %>%
+  ungroup()
+
+
+injuries_summarized <- nyc_long %>%
+  filter(BOROUGH != "", grepl("_Injured", injury_type)) %>%
+  group_by(YEAR, BOROUGH, injury_type) %>%
+  summarise(total_count = sum(count, na.rm = TRUE)) %>%
+  ungroup()
+
+ggplot(injuries_summarized) +
+  aes(x = BOROUGH, y = total_count, fill = injury_type) +
+  geom_col() +
+  facet_wrap(~ YEAR, ncol = 4) +
+  scale_fill_brewer(palette = "BuGn") +
+  labs(
+    title = "Injuries by Borough, Road User, and Year",
+    x = "Borough",
+    y = "Number of Injuries",
+    fill = "Injury Type"
+  ) +
+  theme(
+    strip.text.x = element_text(size = 15),
+    axis.text.x = element_text(angle = 90, hjust = 1, size = 13),
+    axis.text.y = element_text(size = 13),
+    title = element_text(size = 17),
+    axis.title.x = element_text(size = 17),
+    axis.title.y = element_text(size = 17)
+  )
+ggsave("injuries_plot.png", width = 11, height = 15, dpi = 300)
+@
+
+<<echo=FALSE, message=FALSE, warning=FALSE, fig.height=15, fig.width=11>>=
+fatalities_summarized <- nyc_long %>%
+  filter(BOROUGH != "", grepl("_Killed", injury_type)) %>%
+  group_by(YEAR, BOROUGH, injury_type) %>%
+  summarise(total_count = sum(count, na.rm = TRUE)) %>%
+  ungroup()
+
+ggplot(fatalities_summarized) +
+  aes(x = BOROUGH, y = total_count, fill = injury_type) +
+  geom_col() +
+  facet_wrap(~ YEAR, ncol = 4) +
+  scale_fill_brewer(palette = "Set2") +
+  labs(
+    title = "Fatalities by Borough, Road User, and Year",
+    x = "Borough",
+    y = "Number of Fatalities",
+    fill = "Fatality Type"
+  ) +
+  theme(
+    strip.text.x = element_text(size = 15),
+    axis.text.x = element_text(angle = 90, hjust = 1, size = 13),
+    axis.text.y = element_text(size = 13),
+    title = element_text(size = 17),
+    axis.title.x = element_text(size = 17),
+    axis.title.y = element_text(size = 17)
+  )
+ggsave("fatalities_plot.png", width = 11, height = 15, dpi = 300)
+@
 
 
 \subsection{Borough VS Injury Severity}
