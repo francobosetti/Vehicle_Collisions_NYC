@@ -460,6 +460,8 @@ boxplot(cyclists_injured_mass, main = "cyclists injured",
 
 The vast majority of these collisions resulted in motorists being the main affected group. This is unsurprising, as every collision must involve motorists, but the other possible parties may not even be present. Pedestrians were mostly uninjured by these collisions, with some exceptions that result in the amount of pedestrian injuries to go into the 20s. Cyclists were the most unaffected by these mass injury collisions, with a couple of collisions injuring one cyclist, but otherwise 0 cyclists were injured in any of the other collisions. 
 
+Next, we plot both the injuries and fatalities caused by collisions. This is displayed as bar plots on a year to year basis, and compares the frequency in each borough. The injuries/fatalities to motorists, pedestrians, and cyclists are separated for a more visual breakdown. The plot for injuries can be seen below:
+
 <<echo=FALSE, message=FALSE, warning=FALSE, fig.height=15, fig.width=11>>=
 # First reshape the data to long format for stacking
 # First reshape the data to long format for stacking
@@ -510,9 +512,11 @@ ggplot(injuries_summarized) +
     axis.title.x = element_text(size = 17),
     axis.title.y = element_text(size = 17)
   )
-ggsave("injuries_plot.png", width = 11, height = 15, dpi = 300)
 @
+Both Brooklyn and Queens see the most injuries, with motorists being the most common among those injured. A noticeable decline in injuries can be seen from 2020 onward, after the beginning of the Covid pandemic. Note that 2012 data is lower due to the dates beginning in July 2012. 
 
+
+Next, we plot the fatalities:
 <<echo=FALSE, message=FALSE, warning=FALSE, fig.height=15, fig.width=11>>=
 fatalities_summarized <- nyc_long %>%
   filter(BOROUGH != "", grepl("_Killed", injury_type)) %>%
@@ -539,9 +543,8 @@ ggplot(fatalities_summarized) +
     axis.title.x = element_text(size = 17),
     axis.title.y = element_text(size = 17)
   )
-ggsave("fatalities_plot.png", width = 11, height = 15, dpi = 300)
 @
-
+Interestingly, this does not match the distribution of the injuries. A noticeable difference is with the year 2016, where deaths were spread equally among Brooklyn, Manhattan and Queens.
 
 \subsection{Borough VS Injury Severity}
 
