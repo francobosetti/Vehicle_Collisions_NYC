@@ -10,7 +10,7 @@
     
     { \Huge \textbf{Final Project Report Draft 4} \par} 
     \vspace{5mm}
-    { \huge \textbf{Motor vehicle colisions in NYC} \par} 
+    { \huge \textbf{COVID-19's Impact on Motor Vehicle Collisions in NYC} \par} 
     \vspace{3mm}
     { \Large Group 1 (STAT 605 - S1)\par}  
     
@@ -45,95 +45,39 @@
 
 \section{Introduction}
 
-Motor vehicle collisions are a major concern in major populated urban areas like New York City (NYC), where millions of people use diverse transportation systems every day. Understanding these incidents through data analysis can help us identify patterns and make safety improvements. At the same time, social media platforms such as Twitter have become spaces where people share their real-time information about traffic incidents and congestion. This project will analyze NYC motor vehicle collision data alongside Twitter traffic discussions, while also incorporating roadway speed limit data and detailed vehicle-level records to examine how roadway conditions, vehicle characteristics, and public reporting intersect with officially documented traffic incidents.
+The COVID-19 pandemic created an unprecedented natural experiment in urban mobility. Beginning March 2020, New York City's shelter-in-place orders fundamentally altered how millions of people moved through one of the world's densest transportation networks. This project analyzes how COVID-19 transformed motor vehicle collision patterns across frequency, severity, temporal distribution, and geography.
 
-\section{Dataset Description}
-Primary Dataset: NYC Motor Vehicle Collisions 
+Using 13 years of police-reported crash data (2012-2025), we examine three distinct periods: Pre-COVID (baseline), COVID (March 2020-December 2021), and Post-COVID (2022-present). Our analysis addresses four questions: (1) Did collision rates return to pre-pandemic levels or establish a "new normal"? (2) Did crashes become more or less deadly during reduced traffic? (3) Were impacts uniform across NYC's five boroughs? (4) How did vehicle characteristics and driver behaviors contribute to collision severity across periods?
 
-(\url{https://data.cityofnewyork.us/Public-Safety/Motor-Vehicle-Collisions-Crashes/h9gi-nx95/about_data})
+\section{Data}
 
-Our primary dataset contains police-reported motor vehicle collision records from New York City, maintained by the NYPD through their TrafficStat initiative. The dataset includes 2.21 million collision records with 29 variables.
+\subsection{Primary Dataset: NYC Motor Vehicle Collisions}
+\textbf{Source:} NYC OpenData (2.22M records, 29 variables, 2012-2025)
 
+Police-reported collisions from NYPD's TrafficStat system. Key variables include crash date/time, location (coordinates, borough), casualties (injuries/fatalities by road user type), contributing factors (up to 5 per crash), and vehicle types (up to 5 per crash).
 
-Source: NYC OpenData (2025)
+\subsection{Secondary Dataset: Vehicle-Level Details}
+\textbf{Source:} NYC OpenData (4.45M records, 25 variables, 2016-2025)
 
+Vehicle-specific data linked via \texttt{COLLISION\_ID}. Each row represents one vehicle in a crash. Variables include vehicle characteristics (make, model, year, type, occupants), driver demographics (sex, license status), pre-crash actions, damage locations, and contributing factors. We aggregated to crash-level metrics: vehicle count per collision, average vehicle age, and average occupants per vehicle.
 
-Key variables include:
-\begin{itemize}
-  \item Location \& Time: Borough, coordinates (latitude \& longitude), street names, zip codes, crash date/time
-  \item Casualties: Injuries and fatalities by category (pedestrians, cyclists, motorists)
-  \item Contributing Factors: Up to five causal factors per collision
-  \item Vehicle Types: Vehicle type classifications (ATV, bicycle, car/SUV, e-bike, e-scooter, truck/bus, motorcycle, other) for each vehicle involved
-\end{itemize}
+\subsection{Tertiary Dataset: NYC Speed Limits}
+\textbf{Source:} NYC OpenData (141K street segments, Vision Zero initiative)
 
+Posted speed limits by street segment with geographic coordinates. We matched segments to crash locations to analyze whether high-speed roads (>40 mph) correlate with crash frequency and severity changes during COVID. NYC's default speed dropped from 30 to 25 mph in 2014; higher limits indicate highways and major roads.
 
-Preprocessing: We prepared the dataset for analysis by converting crash dates to a standard date format, organizing borough names as categorical variables, and creating additional time-based variables to explore patterns across years and months. 
+\subsection{Quaternary Dataset: Twitter Traffic Reports}
+\textbf{Source:} Research dataset by Dabiri (2018); 51,178 classified tweets
 
-Secondary Dataset: Twitter Traffic Classifications (\url{https://data.mendeley.com/datasets/c3xvj5snvv/1})
+Tweets categorized as non-traffic (0), traffic incidents (1), or traffic conditions (2). We filtered to 798 NYC-specific tweets, then isolated 66 vehicle crash reports for text mining. While predating COVID, this establishes a baseline for social media reporting patterns and enables contributing factor text analysis from official crash reports.
 
-Our secondary dataset contains classified tweets collected from Twitter's API, with each tweet categorized by its traffic-related content.
-
-
-Source: Research dataset by Sina Dabiri (2018)
-
-
-Variables include:
-\begin{itemize}
-  \item Tweet ID
-  \item Classification label: 
-  \item Non-Traffic (Class 0): General tweets unrelated to traffic
-  \item Traffic Incident (Class 1): Reports of crashes, breakdowns, road closures
-  \item Traffic Conditions (Class 2): Congestion reports, traffic advisories, flow conditions
-  \item Tweet text content
-\end{itemize}
-
-
-Preprocessing: We combined the training and test datasets into one dataset since we don’t plan to run a classification model. We renamed variables for clarity and ensured consistency in column naming. Using keyword matching with word boundaries, we extracted location information and classified tweets by content type (transit vs. vehicle). This multi-stage filtering process reduced the dataset from 51,178 total tweets to 798 NYC traffic-related tweets, and finally to 66 vehicle crash tweets.
-
-Tertiary Dataset: NYC Speed Limits (\url{https://data.cityofnewyork.us/Transportation/VZV_Speed-Limits/5mad-ntua/about_data}) 
-
-Our tertiary dataset provided posted speed limits across NYC streets, maintained under the Vision Zero initiative. This dataset will allow us to explore whether high-speed areas correlate with higher accident frequency and severity.
-
-
-Source: NYC OpenData (2025)
-
-
-Variables include:
-\begin{itemize}
-  \item Segment Geometry: street segment represented as geographic coordinates (longitude \& latitude)
-  \item Posted Speed Limit: legal speed limit value for each street segment
-  \item Street Name
-  \item Borough
-\end{itemize}
-
-Preprocessing: We extracted latitude and longitude from the geometric strings and rounded them to 4 decimals to match with collision coordinates. This allowed us to link crash locations to nearby street segments. We also filtered roads with speed limits above 40 mph to compare crashes on high-speed vs. lower-speed roads. 
-
-Quaternary Dataset: Motor Vehicle Collisions - Vehicles (\url{https://data.cityofnewyork.us/Public-Safety/Motor-Vehicle-Collisions-Vehicles/bm4k-52h4/about_data}) 
-
-Our quaternary dataset gives vehicle-level details for each crash in NYC. Unlike the primary collisions dataset, where each row represents a crash, here each row represents a single vehicle involved. This will give us insights into how vehicle type, driver demographics, and pre-crash behavior contribute to accidents.
-
-Source: NYC OpenData (2025)
-
-
-Variables include:
-\begin{itemize}
-  \item Collision information 
-  \item Vehicle details 
-  \item Driver information
-  \item Crash circumstances 
-  \item Contributing factors 
-\end{itemize}
-
-Preprocessing: We plan to link this dataset with the primary collisions dataset using the 'collision\_id' key. This will also expand our crash-level analysis with vehicle-level and driver-level details, such as identifying trends in which vehicle types are most frequently involved in accidents and which driver factors contribute most to severe outcomes.  
 
 \newpage
 
 
-\section{Data Preparation}
-
-Prepare the data for processing:
-
 <<echo=FALSE, message=FALSE, warning=FALSE>>=
+# Preprocessing 
+
 library(rcompanion)
 library(ggplot2)
 library(dplyr)
@@ -153,6 +97,7 @@ library(tidytext)
 
 
 <<echo=FALSE, message=FALSE, warning=FALSE>>=
+# nyc preprocessing
 read.csv(file = "data/Motor_Vehicle_Collisions_-_Crashes.csv") %>%
 mutate(CRASH.DATE=as.Date(CRASH.DATE, format = "%m/%d/%Y"),
        BOROUGH=factor(BOROUGH),
@@ -164,59 +109,9 @@ mutate(CRASH.DATE=as.Date(CRASH.DATE, format = "%m/%d/%Y"),
 
 @
 
-\subsection{Secondary Datasets}
-While the New York Collisions dataset provides many useful columns on which to perform analysis, more insight can be gained when considering other forms of data. Below we import these auxillary datasets:
 
 <<echo=FALSE, message=FALSE, warning=FALSE>>=
-twitter_train <- read.csv("data/1_TrainingSet_3Class.csv", header=FALSE)
-twitter_test <- read.csv("data/1_TestSet_3Class.csv", header=FALSE)
-
-# add headers
-names(twitter_train) <- c("class", "tweet_id", "tweet_text")
-names(twitter_test) <- c("class", "tweet_id", "tweet_text")
-
-# Combine 
-#twitter <- rbind(twitter_train, twitter_test) old method, no deplyr
-bind_rows(twitter_train, twitter_test) %>%
-mutate(clean_tweet_id=gsub("^s", "", tweet_id)) -> twitter
-
-@
-
-
-The VZV dataset on speed limits contains a map of city speed limits. Each speed limit is attached to a street or section of a street, specified by a sequence of coordinates. We can use those coordinates to map this dataset to our original nyc dataset to create a combined dataframe containing all the values of the nyc dataset, but with a new column representing the speed limit. To avoid any duplicated values caused by many-to-many matching, we first pre-process the speed limits dataset to ensure that for each location value there is only one speed limit value, taking the maximum if there are multiple options. 
-<<echo=FALSE, message=FALSE, warning=FALSE>>=
-sp_limits <- read.csv("data/VZV_Speed_Limits_20251002.csv")
-
-# Format the sp_limits latitude and longitude
-# Pre-process the speed limit data
-library(dplyr)
-lats <- strsplit(sp_limits$the_geom, " ") %>%
-  lapply(FUN=function(x) substr(x[3], 1, nchar(x[3])-1)) %>%
-  as.numeric()
-longs <- strsplit(sp_limits$the_geom, " ") %>%
-  lapply(FUN=function(x) substr(x[2], 3, nchar(x[3]))) %>%
-  as.numeric()
-loc<- paste("(", round(lats, digits = 4), ", ", round(longs, digits = 4), ")", sep = "")
-sp_lim_proc <- mutate(sp_limits, latitude = lats, longitude = longs, ROUND.LOCATION =loc) %>%
-  rename(SPEED.LIMIT = postvz_sl)
-
-sp_limits_filt <- sp_lim_proc %>%
-  group_by(ROUND.LOCATION) %>%
-  slice_max(order_by = SPEED.LIMIT, n=1, with_ties = FALSE) %>%
-  ungroup()
-  
-
-# Create dataframe of the speed limits combined with the rest of the data
-combined <- # add speed limit data to nyc dataset
-  mutate(nyc, ROUND.LOCATION = paste("(", round(LATITUDE, digits = 4), ", ", 
-                                     round(LONGITUDE, digits = 4), ")", sep = "")) %>%
-  filter(!is.na(LATITUDE), !is.na(LONGITUDE)) %>%
-  inner_join(dplyr::select(sp_limits_filt, SPEED.LIMIT, ROUND.LOCATION), by="ROUND.LOCATION")
-@
-
-
-The Motor Vehicle Collisions vehicle table contains details on each vehicle involved in a collision. Each row represents a particular vehicle with certain attributes. The collision ID of the main dataset is also present in this dataset, although values are no longer unique as multiple vehicles can contribute to one collision.
-<<echo=FALSE, message=FALSE, warning=FALSE>>=
+# vehicle preprocessing
 nyv <- read.csv(file = "data/Motor_Vehicle_Collisions_-_Vehicles_20251002.csv")
 nyv$CRASH_DATE <- as.Date(nyv$CRASH_DATE, format = "%m/%d/%Y")
 nyv$YEAR <- as.numeric(format(nyv$CRASH_DATE, "%Y"))
@@ -247,6 +142,7 @@ nyc$AV_VEH_YEAR <- av_car_made[as.character(nyc$COLLISION_ID)]
 nyc$AV_VEH_AGE <-  as.numeric(nyc$YEAR) - nyc$AV_VEH_YEAR
 @
 
+
 <<echo=FALSE, message=FALSE, warning=FALSE>>=
 #CHANGE DATE TO CURRENT FILE
 
@@ -276,6 +172,117 @@ nyc$AV_VEH_AGE <-  as.numeric(nyc$YEAR) - nyc$AV_VEH_YEAR
 # nyc %>%
 # left_join(nyv_agg, by = "COLLISION_ID") %>%
 # mutate(AV_VEH_AGE = as.numeric(YEAR) - as.numeric(AV_VEH_YEAR)) -> nyc
+@
+
+
+<<echo=FALSE, message=FALSE, warning=FALSE>>=
+# vzv speed limit preprocessing
+sp_limits <- read.csv("data/VZV_Speed_Limits_20251002.csv")
+
+# Format the sp_limits latitude and longitude
+# Pre-process the speed limit data
+library(dplyr)
+lats <- strsplit(sp_limits$the_geom, " ") %>%
+  lapply(FUN=function(x) substr(x[3], 1, nchar(x[3])-1)) %>%
+  as.numeric()
+longs <- strsplit(sp_limits$the_geom, " ") %>%
+  lapply(FUN=function(x) substr(x[2], 3, nchar(x[3]))) %>%
+  as.numeric()
+loc<- paste("(", round(lats, digits = 4), ", ", round(longs, digits = 4), ")", sep = "")
+sp_lim_proc <- mutate(sp_limits, latitude = lats, longitude = longs, ROUND.LOCATION =loc) %>%
+  rename(SPEED.LIMIT = postvz_sl)
+
+sp_limits_filt <- sp_lim_proc %>%
+  group_by(ROUND.LOCATION) %>%
+  slice_max(order_by = SPEED.LIMIT, n=1, with_ties = FALSE) %>%
+  ungroup()
+  
+
+# Create dataframe of the speed limits combined with the rest of the data
+combined <- # add speed limit data to nyc dataset
+  mutate(nyc, ROUND.LOCATION = paste("(", round(LATITUDE, digits = 4), ", ", 
+                                     round(LONGITUDE, digits = 4), ")", sep = "")) %>%
+  filter(!is.na(LATITUDE), !is.na(LONGITUDE)) %>%
+  inner_join(dplyr::select(sp_limits_filt, SPEED.LIMIT, ROUND.LOCATION), by="ROUND.LOCATION")
+@
+
+
+<<echo=FALSE, message=FALSE, warning=FALSE>>=
+# twitter preprocessing 1
+
+twitter_train <- read.csv("data/1_TrainingSet_3Class.csv", header=FALSE)
+twitter_test <- read.csv("data/1_TestSet_3Class.csv", header=FALSE)
+
+# add headers
+names(twitter_train) <- c("class", "tweet_id", "tweet_text")
+names(twitter_test) <- c("class", "tweet_id", "tweet_text")
+
+# Combine 
+bind_rows(twitter_train, twitter_test) %>%
+mutate(clean_tweet_id=gsub("^s", "", tweet_id)) -> twitter
+
+twitter$tweet_id <- gsub("^s", "", twitter$tweet_id)
+
+borough_keywords <- c("Manhattan", "Brooklyn", "Queens", "Bronx", "Staten Island")
+city_keywords <- c("NYC", "New York City", "New York")
+
+extract_location <- function(text) {
+  text_lower <- tolower(text)
+  
+  # Check boroughs 
+  for(borough in borough_keywords) {
+    # Use word boundary to avoid matching "Bronx" in "Bronxville" etc.
+    if(str_detect(text_lower, paste0("\\b", tolower(borough), "\\b"))) {
+      return(borough)
+    }
+  }
+  
+  # Check for general NYC 
+  for(city in city_keywords) {
+    if(str_detect(text_lower, tolower(city))) {
+      return("NYC (unspecified)")
+    }
+  }
+  
+  return(NA)  # No NYC mention found
+}
+
+twitter_nyc <- twitter %>%
+  filter(class %in% c(1, 2)) %>%  # Only traffic-related
+  mutate(location = sapply(tweet_text, extract_location)) %>%
+  filter(!is.na(location))  # Keep only tweets mentioning NYC
+
+# nrow(twitter_nyc) # 798
+@
+
+<<echo=FALSE, message=FALSE, warning=FALSE>>=
+# twitter preprocessing 2
+# transit vs vehicle tweets
+twitter_nyc <- twitter_nyc %>%
+  mutate(
+    is_transit = str_detect(tolower(tweet_text), 
+                            "subway|train|#.*line|station|mta|bus"),
+    is_vehicle = str_detect(tolower(tweet_text), 
+                            "car|vehicle|crash|accident|collision|highway|road|traffic")
+  )
+
+table(twitter_nyc$is_transit)
+table(twitter_nyc$is_vehicle)
+
+# extracting vehicle specific crash tweets
+twitter_vehicle <- twitter_nyc %>%
+  mutate(
+    is_real_crash = str_detect(tolower(tweet_text), 
+                               "accident|crash|collision|wreck") &
+      !str_detect(tolower(tweet_text), 
+                  "subway|train|#.*line|station"),
+    is_road_incident = str_detect(tolower(tweet_text),
+                                  "highway|parkway|expressway|west side|fdr") &
+      !str_detect(tolower(tweet_text), "station")
+  ) %>%
+  filter(is_real_crash | is_road_incident)
+
+# nrow(twitter_vehicle) # 66
 @
 
 \section{Visualizations}
@@ -572,72 +579,6 @@ The scatterplot shows that nighttime crashes are significantly deadlier than day
 Social media platforms like Twitter have become sources of real-time traffic information. To investigate whether social media accurately reflects actual crash patterns, we analyzed traffic-related tweets and compared their geographic and content distributions to official NYC crash records.
 
 Our Twitter dataset contained 798 NYC traffic-related tweets. We classified each tweet based on whether it mentioned public transit (subway, train, bus) or vehicle-related incidents (car, crash, highway).
-
-<<echo=FALSE, message=FALSE, warning=FALSE>>=
-# preprocessing 1
-twitter$tweet_id <- gsub("^s", "", twitter$tweet_id)
-
-borough_keywords <- c("Manhattan", "Brooklyn", "Queens", "Bronx", "Staten Island")
-city_keywords <- c("NYC", "New York City", "New York")
-
-extract_location <- function(text) {
-  text_lower <- tolower(text)
-  
-  # Check boroughs 
-  for(borough in borough_keywords) {
-    # Use word boundary to avoid matching "Bronx" in "Bronxville" etc.
-    if(str_detect(text_lower, paste0("\\b", tolower(borough), "\\b"))) {
-      return(borough)
-    }
-  }
-  
-  # Check for general NYC 
-  for(city in city_keywords) {
-    if(str_detect(text_lower, tolower(city))) {
-      return("NYC (unspecified)")
-    }
-  }
-  
-  return(NA)  # No NYC mention found
-}
-
-twitter_nyc <- twitter %>%
-  filter(class %in% c(1, 2)) %>%  # Only traffic-related
-  mutate(location = sapply(tweet_text, extract_location)) %>%
-  filter(!is.na(location))  # Keep only tweets mentioning NYC
-
-# nrow(twitter_nyc) # 798
-@
-
-<<echo=FALSE, message=FALSE, warning=FALSE>>=
-# preprocessing 2
-# transit vs vehicle tweets
-twitter_nyc <- twitter_nyc %>%
-  mutate(
-    is_transit = str_detect(tolower(tweet_text), 
-                            "subway|train|#.*line|station|mta|bus"),
-    is_vehicle = str_detect(tolower(tweet_text), 
-                            "car|vehicle|crash|accident|collision|highway|road|traffic")
-  )
-
-table(twitter_nyc$is_transit)
-table(twitter_nyc$is_vehicle)
-
-# extracting vehicle specific crash tweets
-twitter_vehicle <- twitter_nyc %>%
-  mutate(
-    is_real_crash = str_detect(tolower(tweet_text), 
-                               "accident|crash|collision|wreck") &
-      !str_detect(tolower(tweet_text), 
-                  "subway|train|#.*line|station"),
-    is_road_incident = str_detect(tolower(tweet_text),
-                                  "highway|parkway|expressway|west side|fdr") &
-      !str_detect(tolower(tweet_text), "station")
-  ) %>%
-  filter(is_real_crash | is_road_incident)
-
-# nrow(twitter_vehicle) # 66
-@
 
 \subsubsection{Text Mining Analysis}
 
