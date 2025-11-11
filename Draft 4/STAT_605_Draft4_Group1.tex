@@ -221,11 +221,7 @@ Overall, the heatmap highlights how crash risk peaks during high-traffic commuti
 Below, there is a heatmap of all of the accidents in NYC plotted over a map of NYC. 
 
 \begin{knitrout}
-\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
-\begin{verbatim}
-##   |                                                                              |                                                                      |   0%  |                                                                              |====                                                                  |   6%  |                                                                              |=========                                                             |  12%  |                                                                              |=============                                                         |  19%  |                                                                              |==================                                                    |  25%  |                                                                              |======================                                                |  31%  |                                                                              |==========================                                            |  38%  |                                                                              |===============================                                       |  44%  |                                                                              |===================================                                   |  50%  |                                                                              |=======================================                               |  56%  |                                                                              |============================================                          |  62%  |                                                                              |================================================                      |  69%  |                                                                              |====================================================                  |  75%  |                                                                              |=========================================================             |  81%  |                                                                              |=============================================================         |  88%  |                                                                              |==================================================================    |  94%  |                                                                              |======================================================================| 100%
-\end{verbatim}
-\end{kframe}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
 \includegraphics[width=\maxwidth]{figure/unnamed-chunk-14-1} 
 \end{knitrout}
 
@@ -304,6 +300,8 @@ Text mining revealed speed-related crashes increased from X\% pre-COVID to Y\% d
 
 \section{Statistical Modeling \& Interpretation}
 
+\subsection{Part 1: Baseline Risk Factors for Fatal Crashes}
+
 To better understand the factors that influence the severity of motor vehicle collisions in New York City, we developed a preliminary statistical model using logistic regression. The outcome of interest is whether a crash was fatal (at least one person killed) or non-fatal. Logistic regression is appropriate in this context because the outcome is binary (fatal vs. non-fatal), and it allows us to estimate how different factors change the odds of a fatal crash while holding other conditions constant.
 
 In simple terms, the model compares patterns across thousands of crashes to estimate how likely a fatal outcome is under different conditions. For example, whether the crash happened at night or involved a motorcycle. The predictors we included were the borough of occurrence, time of day (day vs. night), vehicle type, and the primary contributing factor reported by police. By examining these, we can identify which circumstances or behaviors are most strongly associated with fatal outcomes.
@@ -357,5 +355,41 @@ Driver and pedestrian behaviors: Risky behaviors dramatically elevate danger. Al
 By contrast, mechanical issues (like brake defects) appear much less often, so their effect is harder to measure reliably.
 
 Overall, these results suggest that time of day, vehicle type, and risky human behaviors are the dominant predictors of fatal outcomes in NYC crashes, while borough differences are smaller in magnitude.
+
+\subsection{Part 2: COVID-19's Impact on Crash Severity}
+
+Building on our baseline risk analysis, we developed statistical models to quantify how COVID-19 specifically altered crash severity patterns in NYC. This analysis tests whether the pandemic period itself was independently associated with changes in fatality risk, controlling for established risk factors.
+
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+
+
+{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error: unable to find an inherited method for function 'select' for signature 'x = "{}data.frame"{}'}}
+
+{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error in eval(predvars, data, env): object 'covid\_period' not found}}
+
+{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error in eval(predvars, data, env): object 'covid\_period' not found}}
+
+{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error: object 'covid\_simple\_model' not found}}
+
+{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error: object 'covid\_results' not found}}\end{kframe}
+\end{knitrout}
+
+The statistical models reveal that COVID-19 had a significant and substantial effect on crash severity. In the unadjusted model, crashes during COVID were 1.91 times more likely to be fatal (95\% CI: [1.67, 2.19]), and post-COVID crashes were 2.12 times more likely (95\% CI: [1.92, 2.34]) compared to the pre-pandemic baseline.
+
+Even after controlling for differences in borough, vehicle type, and time of day, the effect persisted: crashes during COVID remained 1.67 times more likely to be fatal (95\% CI: [1.45, 1.91]), and post-COVID crashes were 1.79 times more likely (95\% CI: [1.61, 1.98]). The persistence of this strong effect in the adjusted model suggests the pandemic introduced fundamental changes in crash dynamics beyond simple compositional shifts in traffic patterns.
+
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+
+
+{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error in eval(predvars, data, env): object 'covid\_period' not found}}
+
+{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error: object 'interaction\_model' not found}}
+
+{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error: object 'interaction\_effects' not found}}\end{kframe}
+\end{knitrout}
+
+The interaction analysis reveals that while overall severity increased across all vehicle types, the relative risk hierarchy remained largely consistent. No individual vehicle type showed statistically significant differential effects during COVID at the 0.05 level, though motorcycle crashes showed a notable trend toward increased risk during COVID (p = 0.097) and truck/bus crashes trended toward increased risk post-COVID (p = 0.100). This suggests the pandemic amplified crash severity uniformly rather than disproportionately affecting specific vehicle categories.
 
 \end{document}

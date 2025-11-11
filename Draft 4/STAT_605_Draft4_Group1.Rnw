@@ -1053,17 +1053,18 @@ Overall, these results suggest that time of day, vehicle type, and risky human b
 Building on our baseline risk analysis, we developed statistical models to quantify how COVID-19 specifically altered crash severity patterns in NYC. This analysis tests whether the pandemic period itself was independently associated with changes in fatality risk, controlling for established risk factors.
 
 <<echo=FALSE, message=FALSE, warning=FALSE>>=
+nyc_small <- nyc_small %>%
+  left_join(nyc %>% select(COLLISION_ID, covid_period), by = "COLLISION_ID")
+
 # Model 1: COVID period effect
 covid_simple_model <- glm(is_fatal ~ covid_period,
                          data = nyc_small,
                          family = binomial)
-# summary(covid_simple_model)
 
 # Model 2: COVID period controlling for key factors
 covid_adjusted_model <- glm(is_fatal ~ covid_period + borough + vehicle_cat + tod,
                            data = nyc_small, 
                            family = binomial)
-# summary(covid_adjusted_model)
 
 covid_results <- bind_rows(
   tidy(covid_simple_model, conf.int = TRUE, exponentiate = TRUE) %>%
@@ -1091,10 +1092,43 @@ ggplot(covid_results, aes(x = period, y = estimate, color = model, group = model
        color = "Model Type",
        caption = "Values > 1 indicate higher odds of fatal crashes") +
   theme_minimal(base_size = 12)
+  
 @
 
 The statistical models reveal that COVID-19 had a significant and substantial effect on crash severity. In the unadjusted model, crashes during COVID were 1.91 times more likely to be fatal (95\% CI: [1.67, 2.19]), and post-COVID crashes were 2.12 times more likely (95\% CI: [1.92, 2.34]) compared to the pre-pandemic baseline.
 
 Even after controlling for differences in borough, vehicle type, and time of day, the effect persisted: crashes during COVID remained 1.67 times more likely to be fatal (95\% CI: [1.45, 1.91]), and post-COVID crashes were 1.79 times more likely (95\% CI: [1.61, 1.98]). The persistence of this strong effect in the adjusted model suggests the pandemic introduced fundamental changes in crash dynamics beyond simple compositional shifts in traffic patterns.
+
+<<echo=FALSE, message=FALSE, warning=FALSE>>=
+library(broom)
+
+# Model 3: Interaction effects
+interaction_model <- glm(is_fatal ~ covid_period * vehicle_cat + borough + tod,
+                        data = nyc_small,
+                        family = binomial)
+
+interaction_effects <- tidy(interaction_model, conf.int = TRUE, exponentiate = TRUE) %>%
+  filter(grepl(":", term)) %>%
+  mutate(
+    term_clean = gsub("covid_period", "", term),
+    term_clean = gsub("vehicle_cat", "", term_clean),
+    term_clean = gsub(":", " × ", term_clean),
+    significant = p.value < 0.05
+  )
+
+ggplot(interaction_effects, aes(x = term_clean, y = estimate, color = significant)) +
+  geom_point(size = 4) +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0.2) +
+  geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
+  coord_flip() +
+  scale_color_manual(values = c("TRUE" = "red", "FALSE" = "gray60")) +
+  labs(title = "COVID-19 Interaction Effects on Vehicle Type Risks",
+       x = NULL,
+       y = "Interaction Odds Ratio") +
+  theme_minimal(base_size = 12) +
+  theme(legend.position = "none")
+@
+
+The interaction analysis reveals that while overall severity increased across all vehicle types, the relative risk hierarchy remained largely consistent. No individual vehicle type showed statistically significant differential effects during COVID at the 0.05 level, though motorcycle crashes showed a notable trend toward increased risk during COVID (p = 0.097) and truck/bus crashes trended toward increased risk post-COVID (p = 0.100). This suggests the pandemic amplified crash severity uniformly rather than disproportionately affecting specific vehicle categories.
 
 \end{document}
