@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.28 (TeX Live 2025) (preloaded format=pdflatex 2025.11.10)  11 NOV 2025 13:47
+This is pdfTeX, Version 3.141592653-2.6-1.40.28 (TeX Live 2025) (preloaded format=pdflatex 2025.11.10)  11 NOV 2025 15:27
 entering extended mode
  \write18 enabled.
  %&-line parsing enabled.
@@ -326,12 +326,12 @@ pdfTeX warning (ext4): destination with the same identifier (name{page.1}) has b
                    \relax 
 l.95 \newpage
               [1] [2]
-<figure/unnamed-chunk-8-1.pdf, id=128, 794.97pt x 939.51pt>
+<figure/unnamed-chunk-8-1.pdf, id=138, 794.97pt x 939.51pt>
 File: figure/unnamed-chunk-8-1.pdf Graphic file (type pdf)
 <use figure/unnamed-chunk-8-1.pdf>
 Package pdftex.def Info: figure/unnamed-chunk-8-1.pdf  used on input line 155.
 (pdftex.def)             Requested size: 469.75502pt x 555.18057pt.
-<figure/unnamed-chunk-9-1.pdf, id=129, 505.89pt x 505.89pt>
+<figure/unnamed-chunk-9-1.pdf, id=139, 505.89pt x 505.89pt>
 File: figure/unnamed-chunk-9-1.pdf Graphic file (type pdf)
 <use figure/unnamed-chunk-9-1.pdf>
 Package pdftex.def Info: figure/unnamed-chunk-9-1.pdf  used on input line 166.
@@ -342,7 +342,7 @@ Underfull \hbox (badness 10000) in paragraph at lines 161--169
  []
 
 [3 <./figure/unnamed-chunk-8-1.pdf>]
-<figure/unnamed-chunk-10-1.pdf, id=140, 505.89pt x 505.89pt>
+<figure/unnamed-chunk-10-1.pdf, id=150, 505.89pt x 505.89pt>
 File: figure/unnamed-chunk-10-1.pdf Graphic file (type pdf)
 <use figure/unnamed-chunk-10-1.pdf>
 Package pdftex.def Info: figure/unnamed-chunk-10-1.pdf  used on input line 176.
@@ -353,7 +353,7 @@ Overfull \hbox (15.0pt too wide) in paragraph at lines 176--179
  []
 
 [4 <./figure/unnamed-chunk-9-1.pdf>]
-<figure/unnamed-chunk-11-1.pdf, id=151, 505.89pt x 505.89pt>
+<figure/unnamed-chunk-11-1.pdf, id=162, 505.89pt x 505.89pt>
 File: figure/unnamed-chunk-11-1.pdf Graphic file (type pdf)
 <use figure/unnamed-chunk-11-1.pdf>
 Package pdftex.def Info: figure/unnamed-chunk-11-1.pdf  used on input line 186.
@@ -364,7 +364,7 @@ Overfull \hbox (15.0pt too wide) in paragraph at lines 186--189
  []
 
 [5 <./figure/unnamed-chunk-10-1.pdf>]
-<figure/unnamed-chunk-12-1.pdf, id=162, 505.89pt x 505.89pt>
+<figure/unnamed-chunk-12-1.pdf, id=172, 505.89pt x 505.89pt>
 File: figure/unnamed-chunk-12-1.pdf Graphic file (type pdf)
 <use figure/unnamed-chunk-12-1.pdf>
 Package pdftex.def Info: figure/unnamed-chunk-12-1.pdf  used on input line 197.
@@ -375,7 +375,7 @@ Overfull \hbox (15.0pt too wide) in paragraph at lines 197--199
  []
 
 [6 <./figure/unnamed-chunk-11-1.pdf>]
-<figure/unnamed-chunk-13-1.pdf, id=174, 505.89pt x 505.89pt>
+<figure/unnamed-chunk-13-1.pdf, id=184, 505.89pt x 505.89pt>
 File: figure/unnamed-chunk-13-1.pdf Graphic file (type pdf)
 <use figure/unnamed-chunk-13-1.pdf>
 Package pdftex.def Info: figure/unnamed-chunk-13-1.pdf  used on input line 208.
@@ -386,98 +386,105 @@ Overfull \hbox (15.0pt too wide) in paragraph at lines 208--210
  []
 
 [7 <./figure/unnamed-chunk-12-1.pdf>] [8 <./figure/unnamed-chunk-13-1.pdf>]
-<figure/unnamed-chunk-14-1.pdf, id=195, 505.89pt x 505.89pt>
+<figure/unnamed-chunk-14-1.pdf, id=205, 505.89pt x 505.89pt>
 File: figure/unnamed-chunk-14-1.pdf Graphic file (type pdf)
 <use figure/unnamed-chunk-14-1.pdf>
-Package pdftex.def Info: figure/unnamed-chunk-14-1.pdf  used on input line 263.
+Package pdftex.def Info: figure/unnamed-chunk-14-1.pdf  used on input line 225.
 (pdftex.def)             Requested size: 469.75502pt x 469.76265pt.
 
-Overfull \hbox (15.0pt too wide) in paragraph at lines 263--265
+Overfull \hbox (15.0pt too wide) in paragraph at lines 225--227
 [][]
  []
 
-[9]
-<figure/unnamed-chunk-15-1.pdf, id=200, 505.89pt x 505.89pt>
+<figure/unnamed-chunk-15-1.pdf, id=206, 505.89pt x 505.89pt>
 File: figure/unnamed-chunk-15-1.pdf Graphic file (type pdf)
 <use figure/unnamed-chunk-15-1.pdf>
-Package pdftex.def Info: figure/unnamed-chunk-15-1.pdf  used on input line 274.
+Package pdftex.def Info: figure/unnamed-chunk-15-1.pdf  used on input line 236.
 (pdftex.def)             Requested size: 469.75502pt x 469.76265pt.
 
-Overfull \hbox (15.0pt too wide) in paragraph at lines 274--276
+Overfull \hbox (15.0pt too wide) in paragraph at lines 236--238
 [][]
  []
 
-[10 <./figure/unnamed-chunk-14-1.pdf>]
-<figure/unnamed-chunk-16-1.pdf, id=220, 505.89pt x 505.89pt>
+[9 <./figure/unnamed-chunk-14-1.pdf>]
+<figure/unnamed-chunk-16-1.pdf, id=234, 505.89pt x 505.89pt>
 File: figure/unnamed-chunk-16-1.pdf Graphic file (type pdf)
 <use figure/unnamed-chunk-16-1.pdf>
-Package pdftex.def Info: figure/unnamed-chunk-16-1.pdf  used on input line 285.
+Package pdftex.def Info: figure/unnamed-chunk-16-1.pdf  used on input line 247.
 (pdftex.def)             Requested size: 469.75502pt x 469.76265pt.
 
-Overfull \hbox (15.0pt too wide) in paragraph at lines 285--287
+Overfull \hbox (15.0pt too wide) in paragraph at lines 247--249
 [][]
  []
 
-[11 <./figure/unnamed-chunk-15-1.pdf>]
-<figure/unnamed-chunk-17-1.pdf, id=232, 505.89pt x 505.89pt>
+[10 <./figure/unnamed-chunk-15-1.pdf>]
+<figure/unnamed-chunk-17-1.pdf, id=246, 505.89pt x 505.89pt>
 File: figure/unnamed-chunk-17-1.pdf Graphic file (type pdf)
 <use figure/unnamed-chunk-17-1.pdf>
-Package pdftex.def Info: figure/unnamed-chunk-17-1.pdf  used on input line 294.
+Package pdftex.def Info: figure/unnamed-chunk-17-1.pdf  used on input line 256.
 (pdftex.def)             Requested size: 469.75502pt x 469.76265pt.
 
-Overfull \hbox (15.0pt too wide) in paragraph at lines 294--296
+Overfull \hbox (15.0pt too wide) in paragraph at lines 256--258
 [][]
  []
 
-[12 <./figure/unnamed-chunk-16-1.pdf>]
-<figure/unnamed-chunk-19-1.pdf, id=243, 722.7pt x 289.08pt>
+[11 <./figure/unnamed-chunk-16-1.pdf>]
+<figure/unnamed-chunk-19-1.pdf, id=256, 722.7pt x 289.08pt>
 File: figure/unnamed-chunk-19-1.pdf Graphic file (type pdf)
 <use figure/unnamed-chunk-19-1.pdf>
-Package pdftex.def Info: figure/unnamed-chunk-19-1.pdf  used on input line 308.
+Package pdftex.def Info: figure/unnamed-chunk-19-1.pdf  used on input line 270.
 (pdftex.def)             Requested size: 469.75502pt x 187.90417pt.
-[13 <./figure/unnamed-chunk-17-1.pdf>]
-<figure/unnamed-chunk-23-1.pdf, id=256, 794.97pt x 939.51pt>
+[12 <./figure/unnamed-chunk-17-1.pdf>]
+<figure/unnamed-chunk-23-1.pdf, id=270, 794.97pt x 939.51pt>
 File: figure/unnamed-chunk-23-1.pdf Graphic file (type pdf)
 <use figure/unnamed-chunk-23-1.pdf>
-Package pdftex.def Info: figure/unnamed-chunk-23-1.pdf  used on input line 354.
+Package pdftex.def Info: figure/unnamed-chunk-23-1.pdf  used on input line 318.
 (pdftex.def)             Requested size: 469.75502pt x 555.18057pt.
-[14 <./figure/unnamed-chunk-19-1.pdf>] [15 <./figure/unnamed-chunk-23-1.pdf>]
-<figure/unnamed-chunk-24-1.pdf, id=276, 505.89pt x 505.89pt>
+[13 <./figure/unnamed-chunk-19-1.pdf>] [14 <./figure/unnamed-chunk-23-1.pdf>]
+<figure/unnamed-chunk-24-1.pdf, id=291, 505.89pt x 505.89pt>
 File: figure/unnamed-chunk-24-1.pdf Graphic file (type pdf)
 <use figure/unnamed-chunk-24-1.pdf>
-Package pdftex.def Info: figure/unnamed-chunk-24-1.pdf  used on input line 365.
+Package pdftex.def Info: figure/unnamed-chunk-24-1.pdf  used on input line 329.
 (pdftex.def)             Requested size: 469.75502pt x 469.76265pt.
 
-Overfull \hbox (15.0pt too wide) in paragraph at lines 365--367
+Overfull \hbox (15.0pt too wide) in paragraph at lines 329--331
 [][]
  []
 
-<figure/unnamed-chunk-25-1.pdf, id=277, 794.97pt x 939.51pt>
+<figure/unnamed-chunk-25-1.pdf, id=292, 794.97pt x 939.51pt>
 File: figure/unnamed-chunk-25-1.pdf Graphic file (type pdf)
 <use figure/unnamed-chunk-25-1.pdf>
-Package pdftex.def Info: figure/unnamed-chunk-25-1.pdf  used on input line 373.
+Package pdftex.def Info: figure/unnamed-chunk-25-1.pdf  used on input line 337.
 (pdftex.def)             Requested size: 469.75502pt x 555.18057pt.
-[16 <./figure/unnamed-chunk-24-1.pdf>] [17 <./figure/unnamed-chunk-25-1.pdf>] [18] (./STAT_605_Draft4_Group1.aux)
+[15 <./figure/unnamed-chunk-24-1.pdf>] [16 <./figure/unnamed-chunk-25-1.pdf>]
+LaTeX Font Info:    Font shape `OT1/cmtt/bx/n' in size <10> not available
+(Font)              Font shape `OT1/cmtt/m/n' tried instead on input line 367.
+
+Overfull \hbox (55.2404pt too wide) in paragraph at lines 367--368
+[]\OT1/cmtt/m/n/10 ## Error: unable to find an inherited method for function 'select' for signature 'x = "data.frame"'[] 
+ []
+
+[17] (./STAT_605_Draft4_Group1.aux)
  ***********
 LaTeX2e <2025-11-01>
 L3 programming layer <2025-10-24>
  ***********
 Package rerunfilecheck Info: File `STAT_605_Draft4_Group1.out' has not changed.
-(rerunfilecheck)             Checksum: AAC6AD9FC9DE51AE2DDC2B7D12789975;4268.
+(rerunfilecheck)             Checksum: B96AB887DE3AF93FE17AC4538247625C;4873.
  ) 
 Here is how much of TeX's memory you used:
- 10045 strings out of 469519
- 158301 string characters out of 5468710
- 587459 words of memory out of 5000000
- 38555 multiletter control sequences out of 15000+600000
+ 10047 strings out of 469519
+ 158310 string characters out of 5468710
+ 582459 words of memory out of 5000000
+ 38556 multiletter control sequences out of 15000+600000
  631242 words of font info for 53 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
- 75i,8n,79p,1083b,490s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 75i,8n,79p,1083b,487s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </Users/astha.s918/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb></Users/astha.s918/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb></Users/astha.s918/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></Users/astha.s918/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmr12.pfb></Users/astha.s918/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt10.pfb></Users/astha.s918/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt12.pfb>
-Output written on STAT_605_Draft4_Group1.pdf (19 pages, 1244986 bytes).
+Output written on STAT_605_Draft4_Group1.pdf (18 pages, 1259787 bytes).
 PDF statistics:
- 341 PDF objects out of 1000 (max. 8388607)
- 273 compressed objects within 3 object streams
- 42 named destinations out of 1000 (max. 500000)
- 239 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 355 PDF objects out of 1000 (max. 8388607)
+ 288 compressed objects within 3 object streams
+ 43 named destinations out of 1000 (max. 500000)
+ 255 words of extra memory for PDF output out of 10000 (max. 10000000)
 
