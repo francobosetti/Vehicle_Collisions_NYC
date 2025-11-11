@@ -122,26 +122,51 @@ Posted speed limits by street segment with geographic coordinates. We matched se
 
 Tweets categorized as non-traffic (0), traffic incidents (1), or traffic conditions (2). We filtered to 798 NYC-specific tweets, then isolated 66 vehicle crash reports for text mining. While predating COVID, this establishes a baseline for social media reporting patterns and enables contributing factor text analysis from official crash reports.
 
+\subsection{Use of SQL}
+
+In this project, the data preparation process was carried out using a series of SQL queries that transformed raw CSV files into datasets ready for analysis. To keep the workflow organized and easy to follow, each major transformation step was built as a separate SQL view instead of combining everything into one large query. This made the process more modular and transparent, since each view clearly represented a specific stage of data cleaning or filtering. For example, one view focused on identifying tweets mentioning New York City, another detected transit and vehicle references, and a later one isolated road incidents and crashes. Using views in this way made the code easier to read, maintain, and verify, while also allowing intermediate results to be checked throughout the data preparation pipeline.
+
 
 \newpage
 
 
 
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{verbatim}
+## [1] 0
+## [1] 0
+## [1] 0
+\end{verbatim}
+\end{kframe}
+\end{knitrout}
+
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{verbatim}
+## [1] 0
+## [1] 0
+## [1] 0
+## [1] 0
+## [1] 0
+## [1] 0
+\end{verbatim}
+\end{kframe}
+\end{knitrout}
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{verbatim}
+## [1] 0
+## [1] 0
+## [1] 0
+## [1] 0
+## [1] 0
+## [1] 0
+\end{verbatim}
+\end{kframe}
+\end{knitrout}
 
 
 
@@ -152,7 +177,7 @@ By grouping the collisions into each month in which they occured, we can plot a 
 \begin{knitrout}
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
 
-{\centering \includegraphics[width=\maxwidth]{figure/unnamed-chunk-8-1} 
+{\centering \includegraphics[width=\maxwidth]{figure/unnamed-chunk-6-1} 
 
 }
 
@@ -163,7 +188,7 @@ A notable trend is the sudden drop in collisions at the beginning of 2020. This 
 Next, we explore the number of collisions over time within each borough. Note that a large quantity of entries from the dataset do not have a location attached, so those results are not considered for this analysis.
 \begin{knitrout}
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
-\includegraphics[width=\maxwidth]{figure/unnamed-chunk-9-1} 
+\includegraphics[width=\maxwidth]{figure/unnamed-chunk-7-1} 
 \end{knitrout}
 Each borough follows very similar shapes in their respective line. Further analysis to normalize by some factor, e.g. by population or road network density may provide more insight.
 
@@ -173,7 +198,7 @@ From the earlier graph, it seemed like there may be a difference in the trend of
 
 \begin{knitrout}
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
-\includegraphics[width=\maxwidth]{figure/unnamed-chunk-10-1} 
+\includegraphics[width=\maxwidth]{figure/unnamed-chunk-8-1} 
 \end{knitrout}
 This shows a distinct change in the collision trend before and after covid. In Queens, Brooklyn, and the Bronx, the collision rates were all rising prior to 2019, and were falling after 2020. Conversely, in Manhattan and Staten Island, the collision rates were falling prior to 2019, and flattened out after 2020. 
 
@@ -183,7 +208,7 @@ In the dataset every entry has up to 5 `contributing factors'. Below, We see the
 
 \begin{knitrout}
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
-\includegraphics[width=\maxwidth]{figure/unnamed-chunk-11-1} 
+\includegraphics[width=\maxwidth]{figure/unnamed-chunk-9-1} 
 \end{knitrout}
 An overwhelming cause of accidents are due to driver distraction, more than 3 times the next most common.
 
@@ -194,7 +219,7 @@ The histogram below shows the total number of accidents in the dataset for each 
 
 \begin{knitrout}
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
-\includegraphics[width=\maxwidth]{figure/unnamed-chunk-12-1} 
+\includegraphics[width=\maxwidth]{figure/unnamed-chunk-10-1} 
 \end{knitrout}
 
 We can see that most of the accidents occur during the daytime, with a semi-continuous increasing and decreasing structure. The distribution reaches its lowest value at 3:00AM, and peaks around 4:00PM. There are slight spikes around 8-9AM, when people would be driving to work, and also around 4-5:00PM, when people would be leaving work. There is also a small spike around midnight.
@@ -205,7 +230,7 @@ To explore when crashes are most likely to occur, we created a heatmap of crash 
 
 \begin{knitrout}
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
-\includegraphics[width=\maxwidth]{figure/unnamed-chunk-13-1} 
+\includegraphics[width=\maxwidth]{figure/unnamed-chunk-11-1} 
 \end{knitrout}
 
 The heatmap shows a clear concentration of crashes during daytime and evening hours, especially between 8 AM and 7 PM across all weekdays. Friday stands out with the highest crash intensity, particularly in the late afternoon and early evening, likely reflecting a mix of rush-hour traffic and increased social activity at the end of the work week.
@@ -222,7 +247,7 @@ Below, there is a heatmap of all of the accidents in NYC plotted over a map of N
 
 \begin{knitrout}
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
-\includegraphics[width=\maxwidth]{figure/unnamed-chunk-14-1} 
+\includegraphics[width=\maxwidth]{figure/unnamed-chunk-12-1} 
 \end{knitrout}
 
 With this, we can easily visualize at which locations most of the accidents are concentrated. We see that a large majority occur in midtown Manhattan, while there are other hot-spots around upper Manhattan / Harlem and Brooklyn. We see very few reaching out to Staten Island, and fewer as we get farther away from the center of the city.
@@ -233,7 +258,7 @@ Below, we have a graph showing all of the accidents that occurred on roads where
 
 \begin{knitrout}
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
-\includegraphics[width=\maxwidth]{figure/unnamed-chunk-15-1} 
+\includegraphics[width=\maxwidth]{figure/unnamed-chunk-13-1} 
 \end{knitrout}
 
 While this imaging doesn’t directly allow us to draw any conclusions, having this mapping of which car accidents occurred on higher speed roads allows us to do further interpretations of the data with relation to the speed limit.
@@ -244,7 +269,7 @@ This plot compares how the hourly distribution of crashes varied across Pre-COVI
 
 \begin{knitrout}
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
-\includegraphics[width=\maxwidth]{figure/unnamed-chunk-16-1} 
+\includegraphics[width=\maxwidth]{figure/unnamed-chunk-14-1} 
 \end{knitrout}
 
 \subsection{Time of Day vs. Fatality Rate}
@@ -253,7 +278,7 @@ This scatterplot examines the relationship between the hour of day (0-23, milita
 
 \begin{knitrout}
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
-\includegraphics[width=\maxwidth]{figure/unnamed-chunk-17-1} 
+\includegraphics[width=\maxwidth]{figure/unnamed-chunk-15-1} 
 \end{knitrout}
   
 The scatterplot shows that nighttime crashes are significantly deadlier than daytime crashes. Early morning hours (2-4 AM) show fatality rates of 4.5-6.5 deaths per 1,000 crashes, about 6 times higher than midday rates (~1 per 1,000). The negative linear trend also shows that fatality risk decreases consistently throughout the day, where it reaches its lowest point during morning and afternoon hours (7 AM-2 PM), then begins to rise again after 9 PM.
@@ -267,7 +292,7 @@ We applied text mining to crash contributing factors across all 5 CONTRIBUTING.F
 \begin{knitrout}
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
 
-{\centering \includegraphics[width=\maxwidth]{figure/unnamed-chunk-19-1} 
+{\centering \includegraphics[width=\maxwidth]{figure/unnamed-chunk-17-1} 
 
 }
 
@@ -279,17 +304,17 @@ The Twitter data emphasizes location/navigation (st, manhattan, avenue) while th
 \begin{knitrout}
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{table}
 
-\caption{\label{tab:unnamed-chunk-20}Speed-Related Crashes by COVID Period (Text-Mined)}
+\caption{\label{tab:unnamed-chunk-18}Speed-Related Crashes by COVID Period (Text-Mined)}
 \centering
 \begin{tabular}[t]{l|r|r|r}
 \hline
 Period & Total Crashes & Speed-Related & Percent\\
 \hline
-Pre-COVID & 1659998 & 120776 & 7.3\\
+Pre-COVID & 1659997 & 120776 & 7.3\\
 \hline
 During COVID & 195404 & 18588 & 9.5\\
 \hline
-Post-COVID & 363229 & 34732 & 9.6\\
+Post-COVID & 350217 & 33529 & 9.6\\
 \hline
 \end{tabular}
 \end{table}
@@ -315,7 +340,7 @@ In simple terms, the model compares patterns across thousands of crashes to esti
 \begin{knitrout}
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
 
-{\centering \includegraphics[width=\maxwidth]{figure/unnamed-chunk-23-1} 
+{\centering \includegraphics[width=\maxwidth]{figure/unnamed-chunk-21-1} 
 
 }
 
@@ -326,7 +351,7 @@ The forest plot clearly highlights which predictors have a statistically signifi
 
 \begin{knitrout}
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
-\includegraphics[width=\maxwidth]{figure/unnamed-chunk-24-1} 
+\includegraphics[width=\maxwidth]{figure/unnamed-chunk-22-1} 
 \end{knitrout}
 
 The plot illustrates how the predicted probability of a fatal crash varies by vehicle type and time of day, offering a more intuitive view of the logistic regression model’s results. Fatal crashes are exceedingly rare for cars and SUVs, remaining below 0.2\% even at night. However, the probability increases substantially for motorcycles, exceeding 2\% at night (an order of magnitude higher than for any other vehicle type). Trucks and buses also show elevated fatality risk, roughly double that of cars, while bicycles and scooters occupy an intermediate range. Across all vehicle types, nighttime crashes consistently show higher fatal probabilities than daytime ones, suggesting that reduced visibility, fatigue, or riskier nighttime behavior may compound the inherent dangers of certain vehicles. Overall, the visualization reinforces that motorcycles and nighttime driving represent the most critical risk combination for fatal outcomes.
@@ -334,7 +359,7 @@ The plot illustrates how the predicted probability of a fatal crash varies by ve
 \begin{knitrout}
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
 
-{\centering \includegraphics[width=\maxwidth]{figure/unnamed-chunk-25-1} 
+{\centering \includegraphics[width=\maxwidth]{figure/unnamed-chunk-23-1} 
 
 }
 

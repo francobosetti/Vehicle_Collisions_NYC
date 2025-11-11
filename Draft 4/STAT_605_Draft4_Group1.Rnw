@@ -71,6 +71,10 @@ Posted speed limits by street segment with geographic coordinates. We matched se
 
 Tweets categorized as non-traffic (0), traffic incidents (1), or traffic conditions (2). We filtered to 798 NYC-specific tweets, then isolated 66 vehicle crash reports for text mining. While predating COVID, this establishes a baseline for social media reporting patterns and enables contributing factor text analysis from official crash reports.
 
+\subsection{Use of SQL}
+
+In this project, the data preparation process was carried out using a series of SQL queries that transformed raw CSV files into datasets ready for analysis. To keep the workflow organized and easy to follow, each major transformation step was built as a separate SQL view instead of combining everything into one large query. This made the process more modular and transparent, since each view clearly represented a specific stage of data cleaning or filtering. For example, one view focused on identifying tweets mentioning New York City, another detected transit and vehicle references, and a later one isolated road incidents and crashes. Using views in this way made the code easier to read, maintain, and verify, while also allowing intermediate results to be checked throughout the data preparation pipeline.
+
 
 \newpage
 
@@ -113,14 +117,14 @@ WITH b AS (
     \"ON STREET NAME\"                               AS on_street_name,
     \"CROSS STREET NAME\"                            AS cross_street_name,
     \"OFF STREET NAME\"                              AS off_street_name,
-    \"NUMBER OF PERSONS INJURED\"                    AS number_of_persons_injured,
-    \"NUMBER OF PERSONS KILLED\"                     AS number_of_persons_killed,
-    \"NUMBER OF PEDESTRIANS INJURED\"                AS number_of_pedestrians_injured,
-    \"NUMBER OF PEDESTRIANS KILLED\"                 AS number_of_pedestrians_killed,
-    \"NUMBER OF CYCLIST INJURED\"                    AS number_of_cyclist_injured,
-    \"NUMBER OF CYCLIST KILLED\"                     AS number_of_cyclist_killed,
-    \"NUMBER OF MOTORIST INJURED\"                   AS number_of_motorist_injured,
-    \"NUMBER OF MOTORIST KILLED\"                    AS number_of_motorist_killed,
+    \"NUMBER OF PERSONS INJURED\"     AS number_of_persons_injured,
+  \"NUMBER OF PERSONS KILLED\"      AS number_of_persons_killed,
+  \"NUMBER OF PEDESTRIANS INJURED\" AS number_of_pedestrians_injured,
+  \"NUMBER OF PEDESTRIANS KILLED\"  AS number_of_pedestrians_killed,
+  \"NUMBER OF CYCLIST INJURED\"     AS number_of_cyclist_injured,
+  \"NUMBER OF CYCLIST KILLED\"      AS number_of_cyclist_killed,
+  \"NUMBER OF MOTORIST INJURED\"    AS number_of_motorist_injured,
+  \"NUMBER OF MOTORIST KILLED\"     AS number_of_motorist_killed,
     \"CONTRIBUTING FACTOR VEHICLE 1\"                AS contributing_factor_vehicle_1,
     \"CONTRIBUTING FACTOR VEHICLE 2\"                AS contributing_factor_vehicle_2,
     \"CONTRIBUTING FACTOR VEHICLE 3\"                AS contributing_factor_vehicle_3,
@@ -254,6 +258,19 @@ nyc$covid_period <- factor(nyc$covid_period,
                            levels = c("Pre-COVID","During COVID","Post-COVID"))
 
 nyc$BOROUGH <- factor(nyc$BOROUGH)
+
+nyc <- nyc %>%
+mutate(across(
+    c(NUMBER.OF.PERSONS.INJURED,
+      NUMBER.OF.PERSONS.KILLED,
+      NUMBER.OF.PEDESTRIANS.INJURED,
+      NUMBER.OF.PEDESTRIANS.KILLED,
+      NUMBER.OF.CYCLIST.INJURED,
+      NUMBER.OF.CYCLIST.KILLED,
+      NUMBER.OF.MOTORIST.INJURED,
+      NUMBER.OF.MOTORIST.KILLED),
+    as.integer
+  ))
 @
 
 <<echo=FALSE, message=FALSE, warning=FALSE>>=
