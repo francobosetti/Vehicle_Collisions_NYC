@@ -78,7 +78,7 @@ In this project, the data preparation process was carried out using a series of 
 
 \newpage
 
-<<echo=FALSE, message=FALSE, warning=FALSE>>=
+<<echo=FALSE, message=FALSE, warning=FALSE, results = 'hide'>>=
 # Preprocessing 
 library(RSQLite)
 library(rcompanion)
@@ -100,7 +100,7 @@ library(tidytext)
 dcon <- dbConnect(SQLite(), dbname = "data/Collisions_DB.db")
 @
 
-<<echo=FALSE, message=FALSE, warning=FALSE>>=
+<<echo=FALSE, message=FALSE, warning=FALSE, results = 'hide'>>=
 # nyc preprocessing
 dbExecute(dcon, "
 CREATE VIEW IF NOT EXISTS crashes_enriched AS
@@ -273,7 +273,7 @@ mutate(across(
   ))
 @
 
-<<echo=FALSE, message=FALSE, warning=FALSE>>=
+<<echo=FALSE, message=FALSE, warning=FALSE, results = 'hide'>>=
 # vzv speed limit preprocessing
 # Format the sp_limits latitude and longitude
 # Pre-process the speed limit data
@@ -379,7 +379,7 @@ combined <- # add speed limit data to nyc dataset
 @
 
 
-<<echo=FALSE, message=FALSE, warning=FALSE>>=
+<<echo=FALSE, message=FALSE, warning=FALSE, results = 'hide'>>=
 # twitter preprocessing 2
 # transit vs vehicle tweets
 dbExecute(dcon, "DROP VIEW IF EXISTS v_twitter_flags;")
@@ -495,7 +495,7 @@ twitter_vehicle <- dbGetQuery(dcon, "SELECT * FROM v_twitter_vehicle") %>%
   )
 @
 
-<<echo=FALSE, message=FALSE, warning=FALSE>>=
+<<echo=FALSE, message=FALSE, warning=FALSE, results = 'hide'>>=
 dbDisconnect(dcon)
 @
 
@@ -922,6 +922,7 @@ nyc_small <- nyc %>%
            CONTRIBUTING.FACTOR.VEHICLE.1 != "1" &
            CONTRIBUTING.FACTOR.VEHICLE.1 != "80") %>%
   transmute(
+    covid_period = covid_period,
     is_fatal = ifelse(NUMBER.OF.PERSONS.KILLED > 0, 1, 0),  # outcome
     borough = BOROUGH,
     crash_hour = hour(hm(CRASH.TIME)),
@@ -1070,9 +1071,6 @@ Overall, these results suggest that time of day, vehicle type, and risky human b
 Building on our baseline risk analysis, we developed statistical models to quantify how COVID-19 specifically altered crash severity patterns in NYC. This analysis tests whether the pandemic period itself was independently associated with changes in fatality risk, controlling for established risk factors.
 
 <<echo=FALSE, message=FALSE, warning=FALSE>>=
-nyc_small <- nyc_small %>%
-  left_join(nyc %>% select(COLLISION_ID, covid_period), by = "COLLISION_ID")
-
 # Model 1: COVID period effect
 covid_simple_model <- glm(is_fatal ~ covid_period,
                          data = nyc_small,
@@ -1109,7 +1107,6 @@ ggplot(covid_results, aes(x = period, y = estimate, color = model, group = model
        color = "Model Type",
        caption = "Values > 1 indicate higher odds of fatal crashes") +
   theme_minimal(base_size = 12)
-  
 @
 
 The statistical models reveal that COVID-19 had a significant and substantial effect on crash severity. In the unadjusted model, crashes during COVID were 1.91 times more likely to be fatal (95\% CI: [1.67, 2.19]), and post-COVID crashes were 2.12 times more likely (95\% CI: [1.92, 2.34]) compared to the pre-pandemic baseline.
@@ -1117,8 +1114,6 @@ The statistical models reveal that COVID-19 had a significant and substantial ef
 Even after controlling for differences in borough, vehicle type, and time of day, the effect persisted: crashes during COVID remained 1.67 times more likely to be fatal (95\% CI: [1.45, 1.91]), and post-COVID crashes were 1.79 times more likely (95\% CI: [1.61, 1.98]). The persistence of this strong effect in the adjusted model suggests the pandemic introduced fundamental changes in crash dynamics beyond simple compositional shifts in traffic patterns.
 
 <<echo=FALSE, message=FALSE, warning=FALSE>>=
-library(broom)
-
 # Model 3: Interaction effects
 interaction_model <- glm(is_fatal ~ covid_period * vehicle_cat + borough + tod,
                         data = nyc_small,

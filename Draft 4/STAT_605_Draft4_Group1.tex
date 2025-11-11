@@ -131,42 +131,12 @@ In this project, the data preparation process was carried out using a series of 
 
 
 
-\begin{knitrout}
-\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
-\begin{verbatim}
-## [1] 0
-## [1] 0
-## [1] 0
-\end{verbatim}
-\end{kframe}
-\end{knitrout}
-
-\begin{knitrout}
-\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
-\begin{verbatim}
-## [1] 0
-## [1] 0
-## [1] 0
-## [1] 0
-## [1] 0
-## [1] 0
-\end{verbatim}
-\end{kframe}
-\end{knitrout}
 
 
-\begin{knitrout}
-\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
-\begin{verbatim}
-## [1] 0
-## [1] 0
-## [1] 0
-## [1] 0
-## [1] 0
-## [1] 0
-\end{verbatim}
-\end{kframe}
-\end{knitrout}
+
+
+
+
 
 
 
@@ -386,18 +356,8 @@ Overall, these results suggest that time of day, vehicle type, and risky human b
 Building on our baseline risk analysis, we developed statistical models to quantify how COVID-19 specifically altered crash severity patterns in NYC. This analysis tests whether the pandemic period itself was independently associated with changes in fatality risk, controlling for established risk factors.
 
 \begin{knitrout}
-\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
-
-
-{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error: unable to find an inherited method for function 'select' for signature 'x = "{}data.frame"{}'}}
-
-{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error in eval(predvars, data, env): object 'covid\_period' not found}}
-
-{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error in eval(predvars, data, env): object 'covid\_period' not found}}
-
-{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error: object 'covid\_simple\_model' not found}}
-
-{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error: object 'covid\_results' not found}}\end{kframe}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+\includegraphics[width=\maxwidth]{figure/unnamed-chunk-24-1} 
 \end{knitrout}
 
 The statistical models reveal that COVID-19 had a significant and substantial effect on crash severity. In the unadjusted model, crashes during COVID were 1.91 times more likely to be fatal (95\% CI: [1.67, 2.19]), and post-COVID crashes were 2.12 times more likely (95\% CI: [1.92, 2.34]) compared to the pre-pandemic baseline.
@@ -405,14 +365,8 @@ The statistical models reveal that COVID-19 had a significant and substantial ef
 Even after controlling for differences in borough, vehicle type, and time of day, the effect persisted: crashes during COVID remained 1.67 times more likely to be fatal (95\% CI: [1.45, 1.91]), and post-COVID crashes were 1.79 times more likely (95\% CI: [1.61, 1.98]). The persistence of this strong effect in the adjusted model suggests the pandemic introduced fundamental changes in crash dynamics beyond simple compositional shifts in traffic patterns.
 
 \begin{knitrout}
-\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
-
-
-{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error in eval(predvars, data, env): object 'covid\_period' not found}}
-
-{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error: object 'interaction\_model' not found}}
-
-{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error: object 'interaction\_effects' not found}}\end{kframe}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+\includegraphics[width=\maxwidth]{figure/unnamed-chunk-25-1} 
 \end{knitrout}
 
 The interaction analysis reveals that while overall severity increased across all vehicle types, the relative risk hierarchy remained largely consistent. No individual vehicle type showed statistically significant differential effects during COVID at the 0.05 level, though motorcycle crashes showed a notable trend toward increased risk during COVID (p = 0.097) and truck/bus crashes trended toward increased risk post-COVID (p = 0.100). This suggests the pandemic amplified crash severity uniformly rather than disproportionately affecting specific vehicle categories.
