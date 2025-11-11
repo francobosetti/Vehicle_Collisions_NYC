@@ -725,6 +725,8 @@ Text mining revealed speed-related crashes increased from X\% pre-COVID to Y\% d
 
 \section{Statistical Modeling \& Interpretation}
 
+\subsection{Part 1: Baseline Risk Factors for Fatal Crashes}
+
 To better understand the factors that influence the severity of motor vehicle collisions in New York City, we developed a preliminary statistical model using logistic regression. The outcome of interest is whether a crash was fatal (at least one person killed) or non-fatal. Logistic regression is appropriate in this context because the outcome is binary (fatal vs. non-fatal), and it allows us to estimate how different factors change the odds of a fatal crash while holding other conditions constant.
 
 In simple terms, the model compares patterns across thousands of crashes to estimate how likely a fatal outcome is under different conditions. For example, whether the crash happened at night or involved a motorcycle. The predictors we included were the borough of occurrence, time of day (day vs. night), vehicle type, and the primary contributing factor reported by police. By examining these, we can identify which circumstances or behaviors are most strongly associated with fatal outcomes.
@@ -882,5 +884,54 @@ Driver and pedestrian behaviors: Risky behaviors dramatically elevate danger. Al
 By contrast, mechanical issues (like brake defects) appear much less often, so their effect is harder to measure reliably.
 
 Overall, these results suggest that time of day, vehicle type, and risky human behaviors are the dominant predictors of fatal outcomes in NYC crashes, while borough differences are smaller in magnitude.
+
+\subsection{Part 2: COVID-19's Impact on Crash Severity}
+
+Building on our baseline risk analysis, we developed statistical models to quantify how COVID-19 specifically altered crash severity patterns in NYC. This analysis tests whether the pandemic period itself was independently associated with changes in fatality risk, controlling for established risk factors.
+
+<<echo=FALSE, message=FALSE, warning=FALSE>>=
+# Model 1: COVID period effect
+covid_simple_model <- glm(is_fatal ~ covid_period,
+                         data = nyc_small,
+                         family = binomial)
+# summary(covid_simple_model)
+
+# Model 2: COVID period controlling for key factors
+covid_adjusted_model <- glm(is_fatal ~ covid_period + borough + vehicle_cat + tod,
+                           data = nyc_small, 
+                           family = binomial)
+# summary(covid_adjusted_model)
+
+covid_results <- bind_rows(
+  tidy(covid_simple_model, conf.int = TRUE, exponentiate = TRUE) %>%
+    mutate(model = "Unadjusted"),
+  tidy(covid_adjusted_model, conf.int = TRUE, exponentiate = TRUE) %>%
+    mutate(model = "Adjusted")
+) %>%
+  filter(grepl("covid_period", term)) %>%
+  mutate(period = case_when(
+    grepl("During COVID", term) ~ "During COVID",
+    grepl("Post-COVID", term) ~ "Post-COVID",
+    TRUE ~ "Reference"
+  )) %>%
+  filter(period != "Reference")
+
+ggplot(covid_results, aes(x = period, y = estimate, color = model, group = model)) +
+  geom_point(position = position_dodge(width = 0.5), size = 4) +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), 
+                position = position_dodge(width = 0.5), width = 0.2) +
+  geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
+  scale_color_brewer(palette = "Set1") +
+  labs(title = "COVID-19 Impact on Fatality Odds: Unadjusted vs Adjusted Models",
+       x = "COVID Period",
+       y = "Odds Ratio (vs. Pre-COVID)",
+       color = "Model Type",
+       caption = "Values > 1 indicate higher odds of fatal crashes") +
+  theme_minimal(base_size = 12)
+@
+
+The statistical models reveal that COVID-19 had a significant and substantial effect on crash severity. In the unadjusted model, crashes during COVID were 1.91 times more likely to be fatal (95\% CI: [1.67, 2.19]), and post-COVID crashes were 2.12 times more likely (95\% CI: [1.92, 2.34]) compared to the pre-pandemic baseline.
+
+Even after controlling for differences in borough, vehicle type, and time of day, the effect persisted: crashes during COVID remained 1.67 times more likely to be fatal (95\% CI: [1.45, 1.91]), and post-COVID crashes were 1.79 times more likely (95\% CI: [1.61, 1.98]). The persistence of this strong effect in the adjusted model suggests the pandemic introduced fundamental changes in crash dynamics beyond simple compositional shifts in traffic patterns.
 
 \end{document}
