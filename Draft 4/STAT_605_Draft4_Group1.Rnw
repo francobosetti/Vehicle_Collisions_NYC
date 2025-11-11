@@ -371,6 +371,30 @@ text(x=as.Date("2020-03-17"), y=max_col*0.7,
 @
 Each borough follows very similar shapes in their respective line. Further analysis to normalize by some factor, e.g. by population or road network density may provide more insight.
 
+\subsection{Analysis of linear trends in vehicle collisions}
+
+From the earlier graph, it seemed like there may be a difference in the trend of the amount of collisions before and after Covid. To further analyze this, we performed a linear regression by borough of the total crashes per year, performing separate linear regressions before and after the Covid shutdown. The resulting graph is shown below.
+
+<<echo=FALSE, message=FALSE, warning=FALSE>>=
+dat <- nyc %>%
+  filter(BOROUGH != "") %>%
+  group_by(BOROUGH) %>%
+  count(YEAR) %>%
+  ungroup() %>%
+  mutate(period = ifelse(YEAR <= 2019, "2019 and before", "2020 and after"))
+
+ggplot(dat, aes(x = YEAR, y = n, color = BOROUGH)) +
+  geom_point() +
+  geom_smooth(aes(linetype = period, group = interaction(BOROUGH, period)),
+              method = "lm",
+              se = FALSE) +
+  labs(title = "Piecewise Linear Trends in Total Crashes per Year by Borough",
+       x = "Year",
+       y = "Number of Crashes",
+       linetype = "Time Period")
+@
+This shows a distinct change in the collision trend before and after covid. In Queens, Brooklyn, and the Bronx, the collision rates were all rising prior to 2019, and were falling after 2020. Conversely, in Manhattan and Staten Island, the collision rates were falling prior to 2019, and flattened out after 2020. 
+
 \subsection{Causes of Collisions}
 
 In the dataset every entry has up to 5 `contributing factors'. Below, We see these results aggregated and the top 5 most prevalent causes displayed in a bar chart.
@@ -473,56 +497,44 @@ Overall, the heatmap highlights how crash risk peaks during high-traffic commuti
 
 \subsubsection{All Accidents}
 
-There are two graphs plotted below. One superimposes a subset of the accidents on the map of NYC, color coded by borough, and the other superimposes a subset of the speed limits on the map of NYC. 
+Below, there is a heatmap of all of the accidents in NYC plotted over a map of NYC. 
 
 <<echo=FALSE, message=FALSE, warning=FALSE>>=
 #plot the car crashes on the NYC map
 small_sample_sf <- filter(combined, between(LONGITUDE, -74.26, -73.70) & 
-                        between(LATITUDE, 40.49, 40.92)) %>%
+                            between(LATITUDE, 40.49, 40.92)) %>%
   sample_n(3000) %>%
   st_as_sf(coords = c("LONGITUDE", "LATITUDE"), crs = 4326) %>%
   st_transform(3857)
 
 nyc_bbox <- st_bbox(small_sample_sf)
-accident_plot <- 
-  ggplot(small_sample_sf) +
-  annotation_map_tile(type = "cartolight", zoom = 11) +
-  aes(color = BOROUGH, alpha = .3) + geom_sf( size = 1) +
+
+ggplot(small_sample_sf)+
+  annotation_map_tile(type = "cartolight", zoom=11)+
+  stat_density_2d(
+    aes(x = st_coordinates(small_sample_sf)[,1],
+        y = st_coordinates(small_sample_sf)[,2],
+        fill = after_stat(level),
+        alpha = after_stat(level)),
+    geom = "polygon",
+    contour = TRUE
+  ) +
+  scale_fill_viridis_c(option = "magma") +
+  scale_alpha(range = c(0.05, 0.4), guide = "none") +
   coord_sf(xlim = c(nyc_bbox["xmin"], nyc_bbox["xmax"]),
            ylim = c(nyc_bbox["ymin"], nyc_bbox["ymax"]),
            expand = FALSE) +
-  labs(title = "NYC Accident Mapping by Borough") +
-  guides(alpha = "none")
-
-  
-# plot the speed limits on the NYC map
-speed_plot <-
-  sp_lim_proc %>%
-  sample_n(5000) %>%
-  st_as_sf(coords = c("longitude", "latitude"), crs = 4326) %>%
-  st_transform(3857) %>%
-  ggplot()+
-  annotation_map_tile(type = "cartolight", zoom = 11) +
-  aes(color = SPEED.LIMIT, alpha = .3) +
-  geom_sf(size = 1) +
-  coord_sf(xlim = c(nyc_bbox["xmin"], nyc_bbox["xmax"]),
-           ylim = c(nyc_bbox["ymin"], nyc_bbox["ymax"]),
-           expand = FALSE) +
-  labs(title = "NYC Speed Limit Mapping") +
-  scale_color_gradient(low = "green", high = "red") +
-  guides(alpha = "none")
-
-
-# Display plots side by side
-require(gridExtra)
-grid.arrange(accident_plot,speed_plot)
+  labs(title = "NYC Accident Density Heatmap") +
+  xlab("Longitude Coordinates") +
+  ylab("Latitude Coordinates") +
+  guides(fill = guide_colorbar(title = "Density"))
 @
 
-The speed limit graph shows that there are high speed limits on the highways, around the 40-50mph range, and lower speed limits everywhere else, mostly in the 20-30mph range. We can visually inspect and see that a lot of the areas that did not have labels for their borough correspond with the higher speed limit lines, indicating that when an accident occurred on a highway, there was likely no borough provided. We can also see that a lot of the accidents are focused in the Manhattan area, with the most sparse area being Staten Island. This is likely because of the street density in Manhattan vs Staten Island.
+With this, we can easily visualize at which locations most of the accidents are concentrated. We see that a large majority occur in midtown Manhattan, while there are other hot-spots around upper Manhattan / Harlem and Brooklyn. We see very few reaching out to Staten Island, and fewer as we get farther away from the center of the city.
 
 \subsubsection{Highway Accidents}
 
-Below, we have a graph showing all of the accidents that occurred on roads where the speed limit is greater than 40 mph, mapped onto an image of NYC. This gives us a far clearer picture of the highway road mapping in NYC.
+Below, we have a graph showing all of the accidents that occurred on roads where the speed limit is greater than 40 mph, mapped onto an image of NYC. This gives us a clear picture of the highway road mapping in NYC.
 
 <<echo=FALSE, message=FALSE, warning=FALSE>>=
 # Find the accidents that occurred on high speed roads
@@ -540,7 +552,7 @@ filter(combined, between(LONGITUDE, -74.26, -73.70) &
   labs(title = "Car accidents on high speed roads (>40mph)")
 @
 
-While this imaging doesn’t directly allow us to draw any conclusions, having this mapping of which car accidents occurred on higher speed roads allows us to do further interpretations of the data with relation to the speed limit, as we show in the next graphical comparison. 
+While this imaging doesn’t directly allow us to draw any conclusions, having this mapping of which car accidents occurred on higher speed roads allows us to do further interpretations of the data with relation to the speed limit.
 
 
 \subsection{Time of Day vs. Fatality Rate}
