@@ -77,7 +77,7 @@ Tweets categorized as non-traffic (0), traffic incidents (1), or traffic conditi
 
 <<echo=FALSE, message=FALSE, warning=FALSE>>=
 # Preprocessing 
-
+library(RSQLite)
 library(rcompanion)
 library(ggplot2)
 library(dplyr)
@@ -93,136 +93,267 @@ library(ggeffects)
 library(forcats)
 library(stringr)
 library(tidytext)
+
+dcon <- dbConnect(SQLite(), dbname = "data/Collisions_DB.db")
 @
 
 
 <<echo=FALSE, message=FALSE, warning=FALSE>>=
 # nyc preprocessing
-read.csv(file = "data/Motor_Vehicle_Collisions_-_Crashes.csv") %>%
-mutate(CRASH.DATE=as.Date(CRASH.DATE, format = "%m/%d/%Y"),
-       BOROUGH=factor(BOROUGH),
-       YEAR_MONTH=format(CRASH.DATE, "%Y-%m"),
-       YEAR=format(CRASH.DATE, "%Y"),
-       round_location=paste("(", round(LATITUDE, digits = 4), ", ",
-                            round(LONGITUDE, digits = 4), ")", sep = ""),
-       HOUR=as.numeric(sub("\\:.*", "", CRASH.TIME)),
-       
-       # covid period classification 
-       covid_period = case_when(
-         CRASH.DATE < as.Date("2020-03-01") ~ "Pre-COVID",
-         CRASH.DATE >= as.Date("2020-03-01") & CRASH.DATE < as.Date("2022-01-01") ~ "During COVID",
-         CRASH.DATE >= as.Date("2022-01-01") ~ "Post-COVID"
-       ),
-       covid_period = factor(covid_period, 
-                            levels = c("Pre-COVID", "During COVID", "Post-COVID")),
-       is_covid = CRASH.DATE >= as.Date("2020-03-01") & CRASH.DATE < as.Date("2022-01-01"),
-       is_post_covid = CRASH.DATE >= as.Date("2022-01-01")
-       ) -> nyc
+dbExecute(dcon, "
+CREATE VIEW IF NOT EXISTS crashes_enriched AS
+WITH b AS (
+  SELECT
+    -- map raw columns to helper names
+    substr(\"CRASH DATE\",7,4) || '-' || substr(\"CRASH DATE\",1,2) || '-' || substr(\"CRASH DATE\",4,2) AS crash_date_iso,
+    \"CRASH TIME\"                                   AS crash_time_raw,
+    \"BOROUGH\"                                      AS borough,
+    \"ZIP CODE\"                                     AS zip_code,
+    CAST(\"LATITUDE\"  AS REAL)                      AS latitude,
+    CAST(\"LONGITUDE\" AS REAL)                      AS longitude,
+    \"LOCATION\"                                     AS location,
+    \"ON STREET NAME\"                               AS on_street_name,
+    \"CROSS STREET NAME\"                            AS cross_street_name,
+    \"OFF STREET NAME\"                              AS off_street_name,
+    \"NUMBER OF PERSONS INJURED\"                    AS number_of_persons_injured,
+    \"NUMBER OF PERSONS KILLED\"                     AS number_of_persons_killed,
+    \"NUMBER OF PEDESTRIANS INJURED\"                AS number_of_pedestrians_injured,
+    \"NUMBER OF PEDESTRIANS KILLED\"                 AS number_of_pedestrians_killed,
+    \"NUMBER OF CYCLIST INJURED\"                    AS number_of_cyclist_injured,
+    \"NUMBER OF CYCLIST KILLED\"                     AS number_of_cyclist_killed,
+    \"NUMBER OF MOTORIST INJURED\"                   AS number_of_motorist_injured,
+    \"NUMBER OF MOTORIST KILLED\"                    AS number_of_motorist_killed,
+    \"CONTRIBUTING FACTOR VEHICLE 1\"                AS contributing_factor_vehicle_1,
+    \"CONTRIBUTING FACTOR VEHICLE 2\"                AS contributing_factor_vehicle_2,
+    \"CONTRIBUTING FACTOR VEHICLE 3\"                AS contributing_factor_vehicle_3,
+    \"CONTRIBUTING FACTOR VEHICLE 4\"                AS contributing_factor_vehicle_4,
+    \"CONTRIBUTING FACTOR VEHICLE 5\"                AS contributing_factor_vehicle_5,
+    \"COLLISION_ID\"                                 AS collision_id,
+    \"VEHICLE TYPE CODE 1\"                          AS vehicle_type_code_1,
+    \"VEHICLE TYPE CODE 2\"                          AS vehicle_type_code_2,
+    \"VEHICLE TYPE CODE 3\"                          AS vehicle_type_code_3,
+    \"VEHICLE TYPE CODE 4\"                          AS vehicle_type_code_4,
+    \"VEHICLE TYPE CODE 5\"                          AS vehicle_type_code_5
+  FROM crashes
+)
+SELECT
+  -- original columns with R-friendly names
+  date(crash_date_iso)                               AS \"CRASH.DATE\",
+  crash_time_raw                                     AS \"CRASH.TIME\",
+  borough                                            AS \"BOROUGH\",
+  zip_code                                           AS \"ZIP.CODE\",
+  latitude                                           AS \"LATITUDE\",
+  longitude                                          AS \"LONGITUDE\",
+  location                                           AS \"LOCATION\",
+  on_street_name                                     AS \"ON.STREET.NAME\",
+  cross_street_name                                  AS \"CROSS.STREET.NAME\",
+  off_street_name                                    AS \"OFF.STREET.NAME\",
+  number_of_persons_injured                          AS \"NUMBER.OF.PERSONS.INJURED\",
+  number_of_persons_killed                           AS \"NUMBER.OF.PERSONS.KILLED\",
+  number_of_pedestrians_injured                      AS \"NUMBER.OF.PEDESTRIANS.INJURED\",
+  number_of_pedestrians_killed                       AS \"NUMBER.OF.PEDESTRIANS.KILLED\",
+  number_of_cyclist_injured                          AS \"NUMBER.OF.CYCLIST.INJURED\",
+  number_of_cyclist_killed                           AS \"NUMBER.OF.CYCLIST.KILLED\",
+  number_of_motorist_injured                         AS \"NUMBER.OF.MOTORIST.INJURED\",
+  number_of_motorist_killed                          AS \"NUMBER.OF.MOTORIST.KILLED\",
+  contributing_factor_vehicle_1                      AS \"CONTRIBUTING.FACTOR.VEHICLE.1\",
+  contributing_factor_vehicle_2                      AS \"CONTRIBUTING.FACTOR.VEHICLE.2\",
+  contributing_factor_vehicle_3                      AS \"CONTRIBUTING.FACTOR.VEHICLE.3\",
+  contributing_factor_vehicle_4                      AS \"CONTRIBUTING.FACTOR.VEHICLE.4\",
+  contributing_factor_vehicle_5                      AS \"CONTRIBUTING.FACTOR.VEHICLE.5\",
+  collision_id                                       AS \"COLLISION_ID\",
+  vehicle_type_code_1                                AS \"VEHICLE.TYPE.CODE.1\",
+  vehicle_type_code_2                                AS \"VEHICLE.TYPE.CODE.2\",
+  vehicle_type_code_3                                AS \"VEHICLE.TYPE.CODE.3\",
+  vehicle_type_code_4                                AS \"VEHICLE.TYPE.CODE.4\",
+  vehicle_type_code_5                                AS \"VEHICLE.TYPE.CODE.5\",
+  -- derived fields
+  strftime('%Y-%m', crash_date_iso)                  AS YEAR_MONTH,
+  strftime('%Y',    crash_date_iso)                  AS YEAR,
+  '(' || printf('%.4f', latitude) || ', ' ||
+        printf('%.4f', longitude) || ')'             AS round_location,
+  CASE
+    WHEN instr(crash_time_raw, ':') > 0
+      THEN CAST(substr(crash_time_raw, 1, instr(crash_time_raw, ':') - 1) AS INTEGER)
+    ELSE NULL
+  END                                                AS HOUR,
+  CASE
+    WHEN date(crash_date_iso) <  date('2020-03-01')                          THEN 'Pre-COVID'
+    WHEN date(crash_date_iso) >= date('2020-03-01')
+     AND date(crash_date_iso) <  date('2022-01-01')                          THEN 'During COVID'
+    ELSE 'Post-COVID'
+  END                                                AS covid_period,
+  CASE
+    WHEN date(crash_date_iso) >= date('2020-03-01')
+     AND date(crash_date_iso) <  date('2022-01-01')                          THEN 1 ELSE 0
+  END                                                AS is_covid,
+  CASE
+    WHEN date(crash_date_iso) >= date('2022-01-01')                          THEN 1 ELSE 0
+  END                                                AS is_post_covid
+FROM b;
+")
 
+dbExecute(dcon, "
+CREATE VIEW IF NOT EXISTS vehicles_enriched AS
+WITH v AS (
+  SELECT
+    -- original columns
+    \"UNIQUE_ID\", \"COLLISION_ID\", \"CRASH_DATE\", \"CRASH_TIME\",
+    \"VEHICLE_ID\", \"STATE_REGISTRATION\", \"VEHICLE_TYPE\", \"VEHICLE_MAKE\",
+    \"VEHICLE_MODEL\", \"VEHICLE_YEAR\", \"TRAVEL_DIRECTION\", \"VEHICLE_OCCUPANTS\",
+    \"DRIVER_SEX\", \"DRIVER_LICENSE_STATUS\", \"DRIVER_LICENSE_JURISDICTION\", \"PRE_CRASH\",
+    \"POINT_OF_IMPACT\", \"VEHICLE_DAMAGE\", \"VEHICLE_DAMAGE_1\", \"VEHICLE_DAMAGE_2\",
+    \"VEHICLE_DAMAGE_3\", \"PUBLIC_PROPERTY_DAMAGE\", \"PUBLIC_PROPERTY_DAMAGE_TYPE\",
+    \"CONTRIBUTING_FACTOR_1\", \"CONTRIBUTING_FACTOR_2\",
+
+    -- helpers
+    substr(\"CRASH_DATE\",7,4) || '-' || substr(\"CRASH_DATE\",1,2) || '-' || substr(\"CRASH_DATE\",4,2) AS crash_date_iso,
+    CAST(\"VEHICLE_YEAR\" AS INTEGER)      AS veh_year_int,
+    CAST(\"VEHICLE_OCCUPANTS\" AS INTEGER) AS veh_occ_int
+  FROM vehicles
+)
+SELECT
+  v.*,
+  CAST(strftime('%Y', crash_date_iso) AS INTEGER)                  AS year_int,
+  CASE
+    WHEN date(crash_date_iso) <  date('2020-03-01')                THEN 'Pre-COVID'
+    WHEN date(crash_date_iso) >= date('2020-03-01')
+     AND date(crash_date_iso) <  date('2022-01-01')                THEN 'During COVID'
+    ELSE 'Post-COVID'
+  END                                                              AS covid_period
+FROM v;
+")
+
+dbExecute(dcon, "
+CREATE VIEW IF NOT EXISTS vehicle_agg AS
+SELECT
+  COLLISION_ID,
+  COUNT(*)                                                     AS VEHICLE_COUNT,
+  AVG(CASE
+        WHEN veh_occ_int BETWEEN 1 AND 60                      THEN veh_occ_int
+      END)                                                     AS AV_PASSENGERS,
+  AVG(CASE
+        WHEN veh_year_int BETWEEN 1920 AND 2025
+         AND veh_year_int <= year_int                          THEN veh_year_int
+      END)                                                     AS AV_VEH_YEAR
+FROM vehicles_enriched
+GROUP BY COLLISION_ID;
+")
+
+nyc <- dbGetQuery(dcon, "
+SELECT
+  ce.*,                            
+  va.VEHICLE_COUNT,
+  va.AV_PASSENGERS,
+  va.AV_VEH_YEAR,
+  CAST(ce.YEAR AS INTEGER) - va.AV_VEH_YEAR AS AV_VEH_AGE
+FROM crashes_enriched AS ce
+LEFT JOIN vehicle_agg   AS va
+  ON ce.COLLISION_ID = va.COLLISION_ID;
+")
+
+nyc$covid_period <- factor(nyc$covid_period, 
+                           levels = c("Pre-COVID","During COVID","Post-COVID"))
+
+nyc$BOROUGH <- factor(nyc$BOROUGH)
 @
-
-
-<<echo=FALSE, message=FALSE, warning=FALSE>>=
-# vehicle preprocessing
-nyv <- read.csv(file = "data/Motor_Vehicle_Collisions_-_Vehicles_20251002.csv")
-nyv$CRASH_DATE <- as.Date(nyv$CRASH_DATE, format = "%m/%d/%Y")
-nyv$YEAR <- as.numeric(format(nyv$CRASH_DATE, "%Y"))
-
-# covid period classification 
-nyv <- nyv %>%
-  mutate(
-    covid_period = case_when(
-      CRASH_DATE < as.Date("2020-03-01") ~ "Pre-COVID",
-      CRASH_DATE >= as.Date("2020-03-01") & CRASH_DATE < as.Date("2022-01-01") ~ "During COVID",
-      CRASH_DATE >= as.Date("2022-01-01") ~ "Post-COVID"
-    ),
-    covid_period = factor(covid_period, levels = c("Pre-COVID", "During COVID", "Post-COVID"))
-  )
-
-
-veh_per_col <- tapply(nyv$COLLISION_ID, nyv$COLLISION_ID, length)
-nyc$VEHICLE_COUNT <- veh_per_col[as.character(nyc$COLLISION_ID)]
-
-#rows where vehicle occupants is not NA, 
-#not 0 and not above 60 (capacity of New York Bus)
-ex_pas_move <- (!is.na(nyv$VEHICLE_OCCUPANTS))&(nyv$VEHICLE_OCCUPANTS %in% 1:60) 
-pass_per_veh <- tapply(nyv$VEHICLE_OCCUPANTS[ex_pas_move],
-                       nyv$COLLISION_ID[ex_pas_move],
-                       mean)
-nyc$AV_PASSENGERS <- pass_per_veh[as.character(nyc$COLLISION_ID)]
-
-#Select only vehicle year models from 1920-2025 to clean the data
-ex_veh_year <- (!is.na(nyv$VEHICLE_YEAR))&
-               (nyv$VEHICLE_YEAR %in% 1920:2025) &
-               (nyv$VEHICLE_YEAR <= nyv$YEAR)
-               
-av_car_made <- tapply(nyv$VEHICLE_YEAR[ex_veh_year],
-                      nyv$COLLISION_ID[ex_veh_year],
-                      mean)
-nyc$AV_VEH_YEAR <- av_car_made[as.character(nyc$COLLISION_ID)]
-
-#Add average vehicle age column.
-#Note that vehicles year sometimes given as year rounded up.
-nyc$AV_VEH_AGE <-  as.numeric(nyc$YEAR) - nyc$AV_VEH_YEAR
-@
-
-
-<<echo=FALSE, message=FALSE, warning=FALSE>>=
-#CHANGE DATE TO CURRENT FILE
-
-#This Deplyr method appears to be slower than the original method
-
-# read.csv(file = "data/Motor_Vehicle_Collisions_-_Vehicles_20250930.csv") %>%
-# mutate(CRASH_DATE=as.Date(CRASH_DATE, format = "%m/%d/%Y"),
-#        YEAR=as.numeric(format(CRASH_DATE, "%Y"))) -> nyv
-#        
-#        
-# nyv %>%
-# group_by(COLLISION_ID) %>%
-# summarise(
-#     VEHICLE_COUNT = n(),
-#     AV_PASSENGERS = mean(VEHICLE_OCCUPANTS[VEHICLE_OCCUPANTS %in% 1:60], 
-#                          na.rm = TRUE),
-#     AV_VEH_YEAR = mean(VEHICLE_YEAR[VEHICLE_YEAR %in% 1920:2025 &
-#                                     VEHICLE_YEAR <= YEAR], 
-#                        na.rm = TRUE),
-#     .groups = 'drop') %>%
-#   mutate(
-#     AV_PASSENGERS = ifelse(is.nan(AV_PASSENGERS), NA, AV_PASSENGERS),
-#     AV_VEH_YEAR = ifelse(is.nan(AV_VEH_YEAR), NA, AV_VEH_YEAR)
-#   ) -> nyv_agg
-# 
-# # Join the aggregated data to the existing nyc dataframe
-# nyc %>%
-# left_join(nyv_agg, by = "COLLISION_ID") %>%
-# mutate(AV_VEH_AGE = as.numeric(YEAR) - as.numeric(AV_VEH_YEAR)) -> nyc
-@
-
 
 <<echo=FALSE, message=FALSE, warning=FALSE>>=
 # vzv speed limit preprocessing
-sp_limits <- read.csv("data/VZV_Speed_Limits_20251002.csv")
-
 # Format the sp_limits latitude and longitude
 # Pre-process the speed limit data
-library(dplyr)
-lats <- strsplit(sp_limits$the_geom, " ") %>%
-  lapply(FUN=function(x) substr(x[3], 1, nchar(x[3])-1)) %>%
-  as.numeric()
-longs <- strsplit(sp_limits$the_geom, " ") %>%
-  lapply(FUN=function(x) substr(x[2], 3, nchar(x[3]))) %>%
-  as.numeric()
-loc<- paste("(", round(lats, digits = 4), ", ", round(longs, digits = 4), ")", sep = "")
-sp_lim_proc <- mutate(sp_limits, latitude = lats, longitude = longs, ROUND.LOCATION =loc) %>%
-  rename(SPEED.LIMIT = postvz_sl)
+dbExecute(dcon, "
+  DROP VIEW IF EXISTS v_speed_limits_parsed;
+")
+dbExecute(dcon, "
+  DROP VIEW IF EXISTS v_sp_lim_proc;
+")
+dbExecute(dcon, "
+  DROP VIEW IF EXISTS v_sp_limits_filt;
+")
 
-sp_limits_filt <- sp_lim_proc %>%
-  group_by(ROUND.LOCATION) %>%
-  slice_max(order_by = SPEED.LIMIT, n=1, with_ties = FALSE) %>%
-  ungroup()
-  
+dbExecute(dcon, "
+CREATE TEMP VIEW v_speed_limits_parsed AS
+WITH base AS (
+  SELECT
+    rowid AS rid,
+    the_geom,
+    street,
+    postvz_sl,
+    postvz_sg,
+    Shape_Leng,
+    CASE
+      WHEN the_geom LIKE 'POINT (%'
+        THEN TRIM(REPLACE(REPLACE(the_geom, 'POINT (', ''), ')', ''))
+      WHEN the_geom LIKE 'LINESTRING (%'
+        THEN TRIM(REPLACE(REPLACE(the_geom, 'LINESTRING (', ''), ')', ''))
+      WHEN the_geom LIKE 'MULTILINESTRING ((%'
+        THEN TRIM(REPLACE(REPLACE(the_geom, 'MULTILINESTRING ((', ''), '))', ''))
+      ELSE NULL
+    END AS raw_coords
+  FROM speed_limits
+),
+first_pair AS (
+  SELECT
+    rid, the_geom, street, postvz_sl, postvz_sg, Shape_Leng,
+    CASE
+      WHEN the_geom LIKE 'POINT (%'
+        THEN raw_coords
+      ELSE
+        SUBSTR(raw_coords, 1,
+          CASE WHEN INSTR(raw_coords, ',') > 0
+               THEN INSTR(raw_coords, ',') - 1
+               ELSE LENGTH(raw_coords)
+          END)
+    END AS inner_xy
+  FROM base
+),
+split_xy AS (
+  SELECT
+    rid, the_geom, street, postvz_sl, postvz_sg, Shape_Leng, inner_xy,
+    CAST(SUBSTR(inner_xy, 1, INSTR(inner_xy, ' ') - 1) AS REAL) AS longitude,
+    CAST(SUBSTR(inner_xy, INSTR(inner_xy, ' ') + 1) AS REAL)   AS latitude
+  FROM first_pair
+)
+SELECT
+  rid, the_geom, street, postvz_sl, postvz_sg, Shape_Leng, latitude, longitude
+FROM split_xy;
+")
 
-# Create dataframe of the speed limits combined with the rest of the data
+dbExecute(dcon, "
+CREATE TEMP VIEW v_sp_lim_proc AS
+SELECT
+  rid,
+  the_geom,
+  street,
+  CAST(postvz_sl AS REAL) AS SPEED_LIMIT,
+  postvz_sg,
+  Shape_Leng,
+  latitude,
+  longitude,
+  '(' || printf('%.4f', latitude) || ', ' || printf('%.4f', longitude) || ')' AS ROUND_LOCATION
+FROM v_speed_limits_parsed;
+")
+
+
+dbExecute(dcon, "
+CREATE TEMP VIEW v_sp_limits_filt AS
+WITH ranked AS (
+  SELECT
+    *,
+    ROW_NUMBER() OVER (
+      PARTITION BY ROUND_LOCATION
+      ORDER BY SPEED_LIMIT DESC, rid ASC
+    ) AS rn
+  FROM v_sp_lim_proc
+)
+SELECT *
+FROM ranked
+WHERE rn = 1;
+")
+
+sp_limits_filt <- dbGetQuery(dcon, "SELECT the_geom, street, SPEED_LIMIT AS \"SPEED.LIMIT\", postvz_sg, Shape_Leng, latitude, longitude, ROUND_LOCATION AS \"ROUND.LOCATION\" FROM v_sp_limits_filt;")
+
 combined <- # add speed limit data to nyc dataset
   mutate(nyc, ROUND.LOCATION = paste("(", round(LATITUDE, digits = 4), ", ", 
                                      round(LONGITUDE, digits = 4), ")", sep = "")) %>%
@@ -232,81 +363,124 @@ combined <- # add speed limit data to nyc dataset
 
 
 <<echo=FALSE, message=FALSE, warning=FALSE>>=
-# twitter preprocessing 1
+# twitter preprocessing 2
+# transit vs vehicle tweets
+dbExecute(dcon, "DROP VIEW IF EXISTS v_twitter_flags;")
+dbExecute(dcon, "DROP VIEW IF EXISTS v_twitter_vehicle;")
+dbExecute(dcon, "DROP VIEW IF EXISTS v_twitter_nyc;")
 
-twitter_train <- read.csv("data/1_TrainingSet_3Class.csv", header=FALSE)
-twitter_test <- read.csv("data/1_TestSet_3Class.csv", header=FALSE)
+dbExecute(dcon, "
+CREATE TEMP VIEW v_twitter_nyc AS
+WITH base AS (
+  SELECT
+    class,
+    tweet_id,
+    tweet_text,
+    LOWER(tweet_text) AS txt
+  FROM tweets
+  WHERE class IN ('1','2')
+),
+tagged AS (
+  SELECT
+    class,
+    tweet_id,
+    tweet_text,
+    CASE
+      WHEN txt LIKE '%manhattan%' THEN 'Manhattan'
+      WHEN txt LIKE '%brooklyn%' THEN 'Brooklyn'
+      WHEN txt LIKE '%queens%' THEN 'Queens'
+      WHEN txt LIKE '%bronx%' THEN 'Bronx'
+      WHEN txt LIKE '%staten island%' THEN 'Staten Island'
+      WHEN txt LIKE '%nyc%'
+        OR txt LIKE '%new york city%'
+        OR txt LIKE '%new york%' THEN 'NYC (unspecified)'
+      ELSE NULL
+    END AS location
+  FROM base
+)
+SELECT * FROM tagged WHERE location IS NOT NULL;
+")
 
-# add headers
-names(twitter_train) <- c("class", "tweet_id", "tweet_text")
-names(twitter_test) <- c("class", "tweet_id", "tweet_text")
+dbExecute(dcon, "
+CREATE TEMP VIEW v_twitter_flags AS
+SELECT
+  class,
+  tweet_id,
+  tweet_text,
+  location,
 
-# Combine 
-bind_rows(twitter_train, twitter_test) %>%
-mutate(clean_tweet_id=gsub("^s", "", tweet_id)) -> twitter
+  CASE
+    WHEN LOWER(tweet_text) LIKE '%subway%'
+      OR LOWER(tweet_text) LIKE '%train%'
+      OR LOWER(tweet_text) LIKE '%#%line%'
+      OR LOWER(tweet_text) LIKE '%station%'
+      OR LOWER(tweet_text) LIKE '%mta%'
+      OR LOWER(tweet_text) LIKE '%bus%'
+    THEN TRUE ELSE FALSE
+  END AS is_transit,
 
-twitter$tweet_id <- gsub("^s", "", twitter$tweet_id)
+  CASE
+    WHEN LOWER(tweet_text) LIKE '%car%'
+      OR LOWER(tweet_text) LIKE '%vehicle%'
+      OR LOWER(tweet_text) LIKE '%crash%'
+      OR LOWER(tweet_text) LIKE '%accident%'
+      OR LOWER(tweet_text) LIKE '%collision%'
+      OR LOWER(tweet_text) LIKE '%highway%'
+      OR LOWER(tweet_text) LIKE '%road%'
+      OR LOWER(tweet_text) LIKE '%traffic%'
+    THEN TRUE ELSE FALSE
+  END AS is_vehicle
+FROM v_twitter_nyc;
+")
 
-borough_keywords <- c("Manhattan", "Brooklyn", "Queens", "Bronx", "Staten Island")
-city_keywords <- c("NYC", "New York City", "New York")
+dbExecute(dcon, "
+CREATE TEMP VIEW v_twitter_vehicle AS
+SELECT
+  *,
+  CASE
+    WHEN (LOWER(tweet_text) LIKE '%accident%' OR LOWER(tweet_text) LIKE '%crash%'
+          OR LOWER(tweet_text) LIKE '%collision%' OR LOWER(tweet_text) LIKE '%wreck%')
+         AND LOWER(tweet_text) NOT LIKE '%subway%'
+         AND LOWER(tweet_text) NOT LIKE '%train%'
+         AND LOWER(tweet_text) NOT LIKE '%#%line%'
+         AND LOWER(tweet_text) NOT LIKE '%station%'
+    THEN TRUE ELSE FALSE
+  END AS is_real_crash,
 
-extract_location <- function(text) {
-  text_lower <- tolower(text)
-  
-  # Check boroughs 
-  for(borough in borough_keywords) {
-    # Use word boundary to avoid matching "Bronx" in "Bronxville" etc.
-    if(str_detect(text_lower, paste0("\\b", tolower(borough), "\\b"))) {
-      return(borough)
-    }
-  }
-  
-  # Check for general NYC 
-  for(city in city_keywords) {
-    if(str_detect(text_lower, tolower(city))) {
-      return("NYC (unspecified)")
-    }
-  }
-  
-  return(NA)  # No NYC mention found
-}
+  CASE
+    WHEN (LOWER(tweet_text) LIKE '%highway%' OR LOWER(tweet_text) LIKE '%parkway%'
+          OR LOWER(tweet_text) LIKE '%expressway%' OR LOWER(tweet_text) LIKE '%west side%'
+          OR LOWER(tweet_text) LIKE '%fdr%')
+         AND LOWER(tweet_text) NOT LIKE '%station%'
+    THEN TRUE ELSE FALSE
+  END AS is_road_incident
+FROM v_twitter_flags
+WHERE
+  ((LOWER(tweet_text) LIKE '%accident%' OR LOWER(tweet_text) LIKE '%crash%'
+     OR LOWER(tweet_text) LIKE '%collision%' OR LOWER(tweet_text) LIKE '%wreck%')
+     AND LOWER(tweet_text) NOT LIKE '%subway%'
+     AND LOWER(tweet_text) NOT LIKE '%train%'
+     AND LOWER(tweet_text) NOT LIKE '%#%line%'
+     AND LOWER(tweet_text) NOT LIKE '%station%')
+  OR
+  ((LOWER(tweet_text) LIKE '%highway%' OR LOWER(tweet_text) LIKE '%parkway%'
+     OR LOWER(tweet_text) LIKE '%expressway%' OR LOWER(tweet_text) LIKE '%west side%'
+     OR LOWER(tweet_text) LIKE '%fdr%')
+     AND LOWER(tweet_text) NOT LIKE '%station%');
+")
 
-twitter_nyc <- twitter %>%
-  filter(class %in% c(1, 2)) %>%  # Only traffic-related
-  mutate(location = sapply(tweet_text, extract_location)) %>%
-  filter(!is.na(location))  # Keep only tweets mentioning NYC
 
-# nrow(twitter_nyc) # 798
+twitter_vehicle <- dbGetQuery(dcon, "SELECT * FROM v_twitter_vehicle") %>%
+  mutate(
+    is_transit = as.logical(is_transit),
+    is_vehicle = as.logical(is_vehicle),
+    is_real_crash = as.logical(is_real_crash),
+    is_road_incident = as.logical(is_road_incident)
+  )
 @
 
 <<echo=FALSE, message=FALSE, warning=FALSE>>=
-# twitter preprocessing 2
-# transit vs vehicle tweets
-twitter_nyc <- twitter_nyc %>%
-  mutate(
-    is_transit = str_detect(tolower(tweet_text), 
-                            "subway|train|#.*line|station|mta|bus"),
-    is_vehicle = str_detect(tolower(tweet_text), 
-                            "car|vehicle|crash|accident|collision|highway|road|traffic")
-  )
-
-table(twitter_nyc$is_transit)
-table(twitter_nyc$is_vehicle)
-
-# extracting vehicle specific crash tweets
-twitter_vehicle <- twitter_nyc %>%
-  mutate(
-    is_real_crash = str_detect(tolower(tweet_text), 
-                               "accident|crash|collision|wreck") &
-      !str_detect(tolower(tweet_text), 
-                  "subway|train|#.*line|station"),
-    is_road_incident = str_detect(tolower(tweet_text),
-                                  "highway|parkway|expressway|west side|fdr") &
-      !str_detect(tolower(tweet_text), "station")
-  ) %>%
-  filter(is_real_crash | is_road_incident)
-
-# nrow(twitter_vehicle) # 66
+dbDisconnect(dcon)
 @
 
 \section{Visualizations}
