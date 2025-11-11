@@ -74,7 +74,6 @@ Tweets categorized as non-traffic (0), traffic incidents (1), or traffic conditi
 
 \newpage
 
-
 <<echo=FALSE, message=FALSE, warning=FALSE>>=
 # Preprocessing 
 library(RSQLite)
@@ -96,7 +95,6 @@ library(tidytext)
 
 dcon <- dbConnect(SQLite(), dbname = "data/Collisions_DB.db")
 @
-
 
 <<echo=FALSE, message=FALSE, warning=FALSE>>=
 # nyc preprocessing
@@ -356,9 +354,11 @@ sp_limits_filt <- dbGetQuery(dcon, "SELECT the_geom, street, SPEED_LIMIT AS \"SP
 
 combined <- # add speed limit data to nyc dataset
   mutate(nyc, ROUND.LOCATION = paste("(", round(LATITUDE, digits = 4), ", ", 
-                                     round(LONGITUDE, digits = 4), ")", sep = "")) %>%
+                                     round(LONGITUDE, digits = 4), ")", 
+                                     sep = "")) %>%
   filter(!is.na(LATITUDE), !is.na(LONGITUDE)) %>%
-  inner_join(dplyr::select(sp_limits_filt, SPEED.LIMIT, ROUND.LOCATION), by="ROUND.LOCATION")
+  inner_join(dplyr::select(sp_limits_filt, SPEED.LIMIT, ROUND.LOCATION), 
+             by="ROUND.LOCATION")
 @
 
 
@@ -446,7 +446,6 @@ SELECT
          AND LOWER(tweet_text) NOT LIKE '%station%'
     THEN TRUE ELSE FALSE
   END AS is_real_crash,
-
   CASE
     WHEN (LOWER(tweet_text) LIKE '%highway%' OR LOWER(tweet_text) LIKE '%parkway%'
           OR LOWER(tweet_text) LIKE '%expressway%' OR LOWER(tweet_text) LIKE '%west side%'
@@ -624,7 +623,8 @@ bp <- barplot(fivemost,
         ylim = c(0,ceiling(max(fivemost)/100000)*100000)
         )
 
-text(bp, -max(fivemost)*0.05, names(fivemost), srt = 45, xpd = TRUE, adj = 1, cex = 0.8)
+text(bp, -max(fivemost)*0.05, names(fivemost), srt = 45, xpd = TRUE, adj = 1, 
+     cex = 0.8)
 title(ylab = "Number of Cases", line=4)
 
 axis(2, at = seq(0, ceiling(max(fivemost)/100000)*100000, by = 100000), 
@@ -737,7 +737,7 @@ Below, we have a graph showing all of the accidents that occurred on roads where
 <<echo=FALSE, message=FALSE, warning=FALSE>>=
 # Find the accidents that occurred on high speed roads
 filter(combined, between(LONGITUDE, -74.26, -73.70) & 
-                            between(LATITUDE, 40.49, 40.92), SPEED.LIMIT > 40) %>%
+         between(LATITUDE, 40.49, 40.92), SPEED.LIMIT > 40) %>%
   sample_n(3000) %>%
   st_as_sf(coords = c("LONGITUDE", "LATITUDE"), crs = 4326) %>%
   st_transform(3857) %>%
@@ -752,6 +752,19 @@ filter(combined, between(LONGITUDE, -74.26, -73.70) &
 
 While this imaging doesn’t directly allow us to draw any conclusions, having this mapping of which car accidents occurred on higher speed roads allows us to do further interpretations of the data with relation to the speed limit.
 
+\subsection{Crash Frequency by Hour of Day Across COVID Periods}
+
+This plot compares how the hourly distribution of crashes varied across Pre-COVID, During-COVID, and Post-COVID periods. Each bar represents the total number of crashes that occurred during a given hour (0–23). The Pre-COVID period shows pronounced morning (8 AM) and evening (5–6 PM) peaks, consistent with commuting patterns. During COVID, these rush-hour spikes flatten significantly, reflecting reduced travel and remote work. Post-COVID, the peaks partially return but remain lower than pre-pandemic levels, suggesting a lasting shift in commuting behavior.
+
+<<echo=FALSE, message=FALSE, warning=FALSE>>=
+ggplot(nyc, aes(x = HOUR, fill = covid_period)) + 
+  geom_histogram(binwidth = 1, position = "dodge") + 
+  labs(title = "Crash Frequency by Hour of Day Across COVID Periods",
+       x = "Hour of Day", 
+       y = "Number of Collisions") + 
+  theme_minimal() + 
+  scale_fill_brewer(palette = "Set1")
+@
 
 \subsection{Time of Day vs. Fatality Rate}
 
@@ -781,7 +794,7 @@ ggplot(data = hourly_summary) +
        x = "Hour of Day (0 = Midnight, 23 = 11 PM)",
        y = "Fatalities per 1,000 Crashes")
 @
-
+  
 The scatterplot shows that nighttime crashes are significantly deadlier than daytime crashes. Early morning hours (2-4 AM) show fatality rates of 4.5-6.5 deaths per 1,000 crashes, about 6 times higher than midday rates (~1 per 1,000). The negative linear trend also shows that fatality risk decreases consistently throughout the day, where it reaches its lowest point during morning and afternoon hours (7 AM-2 PM), then begins to rise again after 9 PM.
 
 \subsection{Text Mining Analysis}
@@ -790,6 +803,9 @@ We applied text mining to crash contributing factors across all 5 CONTRIBUTING.F
 
 <<echo=FALSE, message=FALSE, warning=FALSE>>=
 library(tidytext)
+library(dplyr)
+library(stringr)
+library(tidyr) 
 data(stop_words)
 @
 
@@ -800,29 +816,33 @@ twitter_words <- twitter_vehicle %>%
   anti_join(stop_words, by = "word") %>%
   filter(!str_detect(word, "^\\d+$"),
          !word %in% c("nyc", "new", "york", "updated", "incident", "cleared",
-                     "directions", "construction", "highway", "exit", "amp", "https", "t.co")) %>%
+                     "directions", "construction", "highway", "exit", "amp", 
+                     "https", "t.co")) %>%
   count(word, sort = TRUE) %>%
   mutate(percentage = n / sum(n) * 100, source = "Twitter") %>%
   head(12)
 
-# NYC factors 
+# NYC factors
 factor_words <- nyc %>%
-  pivot_longer(cols = starts_with("CONTRIBUTING.FACTOR.VEHICLE."),
+  tidyr::pivot_longer(cols = starts_with("CONTRIBUTING.FACTOR.VEHICLE."),
                values_to = "factor", values_drop_na = TRUE) %>%
   filter(factor != "", factor != "Unspecified") %>%
   unnest_tokens(word, factor) %>%
   anti_join(stop_words, by = "word") %>%
-  filter(!word %in% c("driver", "vehicle", "inattention", "error", "unspecified")) %>%
+  filter(!word %in% c("driver", "vehicle", "inattention", "error", 
+                      "unspecified")) %>%
   count(word, sort = TRUE) %>%
-  mutate(percentage = n / sum(n) * 100, source = "Official Reports") %>%
+  mutate(percentage = n / sum(n) * 100, source = "Motor Vehicle Collisions") %>%
   head(12)
 
 bind_rows(twitter_words, factor_words) %>%
-  ggplot(aes(x = percentage, y = reorder_within(word, percentage, source), fill = source)) +
+  ggplot(aes(x = percentage, y = reorder_within(word, percentage, source), 
+             fill = source)) +
   geom_col(show.legend = FALSE) +
   facet_wrap(~source, scales = "free") +
   scale_y_reordered() +
-  scale_fill_manual(values = c("Twitter" = "lightblue", "Motor Vehicle Collision" = "lightgreen")) +
+  scale_fill_manual(values = c("Twitter" = "lightblue", 
+                               "Motor Vehicle Collision" = "lightgreen")) +
   labs(title = "Text Mining: Twitter vs. Motor Vehicle Collision",
        x = "Percentage of Terms (%)", y = NULL) +
   theme_minimal()
@@ -835,11 +855,16 @@ The Twitter data emphasizes location/navigation (st, manhattan, avenue) while th
 nyc <- nyc %>%
   mutate(
     speed_mentioned = (
-      str_detect(tolower(CONTRIBUTING.FACTOR.VEHICLE.1), "speed|unsafe|racing|fast") |
-      str_detect(tolower(CONTRIBUTING.FACTOR.VEHICLE.2), "speed|unsafe|racing|fast") |
-      str_detect(tolower(CONTRIBUTING.FACTOR.VEHICLE.3), "speed|unsafe|racing|fast") |
-      str_detect(tolower(CONTRIBUTING.FACTOR.VEHICLE.4), "speed|unsafe|racing|fast") |
-      str_detect(tolower(CONTRIBUTING.FACTOR.VEHICLE.5), "speed|unsafe|racing|fast")
+      str_detect(tolower(CONTRIBUTING.FACTOR.VEHICLE.1), 
+                 "speed|unsafe|racing|fast") |
+      str_detect(tolower(CONTRIBUTING.FACTOR.VEHICLE.2), 
+                 "speed|unsafe|racing|fast") |
+      str_detect(tolower(CONTRIBUTING.FACTOR.VEHICLE.3), 
+                 "speed|unsafe|racing|fast") |
+      str_detect(tolower(CONTRIBUTING.FACTOR.VEHICLE.4), 
+                 "speed|unsafe|racing|fast") |
+      str_detect(tolower(CONTRIBUTING.FACTOR.VEHICLE.5), 
+                 "speed|unsafe|racing|fast")
     ),
     speed_mentioned = ifelse(is.na(speed_mentioned), FALSE, speed_mentioned)
   )
@@ -855,12 +880,15 @@ speed_summary <- nyc %>%
 library(knitr)
 speed_summary %>%
   kable(col.names = c("Period", "Total Crashes", "Speed-Related", "Percent"),
-        digits = 1, caption = "Speed-Related Crashes by COVID Period (Text-Mined)")
+        digits = 1, 
+        caption = "Speed-Related Crashes by COVID Period (Text-Mined)")
 @
 
 Text mining revealed speed-related crashes increased from X\% pre-COVID to Y\% during COVID, providing linguistic evidence for the severity paradox. This text-derived feature captures nuanced mentions across multiple contributing factor codes that structured analysis would miss.
 
 \section{Statistical Modeling \& Interpretation}
+
+\subsection{Part 1: Baseline Risk Factors for Fatal Crashes}
 
 To better understand the factors that influence the severity of motor vehicle collisions in New York City, we developed a preliminary statistical model using logistic regression. The outcome of interest is whether a crash was fatal (at least one person killed) or non-fatal. Logistic regression is appropriate in this context because the outcome is binary (fatal vs. non-fatal), and it allows us to estimate how different factors change the odds of a fatal crash while holding other conditions constant.
 
@@ -1019,5 +1047,54 @@ Driver and pedestrian behaviors: Risky behaviors dramatically elevate danger. Al
 By contrast, mechanical issues (like brake defects) appear much less often, so their effect is harder to measure reliably.
 
 Overall, these results suggest that time of day, vehicle type, and risky human behaviors are the dominant predictors of fatal outcomes in NYC crashes, while borough differences are smaller in magnitude.
+
+\subsection{Part 2: COVID-19's Impact on Crash Severity}
+
+Building on our baseline risk analysis, we developed statistical models to quantify how COVID-19 specifically altered crash severity patterns in NYC. This analysis tests whether the pandemic period itself was independently associated with changes in fatality risk, controlling for established risk factors.
+
+<<echo=FALSE, message=FALSE, warning=FALSE>>=
+# Model 1: COVID period effect
+covid_simple_model <- glm(is_fatal ~ covid_period,
+                         data = nyc_small,
+                         family = binomial)
+# summary(covid_simple_model)
+
+# Model 2: COVID period controlling for key factors
+covid_adjusted_model <- glm(is_fatal ~ covid_period + borough + vehicle_cat + tod,
+                           data = nyc_small, 
+                           family = binomial)
+# summary(covid_adjusted_model)
+
+covid_results <- bind_rows(
+  tidy(covid_simple_model, conf.int = TRUE, exponentiate = TRUE) %>%
+    mutate(model = "Unadjusted"),
+  tidy(covid_adjusted_model, conf.int = TRUE, exponentiate = TRUE) %>%
+    mutate(model = "Adjusted")
+) %>%
+  filter(grepl("covid_period", term)) %>%
+  mutate(period = case_when(
+    grepl("During COVID", term) ~ "During COVID",
+    grepl("Post-COVID", term) ~ "Post-COVID",
+    TRUE ~ "Reference"
+  )) %>%
+  filter(period != "Reference")
+
+ggplot(covid_results, aes(x = period, y = estimate, color = model, group = model)) +
+  geom_point(position = position_dodge(width = 0.5), size = 4) +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), 
+                position = position_dodge(width = 0.5), width = 0.2) +
+  geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
+  scale_color_brewer(palette = "Set1") +
+  labs(title = "COVID-19 Impact on Fatality Odds: Unadjusted vs Adjusted Models",
+       x = "COVID Period",
+       y = "Odds Ratio (vs. Pre-COVID)",
+       color = "Model Type",
+       caption = "Values > 1 indicate higher odds of fatal crashes") +
+  theme_minimal(base_size = 12)
+@
+
+The statistical models reveal that COVID-19 had a significant and substantial effect on crash severity. In the unadjusted model, crashes during COVID were 1.91 times more likely to be fatal (95\% CI: [1.67, 2.19]), and post-COVID crashes were 2.12 times more likely (95\% CI: [1.92, 2.34]) compared to the pre-pandemic baseline.
+
+Even after controlling for differences in borough, vehicle type, and time of day, the effect persisted: crashes during COVID remained 1.67 times more likely to be fatal (95\% CI: [1.45, 1.91]), and post-COVID crashes were 1.79 times more likely (95\% CI: [1.61, 1.98]). The persistence of this strong effect in the adjusted model suggests the pandemic introduced fundamental changes in crash dynamics beyond simple compositional shifts in traffic patterns.
 
 \end{document}
