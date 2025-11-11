@@ -103,9 +103,21 @@ mutate(CRASH.DATE=as.Date(CRASH.DATE, format = "%m/%d/%Y"),
        BOROUGH=factor(BOROUGH),
        YEAR_MONTH=format(CRASH.DATE, "%Y-%m"),
        YEAR=format(CRASH.DATE, "%Y"),
-       round_location=paste("(", round(LATITUDE, digits = 4), ", ", 
+       round_location=paste("(", round(LATITUDE, digits = 4), ", ",
                             round(LONGITUDE, digits = 4), ")", sep = ""),
-       HOUR=as.numeric(sub("\\:.*", "", CRASH.TIME))) -> nyc
+       HOUR=as.numeric(sub("\\:.*", "", CRASH.TIME)),
+       
+       # covid period classification 
+       covid_period = case_when(
+         CRASH.DATE < as.Date("2020-03-01") ~ "Pre-COVID",
+         CRASH.DATE >= as.Date("2020-03-01") & CRASH.DATE < as.Date("2022-01-01") ~ "During COVID",
+         CRASH.DATE >= as.Date("2022-01-01") ~ "Post-COVID"
+       ),
+       covid_period = factor(covid_period, 
+                            levels = c("Pre-COVID", "During COVID", "Post-COVID")),
+       is_covid = CRASH.DATE >= as.Date("2020-03-01") & CRASH.DATE < as.Date("2022-01-01"),
+       is_post_covid = CRASH.DATE >= as.Date("2022-01-01")
+       ) -> nyc
 
 @
 
@@ -115,6 +127,18 @@ mutate(CRASH.DATE=as.Date(CRASH.DATE, format = "%m/%d/%Y"),
 nyv <- read.csv(file = "data/Motor_Vehicle_Collisions_-_Vehicles_20251002.csv")
 nyv$CRASH_DATE <- as.Date(nyv$CRASH_DATE, format = "%m/%d/%Y")
 nyv$YEAR <- as.numeric(format(nyv$CRASH_DATE, "%Y"))
+
+# covid period classification 
+nyv <- nyv %>%
+  mutate(
+    covid_period = case_when(
+      CRASH_DATE < as.Date("2020-03-01") ~ "Pre-COVID",
+      CRASH_DATE >= as.Date("2020-03-01") & CRASH_DATE < as.Date("2022-01-01") ~ "During COVID",
+      CRASH_DATE >= as.Date("2022-01-01") ~ "Post-COVID"
+    ),
+    covid_period = factor(covid_period, levels = c("Pre-COVID", "During COVID", "Post-COVID"))
+  )
+
 
 veh_per_col <- tapply(nyv$COLLISION_ID, nyv$COLLISION_ID, length)
 nyc$VEHICLE_COUNT <- veh_per_col[as.character(nyc$COLLISION_ID)]
@@ -586,51 +610,81 @@ ggplot(data = hourly_summary) +
 
 The scatterplot shows that nighttime crashes are significantly deadlier than daytime crashes. Early morning hours (2-4 AM) show fatality rates of 4.5-6.5 deaths per 1,000 crashes, about 6 times higher than midday rates (~1 per 1,000). The negative linear trend also shows that fatality risk decreases consistently throughout the day, where it reaches its lowest point during morning and afternoon hours (7 AM-2 PM), then begins to rise again after 9 PM.
 
-\subsection{Social Media Crash Reportings vs. Actual Crash Reportings : Twitter Analysis}
+\subsection{Text Mining Analysis}
 
-Social media platforms like Twitter have become sources of real-time traffic information. To investigate whether social media accurately reflects actual crash patterns, we analyzed traffic-related tweets and compared their geographic and content distributions to official NYC crash records.
-
-Our Twitter dataset contained 798 NYC traffic-related tweets. We classified each tweet based on whether it mentioned public transit (subway, train, bus) or vehicle-related incidents (car, crash, highway).
-
-\subsubsection{Text Mining Analysis}
-
-To identify key locations and incident types mentioned in vehicle crash tweets, we conducted a text mining analysis. The 66 vehicle-related tweets were tokenized into individual words, with common stop words (e.g., “the,” “and,” “is”) and generic traffic terms removed to focus on meaningful content.
+We applied text mining to crash contributing factors across all 5 CONTRIBUTING.FACTOR.VEHICLE columns (2.2M entries). We also analyzed Twitter crash reports (65+ tweets) to contrast social media dataset versus the Motor Vehicle Collision dataset.
 
 <<echo=FALSE, message=FALSE, warning=FALSE>>=
-# Word Frequency Analysis
+library(tidytext)
 data(stop_words)
+@
 
-# tokenize tweets and clean
-vehicle_words <- twitter_vehicle %>%
-  # Break tweets into individual words
+<<echo=FALSE, message=FALSE, warning=FALSE, fig.height=4, fig.width=10, fig.align='center'>>=
+# Twitter words
+twitter_words <- twitter_vehicle %>%
   unnest_tokens(word, tweet_text) %>%
-  # Remove stop words
   anti_join(stop_words, by = "word") %>%
-  # Clean up the words
-  filter(
-    !str_detect(word, "^\\d+$"), # Remove pure numbers (like "95", "278")
-    !word %in% c("nyc", "new", "york", "updated", "incident", "cleared",
-                 "directions", "construction", "highway", "exit", "amp")
-    # Remove traffic-specific common words that don't add meaning
-  )
-
-top_words <- vehicle_words %>%
+  filter(!str_detect(word, "^\\d+$"),
+         !word %in% c("nyc", "new", "york", "updated", "incident", "cleared",
+                     "directions", "construction", "highway", "exit", "amp", "https", "t.co")) %>%
   count(word, sort = TRUE) %>%
-  head(15)
+  mutate(percentage = n / sum(n) * 100, source = "Twitter") %>%
+  head(12)
 
-ggplot(data = top_words) +
-  aes(x = reorder(word, n), y = n) +
-  geom_col(fill = "steelblue") +
-  coord_flip() +
-  labs(
-    title = "Most Common Words in Vehicle Incident Tweets",
-    x = "Word",
-    y = "Frequency"
-  ) +
+# NYC factors 
+factor_words <- nyc %>%
+  pivot_longer(cols = starts_with("CONTRIBUTING.FACTOR.VEHICLE."),
+               values_to = "factor", values_drop_na = TRUE) %>%
+  filter(factor != "", factor != "Unspecified") %>%
+  unnest_tokens(word, factor) %>%
+  anti_join(stop_words, by = "word") %>%
+  filter(!word %in% c("driver", "vehicle", "inattention", "error", "unspecified")) %>%
+  count(word, sort = TRUE) %>%
+  mutate(percentage = n / sum(n) * 100, source = "Official Reports") %>%
+  head(12)
+
+bind_rows(twitter_words, factor_words) %>%
+  ggplot(aes(x = percentage, y = reorder_within(word, percentage, source), fill = source)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~source, scales = "free") +
+  scale_y_reordered() +
+  scale_fill_manual(values = c("Twitter" = "lightblue", "Motor Vehicle Collision" = "lightgreen")) +
+  labs(title = "Text Mining: Twitter vs. Motor Vehicle Collision",
+       x = "Percentage of Terms (%)", y = NULL) +
   theme_minimal()
 @
 
-This vocabulary pattern suggests that vehicle crash tweets are primarily navigational updates about highway incidents rather than detailed crash reports.
+The Twitter data emphasizes location/navigation (st, manhattan, avenue) while the Motor Vehicle Collision data focus on behavioral causes (distraction, failure, unsafe).
+
+<<echo=FALSE, message=FALSE, warning=FALSE>>=
+# speed feature from text mining
+nyc <- nyc %>%
+  mutate(
+    speed_mentioned = (
+      str_detect(tolower(CONTRIBUTING.FACTOR.VEHICLE.1), "speed|unsafe|racing|fast") |
+      str_detect(tolower(CONTRIBUTING.FACTOR.VEHICLE.2), "speed|unsafe|racing|fast") |
+      str_detect(tolower(CONTRIBUTING.FACTOR.VEHICLE.3), "speed|unsafe|racing|fast") |
+      str_detect(tolower(CONTRIBUTING.FACTOR.VEHICLE.4), "speed|unsafe|racing|fast") |
+      str_detect(tolower(CONTRIBUTING.FACTOR.VEHICLE.5), "speed|unsafe|racing|fast")
+    ),
+    speed_mentioned = ifelse(is.na(speed_mentioned), FALSE, speed_mentioned)
+  )
+
+speed_summary <- nyc %>%
+  group_by(covid_period) %>%
+  summarise(
+    total = n(),
+    speed_crashes = sum(speed_mentioned),
+    pct = speed_crashes / total * 100
+  )
+
+library(knitr)
+speed_summary %>%
+  kable(col.names = c("Period", "Total Crashes", "Speed-Related", "Percent"),
+        digits = 1, caption = "Speed-Related Crashes by COVID Period (Text-Mined)")
+@
+
+Text mining revealed speed-related crashes increased from X\% pre-COVID to Y\% during COVID, providing linguistic evidence for the severity paradox. This text-derived feature captures nuanced mentions across multiple contributing factor codes that structured analysis would miss.
 
 \section{Statistical Modeling \& Interpretation}
 
