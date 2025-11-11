@@ -77,7 +77,6 @@ Tweets categorized as non-traffic (0), traffic incidents (1), or traffic conditi
 
 <<echo=FALSE, message=FALSE, warning=FALSE>>=
 # Preprocessing 
-
 library(rcompanion)
 library(ggplot2)
 library(dplyr)
@@ -98,7 +97,7 @@ library(tidytext)
 
 <<echo=FALSE, message=FALSE, warning=FALSE>>=
 # nyc preprocessing
-read.csv(file = "data/Motor_Vehicle_Collisions_-_Crashes.csv") %>%
+read.csv(file = "~/data/Motor_Vehicle_Collisions_-_Crashes_20251110.csv") %>%
 mutate(CRASH.DATE=as.Date(CRASH.DATE, format = "%m/%d/%Y"),
        BOROUGH=factor(BOROUGH),
        YEAR_MONTH=format(CRASH.DATE, "%Y-%m"),
@@ -110,12 +109,15 @@ mutate(CRASH.DATE=as.Date(CRASH.DATE, format = "%m/%d/%Y"),
        # covid period classification 
        covid_period = case_when(
          CRASH.DATE < as.Date("2020-03-01") ~ "Pre-COVID",
-         CRASH.DATE >= as.Date("2020-03-01") & CRASH.DATE < as.Date("2022-01-01") ~ "During COVID",
+         CRASH.DATE >= as.Date("2020-03-01") 
+         & CRASH.DATE < as.Date("2022-01-01") ~ "During COVID",
          CRASH.DATE >= as.Date("2022-01-01") ~ "Post-COVID"
        ),
        covid_period = factor(covid_period, 
-                            levels = c("Pre-COVID", "During COVID", "Post-COVID")),
-       is_covid = CRASH.DATE >= as.Date("2020-03-01") & CRASH.DATE < as.Date("2022-01-01"),
+                            levels = 
+                              c("Pre-COVID", "During COVID", "Post-COVID")),
+       is_covid = CRASH.DATE >= as.Date("2020-03-01") 
+       & CRASH.DATE < as.Date("2022-01-01"),
        is_post_covid = CRASH.DATE >= as.Date("2022-01-01")
        ) -> nyc
 
@@ -124,7 +126,7 @@ mutate(CRASH.DATE=as.Date(CRASH.DATE, format = "%m/%d/%Y"),
 
 <<echo=FALSE, message=FALSE, warning=FALSE>>=
 # vehicle preprocessing
-nyv <- read.csv(file = "data/Motor_Vehicle_Collisions_-_Vehicles_20251002.csv")
+nyv <- read.csv(file = "~/data/Motor_Vehicle_Collisions_-_Vehicles_20251110.csv")
 nyv$CRASH_DATE <- as.Date(nyv$CRASH_DATE, format = "%m/%d/%Y")
 nyv$YEAR <- as.numeric(format(nyv$CRASH_DATE, "%Y"))
 
@@ -133,10 +135,12 @@ nyv <- nyv %>%
   mutate(
     covid_period = case_when(
       CRASH_DATE < as.Date("2020-03-01") ~ "Pre-COVID",
-      CRASH_DATE >= as.Date("2020-03-01") & CRASH_DATE < as.Date("2022-01-01") ~ "During COVID",
+      CRASH_DATE >= as.Date("2020-03-01") 
+      & CRASH_DATE < as.Date("2022-01-01") ~ "During COVID",
       CRASH_DATE >= as.Date("2022-01-01") ~ "Post-COVID"
     ),
-    covid_period = factor(covid_period, levels = c("Pre-COVID", "During COVID", "Post-COVID"))
+    covid_period = factor(covid_period, 
+                          levels = c("Pre-COVID", "During COVID", "Post-COVID"))
   )
 
 
@@ -201,7 +205,7 @@ nyc$AV_VEH_AGE <-  as.numeric(nyc$YEAR) - nyc$AV_VEH_YEAR
 
 <<echo=FALSE, message=FALSE, warning=FALSE>>=
 # vzv speed limit preprocessing
-sp_limits <- read.csv("data/VZV_Speed_Limits_20251002.csv")
+sp_limits <- read.csv("~/data/VZV_Speed_Limits_20251110.csv")
 
 # Format the sp_limits latitude and longitude
 # Pre-process the speed limit data
@@ -212,8 +216,10 @@ lats <- strsplit(sp_limits$the_geom, " ") %>%
 longs <- strsplit(sp_limits$the_geom, " ") %>%
   lapply(FUN=function(x) substr(x[2], 3, nchar(x[3]))) %>%
   as.numeric()
-loc<- paste("(", round(lats, digits = 4), ", ", round(longs, digits = 4), ")", sep = "")
-sp_lim_proc <- mutate(sp_limits, latitude = lats, longitude = longs, ROUND.LOCATION =loc) %>%
+loc<- paste("(", round(lats, digits = 4), ", ", round(longs, digits = 4), ")", 
+            sep = "")
+sp_lim_proc <- mutate(sp_limits, latitude = lats, 
+                      longitude = longs, ROUND.LOCATION =loc) %>%
   rename(SPEED.LIMIT = postvz_sl)
 
 sp_limits_filt <- sp_lim_proc %>%
@@ -225,17 +231,19 @@ sp_limits_filt <- sp_lim_proc %>%
 # Create dataframe of the speed limits combined with the rest of the data
 combined <- # add speed limit data to nyc dataset
   mutate(nyc, ROUND.LOCATION = paste("(", round(LATITUDE, digits = 4), ", ", 
-                                     round(LONGITUDE, digits = 4), ")", sep = "")) %>%
+                                     round(LONGITUDE, digits = 4), ")", 
+                                     sep = "")) %>%
   filter(!is.na(LATITUDE), !is.na(LONGITUDE)) %>%
-  inner_join(dplyr::select(sp_limits_filt, SPEED.LIMIT, ROUND.LOCATION), by="ROUND.LOCATION")
+  inner_join(dplyr::select(sp_limits_filt, SPEED.LIMIT, ROUND.LOCATION), 
+             by="ROUND.LOCATION")
 @
 
 
 <<echo=FALSE, message=FALSE, warning=FALSE>>=
 # twitter preprocessing 1
 
-twitter_train <- read.csv("data/1_TrainingSet_3Class.csv", header=FALSE)
-twitter_test <- read.csv("data/1_TestSet_3Class.csv", header=FALSE)
+twitter_train <- read.csv("~/data/1_TrainingSet_3Class.csv", header=FALSE)
+twitter_test <- read.csv("~/data/1_TestSet_3Class.csv", header=FALSE)
 
 # add headers
 names(twitter_train) <- c("class", "tweet_id", "tweet_text")
@@ -247,7 +255,8 @@ mutate(clean_tweet_id=gsub("^s", "", tweet_id)) -> twitter
 
 twitter$tweet_id <- gsub("^s", "", twitter$tweet_id)
 
-borough_keywords <- c("Manhattan", "Brooklyn", "Queens", "Bronx", "Staten Island")
+borough_keywords <- c("Manhattan", "Brooklyn", "Queens", "Bronx", 
+                      "Staten Island")
 city_keywords <- c("NYC", "New York City", "New York")
 
 extract_location <- function(text) {
@@ -287,11 +296,12 @@ twitter_nyc <- twitter_nyc %>%
     is_transit = str_detect(tolower(tweet_text), 
                             "subway|train|#.*line|station|mta|bus"),
     is_vehicle = str_detect(tolower(tweet_text), 
-                            "car|vehicle|crash|accident|collision|highway|road|traffic")
+                            "car|vehicle|crash|accident|collision|highway|
+                            road|traffic")
   )
 
-table(twitter_nyc$is_transit)
-table(twitter_nyc$is_vehicle)
+# table(twitter_nyc$is_transit)
+# table(twitter_nyc$is_vehicle)
 
 # extracting vehicle specific crash tweets
 twitter_vehicle <- twitter_nyc %>%
@@ -450,7 +460,8 @@ bp <- barplot(fivemost,
         ylim = c(0,ceiling(max(fivemost)/100000)*100000)
         )
 
-text(bp, -max(fivemost)*0.05, names(fivemost), srt = 45, xpd = TRUE, adj = 1, cex = 0.8)
+text(bp, -max(fivemost)*0.05, names(fivemost), srt = 45, xpd = TRUE, adj = 1, 
+     cex = 0.8)
 title(ylab = "Number of Cases", line=4)
 
 axis(2, at = seq(0, ceiling(max(fivemost)/100000)*100000, by = 100000), 
@@ -563,7 +574,7 @@ Below, we have a graph showing all of the accidents that occurred on roads where
 <<echo=FALSE, message=FALSE, warning=FALSE>>=
 # Find the accidents that occurred on high speed roads
 filter(combined, between(LONGITUDE, -74.26, -73.70) & 
-                            between(LATITUDE, 40.49, 40.92), SPEED.LIMIT > 40) %>%
+         between(LATITUDE, 40.49, 40.92), SPEED.LIMIT > 40) %>%
   sample_n(3000) %>%
   st_as_sf(coords = c("LONGITUDE", "LATITUDE"), crs = 4326) %>%
   st_transform(3857) %>%
@@ -578,6 +589,19 @@ filter(combined, between(LONGITUDE, -74.26, -73.70) &
 
 While this imaging doesn’t directly allow us to draw any conclusions, having this mapping of which car accidents occurred on higher speed roads allows us to do further interpretations of the data with relation to the speed limit.
 
+\subsection{Crash Frequency by Hour of Day Across COVID Periods}
+
+This plot compares how the hourly distribution of crashes varied across Pre-COVID, During-COVID, and Post-COVID periods. Each bar represents the total number of crashes that occurred during a given hour (0–23). The Pre-COVID period shows pronounced morning (8 AM) and evening (5–6 PM) peaks, consistent with commuting patterns. During COVID, these rush-hour spikes flatten significantly, reflecting reduced travel and remote work. Post-COVID, the peaks partially return but remain lower than pre-pandemic levels, suggesting a lasting shift in commuting behavior.
+
+<<echo=FALSE, message=FALSE, warning=FALSE>>=
+ggplot(nyc, aes(x = HOUR, fill = covid_period)) + 
+  geom_histogram(binwidth = 1, position = "dodge") + 
+  labs(title = "Crash Frequency by Hour of Day Across COVID Periods",
+       x = "Hour of Day", 
+       y = "Number of Collisions") + 
+  theme_minimal() + 
+  scale_fill_brewer(palette = "Set1")
+@
 
 \subsection{Time of Day vs. Fatality Rate}
 
@@ -607,7 +631,7 @@ ggplot(data = hourly_summary) +
        x = "Hour of Day (0 = Midnight, 23 = 11 PM)",
        y = "Fatalities per 1,000 Crashes")
 @
-
+  
 The scatterplot shows that nighttime crashes are significantly deadlier than daytime crashes. Early morning hours (2-4 AM) show fatality rates of 4.5-6.5 deaths per 1,000 crashes, about 6 times higher than midday rates (~1 per 1,000). The negative linear trend also shows that fatality risk decreases consistently throughout the day, where it reaches its lowest point during morning and afternoon hours (7 AM-2 PM), then begins to rise again after 9 PM.
 
 \subsection{Text Mining Analysis}
@@ -616,6 +640,9 @@ We applied text mining to crash contributing factors across all 5 CONTRIBUTING.F
 
 <<echo=FALSE, message=FALSE, warning=FALSE>>=
 library(tidytext)
+library(dplyr)
+library(stringr)
+library(tidyr) 
 data(stop_words)
 @
 
@@ -626,29 +653,33 @@ twitter_words <- twitter_vehicle %>%
   anti_join(stop_words, by = "word") %>%
   filter(!str_detect(word, "^\\d+$"),
          !word %in% c("nyc", "new", "york", "updated", "incident", "cleared",
-                     "directions", "construction", "highway", "exit", "amp", "https", "t.co")) %>%
+                     "directions", "construction", "highway", "exit", "amp", 
+                     "https", "t.co")) %>%
   count(word, sort = TRUE) %>%
   mutate(percentage = n / sum(n) * 100, source = "Twitter") %>%
   head(12)
 
-# NYC factors 
+# NYC factors
 factor_words <- nyc %>%
-  pivot_longer(cols = starts_with("CONTRIBUTING.FACTOR.VEHICLE."),
+  tidyr::pivot_longer(cols = starts_with("CONTRIBUTING.FACTOR.VEHICLE."),
                values_to = "factor", values_drop_na = TRUE) %>%
   filter(factor != "", factor != "Unspecified") %>%
   unnest_tokens(word, factor) %>%
   anti_join(stop_words, by = "word") %>%
-  filter(!word %in% c("driver", "vehicle", "inattention", "error", "unspecified")) %>%
+  filter(!word %in% c("driver", "vehicle", "inattention", "error", 
+                      "unspecified")) %>%
   count(word, sort = TRUE) %>%
-  mutate(percentage = n / sum(n) * 100, source = "Official Reports") %>%
+  mutate(percentage = n / sum(n) * 100, source = "Motor Vehicle Collisions") %>%
   head(12)
 
 bind_rows(twitter_words, factor_words) %>%
-  ggplot(aes(x = percentage, y = reorder_within(word, percentage, source), fill = source)) +
+  ggplot(aes(x = percentage, y = reorder_within(word, percentage, source), 
+             fill = source)) +
   geom_col(show.legend = FALSE) +
   facet_wrap(~source, scales = "free") +
   scale_y_reordered() +
-  scale_fill_manual(values = c("Twitter" = "lightblue", "Motor Vehicle Collision" = "lightgreen")) +
+  scale_fill_manual(values = c("Twitter" = "lightblue", 
+                               "Motor Vehicle Collision" = "lightgreen")) +
   labs(title = "Text Mining: Twitter vs. Motor Vehicle Collision",
        x = "Percentage of Terms (%)", y = NULL) +
   theme_minimal()
@@ -661,11 +692,16 @@ The Twitter data emphasizes location/navigation (st, manhattan, avenue) while th
 nyc <- nyc %>%
   mutate(
     speed_mentioned = (
-      str_detect(tolower(CONTRIBUTING.FACTOR.VEHICLE.1), "speed|unsafe|racing|fast") |
-      str_detect(tolower(CONTRIBUTING.FACTOR.VEHICLE.2), "speed|unsafe|racing|fast") |
-      str_detect(tolower(CONTRIBUTING.FACTOR.VEHICLE.3), "speed|unsafe|racing|fast") |
-      str_detect(tolower(CONTRIBUTING.FACTOR.VEHICLE.4), "speed|unsafe|racing|fast") |
-      str_detect(tolower(CONTRIBUTING.FACTOR.VEHICLE.5), "speed|unsafe|racing|fast")
+      str_detect(tolower(CONTRIBUTING.FACTOR.VEHICLE.1), 
+                 "speed|unsafe|racing|fast") |
+      str_detect(tolower(CONTRIBUTING.FACTOR.VEHICLE.2), 
+                 "speed|unsafe|racing|fast") |
+      str_detect(tolower(CONTRIBUTING.FACTOR.VEHICLE.3), 
+                 "speed|unsafe|racing|fast") |
+      str_detect(tolower(CONTRIBUTING.FACTOR.VEHICLE.4), 
+                 "speed|unsafe|racing|fast") |
+      str_detect(tolower(CONTRIBUTING.FACTOR.VEHICLE.5), 
+                 "speed|unsafe|racing|fast")
     ),
     speed_mentioned = ifelse(is.na(speed_mentioned), FALSE, speed_mentioned)
   )
@@ -681,7 +717,8 @@ speed_summary <- nyc %>%
 library(knitr)
 speed_summary %>%
   kable(col.names = c("Period", "Total Crashes", "Speed-Related", "Percent"),
-        digits = 1, caption = "Speed-Related Crashes by COVID Period (Text-Mined)")
+        digits = 1, 
+        caption = "Speed-Related Crashes by COVID Period (Text-Mined)")
 @
 
 Text mining revealed speed-related crashes increased from X\% pre-COVID to Y\% during COVID, providing linguistic evidence for the severity paradox. This text-derived feature captures nuanced mentions across multiple contributing factor codes that structured analysis would miss.
