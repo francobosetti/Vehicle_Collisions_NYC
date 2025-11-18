@@ -533,6 +533,53 @@ abline(v=as.Date("2020-03-17"), col="red", lwd=1.5, lty=5)
 text(x=as.Date("2020-03-17"), y=max(colspermonth)*0.9, 
      labels="Beginning of COVID lockdown", pos=4, col="red", cex=0.8)
 @
+
+
+<<echo=FALSE, message=FALSE, warning=FALSE, fig.height=13, fig.width=11, fig.align='center'>>=
+monthly_counts <- table(nyc$YEAR_MONTH)
+months <- names(monthly_counts)
+colspermonth <- as.numeric(monthly_counts)
+plot_months <- as.Date(paste0(months, "-01"))
+
+plot(plot_months, colspermonth,
+     main="Number of Monthly Vehicle Collisions in New York City",
+     type="n",
+     pch=20,
+     xlab="Month",
+     ylab="Number of Collisions",
+     xaxt="n",
+     yaxt="n",
+     xaxs="i",
+     yaxs="i",
+     ylim=c(0,max(colspermonth)+1000))
+
+rect(xleft = as.Date("2017-01-01"), 
+     ybottom = 0, 
+     xright = as.Date("2020-01-01"), 
+     ytop = max(colspermonth)+1000,
+     col = adjustcolor("lightblue", alpha.f = 0.3), 
+     border = NA)
+
+rect(xleft = as.Date("2022-01-01"), 
+     ybottom = 0, 
+     xright = as.Date("2025-01-01"), 
+     ytop = max(colspermonth)+1000,
+     col = adjustcolor("lightgreen", alpha.f = 0.3), 
+     border = NA)
+
+points(plot_months, colspermonth, pch=20)
+lines(plot_months, colspermonth)
+
+xticks <- seq(min(plot_months), max(plot_months)+365, by = "6 months")
+axis.Date(1, at = xticks, 
+          format = "%b\n%Y", cex.axis = 0.6)
+axis(2, at = seq(0, max(colspermonth)+1000, by = 1000), cex.axis = 0.7, las=1) 
+abline(v = xticks, col = "gray", lty = "dotted")
+abline(v=as.Date("2020-03-17"), col="red", lwd=1.5, lty=5)
+text(x=as.Date("2020-03-17"), y=max(colspermonth)*0.9, 
+     labels="Beginning of \nCOVID lockdown", pos=4, col="red", cex=0.8)
+@
+
 A notable trend is the sudden drop in collisions at the beginning of 2020. This is clearly due to the Covid-19 pandemic, which limited the time people spent outside their homes. What is more notable is how the number of collisions seems to even out to a much lower level than pre-pandemic. More research is needed into why we see this pattern.
 \\ \\
 Next, we explore the number of collisions over time within each borough. Note that a large quantity of entries from the dataset do not have a location attached, so those results are not considered for this analysis.
