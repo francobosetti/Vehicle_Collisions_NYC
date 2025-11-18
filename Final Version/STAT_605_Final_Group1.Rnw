@@ -192,7 +192,9 @@ SELECT
   CASE
     WHEN date(crash_date_iso) >= date('2022-01-01')                          THEN 1 ELSE 0
   END                                                AS is_post_covid
-FROM b;
+FROM b
+  WHERE date(crash_date_iso) >= date('2017-03-01')
+;
 ")
 
 dbExecute(dcon, "
