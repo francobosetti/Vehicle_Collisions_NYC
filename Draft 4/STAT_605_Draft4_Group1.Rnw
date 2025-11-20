@@ -507,31 +507,31 @@ dbDisconnect(dcon)
 \subsubsubsection{Vehicle Collisions over Time}
 By grouping the collisions into each month in which they occured, we can plot a line graph showing the number of collisions over the past 13 years.
 <<echo=FALSE, message=FALSE, warning=FALSE, fig.height=13, fig.width=11, fig.align='center'>>=
-monthly_counts <- table(nyc$YEAR_MONTH)
-months <- names(monthly_counts)
-colspermonth <- as.numeric(monthly_counts)
-plot_months <- as.Date(paste0(months, "-01"))
-plot(plot_months, colspermonth,
-     main="Number of Monthly Vehicle Collisions in New York City",
-     type="o",
-     pch=20,
-     xlab="Month",
-     ylab="Number of Collisions",
-     xaxt="n",
-     yaxt="n",
-     xaxs="i",
-     yaxs="i",
-     ylim=c(0,max(colspermonth)+1000))
-
-
-xticks <- seq(min(plot_months), max(plot_months)+365, by = "6 months")
-axis.Date(1, at = xticks, 
-          format = "%b\n%Y", cex.axis = 0.6)
-axis(2, at = seq(0, max(colspermonth)+1000, by = 1000), cex.axis = 0.7, las=1) 
-abline(v = xticks, col = "gray", lty = "dotted")
-abline(v=as.Date("2020-03-17"), col="red", lwd=1.5, lty=5)
-text(x=as.Date("2020-03-17"), y=max(colspermonth)*0.9, 
-     labels="Beginning of COVID lockdown", pos=4, col="red", cex=0.8)
+# monthly_counts <- table(nyc$YEAR_MONTH)
+# months <- names(monthly_counts)
+# colspermonth <- as.numeric(monthly_counts)
+# plot_months <- as.Date(paste0(months, "-01"))
+# plot(plot_months, colspermonth,
+#      main="Number of Monthly Vehicle Collisions in New York City",
+#      type="o",
+#      pch=20,
+#      xlab="Month",
+#      ylab="Number of Collisions",
+#      xaxt="n",
+#      yaxt="n",
+#      xaxs="i",
+#      yaxs="i",
+#      ylim=c(0,max(colspermonth)+1000))
+# 
+# 
+# xticks <- seq(min(plot_months), max(plot_months)+365, by = "6 months")
+# axis.Date(1, at = xticks, 
+#           format = "%b\n%Y", cex.axis = 0.6)
+# axis(2, at = seq(0, max(colspermonth)+1000, by = 1000), cex.axis = 0.7, las=1) 
+# abline(v = xticks, col = "gray", lty = "dotted")
+# abline(v=as.Date("2020-03-17"), col="red", lwd=1.5, lty=5)
+# text(x=as.Date("2020-03-17"), y=max(colspermonth)*0.9, 
+#      labels="Beginning of COVID lockdown", pos=4, col="red", cex=0.8)
 @
 
 
@@ -541,8 +541,11 @@ months <- names(monthly_counts)
 colspermonth <- as.numeric(monthly_counts)
 plot_months <- as.Date(paste0(months, "-01"))
 
+par(mar = c(5, 5, 4, 2) + 0.1) 
+
 plot(plot_months, colspermonth,
      main="Number of Monthly Vehicle Collisions in New York City",
+     cex.main = 0.9,
      type="n",
      pch=20,
      xlab="Month",
@@ -551,7 +554,8 @@ plot(plot_months, colspermonth,
      yaxt="n",
      xaxs="i",
      yaxs="i",
-     ylim=c(0,max(colspermonth)+1000))
+     ylim=c(0,max(colspermonth)+1000),
+     mgp = c(2.2, 1, 0))
 
 rect(xleft = as.Date("2017-01-01"), 
      ybottom = 0, 
