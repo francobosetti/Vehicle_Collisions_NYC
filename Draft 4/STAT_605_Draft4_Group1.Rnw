@@ -499,7 +499,7 @@ twitter_vehicle <- dbGetQuery(dcon, "SELECT * FROM v_twitter_vehicle") %>%
 dbDisconnect(dcon)
 @
 
-\section{Exploratory Data Analysis}
+
 
 \subsection{Collision Frequency}
 \subsection{Did collision rates return to pre-pandemic levels or establish a ”new normal”? }
@@ -638,6 +638,71 @@ text(x=as.Date("2020-03-17"), y=max_col*0.7,
      labels="Beginning of COVID lockdown", pos=4, col="black", cex=0.8)
 @
 Each borough follows very similar shapes in their respective line. Further analysis to normalize by some factor, e.g. by population or road network density may provide more insight.
+
+
+\section{Exploratory Data Analysis}
+
+\subsection{Pre and Post Covid}
+To explore the relationships between car collisions before and after the pandemic. We chose to use 3 year intervals of 2017-2019 and 2022-2024. This is to capture a large subset of the data while trying to keep as close as possible to times before and after the pandemic. This can be seen in the figure of monthly vehicle collisions across the city.
+
+We first take two subsets of the collision dataset containing collisions from only these years and filtering out any missing locations.
+
+<<echo=FALSE, message=FALSE, warning=FALSE>>=
+nyc_pre <- filter(nyc, covid_period == "Pre-COVID", round_location != "(0.0000, 0.0000)")
+nyc_post <- filter(nyc, covid_period == "Post-COVID", round_location != "(0.0000, 0.0000)")
+@
+
+<<echo=FALSE, message=FALSE, warning=FALSE>>=
+grid_size <- 100
+xs <- seq(-74.3, -73.6, length.out=grid_size)
+ys <- seq(40.4, 41.0, length.out=grid_size)
+
+pre_count <- nyc_pre %>%
+  mutate(
+    x_bin = findInterval(LONGITUDE, xs),
+    y_bin = findInterval(LATITUDE, ys)
+  ) %>%
+  filter(!is.na(x_bin), !is.na(y_bin),
+         x_bin >= 1, x_bin < length(xs),
+         y_bin >= 1, y_bin < length(ys)) %>%
+  mutate(
+    x_center = (xs[x_bin] + xs[x_bin + 1]) / 2,
+    y_center = (ys[y_bin] + ys[y_bin + 1]) / 2
+  ) %>%
+  count(x_center, y_center, name = "pre_count")
+
+post_count <- nyc_post %>%
+  mutate(
+    x_bin = findInterval(LONGITUDE, xs),
+    y_bin = findInterval(LATITUDE, ys)
+  ) %>%
+  filter(!is.na(x_bin), !is.na(y_bin),
+         x_bin >= 1, x_bin < length(xs),
+         y_bin >= 1, y_bin < length(ys)) %>%
+  mutate(
+    x_center = (xs[x_bin] + xs[x_bin + 1]) / 2,
+    y_center = (ys[y_bin] + ys[y_bin + 1]) / 2
+  ) %>%
+  count(x_center, y_center, name = "post_count")
+
+a <- 0.0001 #arrow length scale
+
+full_count <- full_join(pre_count, post_count, by = c("x_center", "y_center")) %>%
+  replace_na(list(pre_count = 0, post_count = 0)) %>%
+  mutate(total_count = pre_count+post_count) %>%
+  filter(total_count != 0) %>%
+  mutate(angle = case_when(
+      pre_count == 0 ~ pi/2,                      
+      post_count == 0 ~ -pi/2,                     
+      #TRUE ~ atan(log(post_count / pre_count))),
+      TRUE ~ pi/2*tanh(log(post_count / pre_count))),
+      angle_360 = angle*180/pi,
+      x_end = x_center + a*total_count*cos(angle),
+      y_end = y_center + a*total_count*sin(angle))
+
+@
+
+
 
 \subsection{Crash Frequency by Hour of Day Across COVID Periods}
 
