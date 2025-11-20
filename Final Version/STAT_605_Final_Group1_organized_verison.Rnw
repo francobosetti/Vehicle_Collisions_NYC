@@ -2,6 +2,7 @@
 \usepackage[left=1in,right=1in,top=1in,bottom=1in]{geometry}
 \usepackage{amsmath}
 \usepackage{hyperref}
+\usepackage{float}
 %\SweaveOpts[concordance=TRUE]
 \begin{document}
 
@@ -96,8 +97,9 @@ library(ggeffects)
 library(forcats)
 library(stringr)
 library(tidytext)
+library(tidyr)
 
-dcon <- dbConnect(SQLite(), dbname = "data/Collisions_DB.db")
+dcon <- dbConnect(SQLite(), dbname = "~/Documents/STAT405_605/STAT605_Project/data/Collisions_DB.db")
 @
 
 <<echo=FALSE, message=FALSE, warning=FALSE, results = 'hide'>>=
@@ -499,11 +501,19 @@ twitter_vehicle <- dbGetQuery(dcon, "SELECT * FROM v_twitter_vehicle") %>%
 dbDisconnect(dcon)
 @
 
-\section{Visualizations}
+\section{Methods Overview}
 
-\subsection{Vehicle Collisions over Time}
-By grouping the collisions into each month in which they occured, we can plot a line graph showing the number of collisions over the past 13 years.
+\section{Exploratory Data Analysis}
+
+\subsection{Did collision rates return to pre-pandemic levels or establish a "new normal"?}
+
+\subsubsection{Motor Vehicle Collisions over Time}
+
+We begin by examining how the overall number of vehicle collisions in New York City evolved over time. Monthly crash counts show a dramatic decline in early 2020, coinciding with the onset of COVID-19 restrictions and the citywide lockdown. This sharp drop reflects the sudden reduction in traffic volume as commuting, tourism, and social activity came to a halt.
+
 <<echo=FALSE, message=FALSE, warning=FALSE, fig.height=13, fig.width=11, fig.align='center'>>=
+par(mfrow = c(1, 2))
+
 monthly_counts <- table(nyc$YEAR_MONTH)
 months <- names(monthly_counts)
 colspermonth <- as.numeric(monthly_counts)
@@ -529,11 +539,8 @@ abline(v = xticks, col = "gray", lty = "dotted")
 abline(v=as.Date("2020-03-17"), col="red", lwd=1.5, lty=5)
 text(x=as.Date("2020-03-17"), y=max(colspermonth)*0.9, 
      labels="Beginning of COVID lockdown", pos=4, col="red", cex=0.8)
-@
-A notable trend is the sudden drop in collisions at the beginning of 2020. This is clearly due to the Covid-19 pandemic, which limited the time people spent outside their homes. What is more notable is how the number of collisions seems to even out to a much lower level than pre-pandemic. More research is needed into why we see this pattern.
-\\ \\
-Next, we explore the number of collisions over time within each borough. Note that a large quantity of entries from the dataset do not have a location attached, so those results are not considered for this analysis.
-<<echo=FALSE, message=FALSE, warning=FALSE>>=
+
+
 borough <- levels(nyc$BOROUGH)
 borough <- borough[borough != ""]
 colors = c("red", "blue", "darkgreen", "purple", "orange")
@@ -582,36 +589,167 @@ abline(v = xticks, col = "gray", lty = "dotted")
 abline(v=as.Date("2020-03-17"), col="black", lwd=1.5, lty=5)
 text(x=as.Date("2020-03-17"), y=max_col*0.7, 
      labels="Beginning of COVID lockdown", pos=4, col="black", cex=0.8)
+
+par(mfrow = c(1, 1))
 @
-Each borough follows very similar shapes in their respective line. Further analysis to normalize by some factor, e.g. by population or road network density may provide more insight.
 
-\subsection{Analysis of linear trends in vehicle collisions}
+We begin by examining how the overall number of vehicle collisions in NYC evolved over time. Monthly crash counts show a dramatic decline in early 2020, coinciding with the onset of COVID-19 restrictions and the citywide lockdown. This sharp drop reflects the sudden reduction in traffic volume as commuting, tourism, and social activity came to a pause.
 
-From the earlier graph, it seemed like there may be a difference in the trend of the amount of collisions before and after Covid. To further analyze this, we performed a linear regression by borough of the total crashes per year, performing separate linear regressions before and after the Covid shutdown. The resulting graph is shown below.
+When broken down by borough, the same general pattern appears, though the magnitude of change differs. Brooklyn and Queens experienced the largest declines and slowest recoveries, consistent with their heavy commuter traffic. Manhattan saw a steep initial drop followed by a quicker rebound, reflecting its concentration of essential services and commercial traffic. Staten Island and the Bronx showed smaller relative changes, indicating more stable local travel patterns.
+
+Overall, these trends reveal that while traffic volumes rebounded after the lockdown, the city’s collision rates did not fully recover. The data suggest a structural shift in how, when, and why people travel in NYC.
+
+\subsubsection{Yearly Crash Trends by Borough, 2012–2025}
 
 <<echo=FALSE, message=FALSE, warning=FALSE>>=
 dat <- nyc %>%
   filter(BOROUGH != "") %>%
-  group_by(BOROUGH) %>%
-  count(YEAR) %>%
-  ungroup() %>%
-  mutate(period = ifelse(YEAR <= 2019, "2019 and before", "2020 and after"))
+  group_by(BOROUGH, YEAR) %>%
+  summarise(n = n(), .groups = "drop")
 
 ggplot(dat, aes(x = YEAR, y = n, color = BOROUGH)) +
-  geom_point() +
-  geom_smooth(aes(linetype = period, group = interaction(BOROUGH, period)),
-              method = "lm",
-              se = FALSE) +
-  labs(title = "Piecewise Linear Trends in Total Crashes per Year by Borough",
-       x = "Year",
-       y = "Number of Crashes",
-       linetype = "Time Period")
+  geom_line(size = 1) +
+  geom_point(size = 2) +
+  labs(
+    title = "Yearly Crash Trends by Borough, 2012–2025",
+    x = "Year",
+    y = "Number of Crashes",
+    color = "Borough"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
 @
-This shows a distinct change in the collision trend before and after covid. In Queens, Brooklyn, and the Bronx, the collision rates were all rising prior to 2019, and were falling after 2020. Conversely, in Manhattan and Staten Island, the collision rates were falling prior to 2019, and flattened out after 2020. 
 
-\subsection{Causes of Collisions}
+When broken down by borough, the same general pattern appears, though the magnitude of change differs. The figure below shows yearly crash totals by borough from 2012 to 2025. Brooklyn and Queens experienced the largest declines and slowest recoveries, consistent with their heavy commuter traffic. Manhattan saw a steep initial drop followed by a slower rebound, reflecting lasting reductions in commuting and tourism. The Bronx showed a moderate decline followed by gradual recovery, while Staten Island remained relatively stable.
 
-In the dataset every entry has up to 5 `contributing factors'. Below, We see these results aggregated and the top 5 most prevalent causes displayed in a bar chart.
+These results indicate that while the overall pattern of decline and partial recovery was shared citywide, the impacts were not uniform. Differences in population density, travel purpose, and road network composition likely explain why some boroughs experienced larger and more persistent changes than others.
+
+\subsection{When do crashes happen? Daily/weekly patterns}
+
+\subsubsection{Crash Frequency by Hour and Day of Week}
+
+To understand when crashes are most likely to occur, we created a heatmap of the crash frequency by hour of the day and day of the week. Each tile represents the total number of crashes in that time slot, with brighter colors indicating more frequent crashes.
+
+<<echo=FALSE, message=FALSE, warning=FALSE>>=
+nyc %>%
+  mutate(
+    hour = hour(hm(CRASH.TIME)),
+    date = ymd(CRASH.DATE),
+    weekday = wday(date, label = TRUE, abbr = FALSE)
+  ) %>%
+  count(hour, weekday) %>%
+  ggplot(aes(x = hour, y = weekday, fill = n)) +
+  geom_tile(color = "white") +
+  scale_fill_viridis_c(option = "C") +
+  scale_x_continuous(breaks = c(0, 6, 12, 18, 24), labels = c("0", "6", "12", "18", "24")) +
+  labs(
+    title = "Crash Frequency by Hour and Day of Week",
+    x = "Hour of Day",
+    y = "Day of Week",
+    fill = "Number of Crashes"
+  ) +
+  theme_minimal()
+@
+
+The heatmap shows a clear concentration of crashes during daytime and evening hours, especially between 8 AM and 7 PM across all weekdays. Friday stands out with the highest crash intensity, particularly in the late afternoon and early evening, likely reflecting a mix of rush-hour traffic and increased social activity at the end of the work week.
+
+In contrast, the overnight hours (midnight to 6 AM) consistently display the fewest crashes across all days, reflecting lower traffic volumes during those times. Sundays appear somewhat less intense overall compared to weekdays, with a broader distribution of crashes throughout the afternoon.
+
+Overall, the heatmap highlights how collision risk peaks during high-traffic commuting periods and social activity times, with Friday evenings being particularly hazardous in New York City.
+
+\subsubsection{Hourly Crash Distribution by COVID Period}
+
+<<echo=FALSE, message=FALSE, warning=FALSE>>=
+hourly_proportions <- nyc %>%
+  group_by(covid_period) %>%
+  count(HOUR) %>%
+  mutate(prop = n / sum(n))
+
+ggplot(hourly_proportions, aes(x = HOUR, y = prop, fill = covid_period)) + 
+  geom_col(position = "dodge") +
+  labs(title = "Proportional Crash Distribution by Hour Across COVID Periods",
+       y = "Proportion of Total Crashes in Period")
+@
+
+After examining overall daily and weekly crash patterns, we next examined how these hourly crash patterns evolved across the Pre‑COVID, During‑COVID, and Post‑COVID periods. The proportional distribution of crashes by hour shows that daily patterns remained broadly consistent across the three COVID periods, but the intensity of rush-hour peaks changed. Before the pandemic, collisions followed a clear bimodal pattern with pronounced morning (around 8AM) and evening (5–6PM) peaks. During COVID, these peaks flattened and shifted slightly later in the day, reflecting reduced commuting and more flexible travel times. In the post‑COVID period, the peaks partially recovered but stayed lower than pre‑pandemic levels, suggesting that hybrid work and lasting behavioral changes continue to moderate traditional rush-hour peaks.
+
+\subsection{Did crashes become more severe?}
+
+We next assessed whether crash severity changed during the pandemic by comparing the rates of fatal and injury crashes across periods.
+
+\subsubsection{Nighttime Crashes Are More Severe: Baseline Pattern}
+
+<<echo=FALSE, message=FALSE, warning=FALSE>>=
+# Fatalities and injuries per hour
+crashes_per_hour <- table(nyc$HOUR)
+fatalities_per_hour <- tapply(nyc$NUMBER.OF.PERSONS.KILLED, nyc$HOUR, sum, na.rm = TRUE)
+injuries_per_hour <- tapply(nyc$NUMBER.OF.PERSONS.INJURED, nyc$HOUR, sum, na.rm = TRUE)
+
+hourly_summary <- data.frame(
+  HOUR = as.numeric(names(crashes_per_hour)),
+  total_crashes = as.numeric(crashes_per_hour),
+  total_fatalities = as.numeric(fatalities_per_hour),
+  total_injuries = as.numeric(injuries_per_hour)
+)
+
+# Normalize per 1,000 crashes
+hourly_summary$fatality_rate <- (hourly_summary$total_fatalities / hourly_summary$total_crashes) * 1000
+hourly_summary$injury_rate <- (hourly_summary$total_injuries / hourly_summary$total_crashes) * 1000
+
+ggplot(hourly_summary, aes(x = HOUR)) +
+  geom_line(aes(y = fatality_rate, color = "Fatalities per 1,000 crashes"), size = 1) +
+  geom_line(aes(y = injury_rate, color = "Injuries per 1,000 crashes"), size = 1) +
+  labs(
+    title = "Crash Severity by Hour of Day",
+    x = "Hour of Day (0 = Midnight, 23 = 11 PM)",
+    y = "Rate per 1,000 Crashes",
+    color = "Metric"
+  ) +
+  theme_minimal()
+@
+
+This plot compares the rates of fatal and injury crashes by hour of day to assess whether crash severity changed during the pandemic. The injury rate follows a clear daily pattern, dipping in the early morning hours and rising sharply during daytime traffic peaks. Fatality rates remain much lower overall but show a slight increase overnight, when traffic volumes are low and speeds are higher. As expected, fatalities are far less common than injuries, with the fatality rate remaining close to zero compared to the much higher injury rate.
+
+These patterns suggest that while the total number of crashes declined during the pandemic, the relative risk of severe outcomes did not decrease proportionally. Nighttime crashes continued to be far deadlier, reflecting persistent high‑risk driving behaviors such as speeding and impaired driving.
+
+\subsubsection{Crash Severity by COVID Period}
+<<echo=FALSE, message=FALSE, warning=FALSE>>=
+crash_severity_period <- nyc %>%
+  group_by(covid_period) %>%
+  summarize(
+    fatal_rate = sum(NUMBER.OF.PERSONS.KILLED, na.rm = TRUE) / n() * 1000,
+    injury_rate = sum(NUMBER.OF.PERSONS.INJURED, na.rm = TRUE) / n() * 1000
+  ) %>%
+  pivot_longer(
+    cols = c(fatal_rate, injury_rate),
+    names_to = "type",
+    values_to = "rate"
+  )
+
+ggplot(crash_severity_period, aes(x = covid_period, y = rate, fill = type)) +
+  geom_col(position = "dodge") +
+  scale_fill_manual(
+    values = c("fatal_rate" = "firebrick", "injury_rate" = "steelblue"),
+    labels = c("Fatality rate", "Injury rate")
+  ) +
+  labs(
+    title = "Crash Severity by COVID Period",
+    x = "COVID Period",
+    y = "Rate per 1,000 Crashes",
+    fill = "Type"
+  ) +
+  facet_wrap(~type, scales="free_y") +
+  theme_minimal(base_size = 13) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+@
+
+The plot shows how crash severity shifted across COVID periods. During the pandemic, the fatality rate per 1,000 crashes increased, while the injury rate declined, indicating that although fewer collisions occurred, they were more severe. This pattern suggests that reduced traffic volume led to higher driving speeds and riskier behavior. In the post‑COVID period, injury rates partially rebounded, but fatality rates remained elevated, implying that some high‑risk driving habits persisted even after traffic returned to normal levels. Overall, the plot highlights a lasting change in crash severity linked to pandemic‑era driving behavior.
+
+\subsection{What causes crashes? How did contributing factors change?}
+
+\subsubsection{Causes of Collisions}
+
+To identify the most common causes of collisions, we aggregated all recorded contributing factors across vehicles. The bar chart below shows the five most frequent causes citywide.
 
 <<echo=FALSE, message=FALSE, warning=FALSE>>=
 cfs <- unique(nyc$CONTRIBUTING.FACTOR.VEHICLE.1)
@@ -652,258 +790,97 @@ axis(2, at = seq(0, ceiling(max(fivemost)/100000)*100000, by = 100000),
      las = 1,
      )
 @
-An overwhelming cause of accidents are due to driver distraction, more than 3 times the next most common.
+
+Driver inattention or distraction stands out as the leading cause, responsible for more than three times as many crashes as the next factor. Failure to yield, following too closely, and unsafe passing follow far behind, showing that most collisions stem from everyday driving mistakes rather than external conditions.
+
+\subsubsection{Distribution of contributing factors by COVID period}
+
+<<echo=FALSE, message=FALSE, warning=FALSE, fig.height=4, fig.width=12, fig.align='center'>>=
 
 
-\subsection{Crashes by Time of Day}
-
-The histogram below shows the total number of accidents in the dataset for each time of day. 
-
-<<echo=FALSE, message=FALSE, warning=FALSE>>=
-layout(mat = 1)
-times <- nyc$CRASH.TIME
-hours <- as.numeric(sub("\\:.*", "", times))
-par(tck = -0.015, mgp = c(1.5, 0.4, 0), mar = c(3, 3, 3, 1.5))
-hist(hours, xlab = "Time of day", ylab = "Number of accidents", axes = FALSE, 
-     main="Total Number of Accidents per Time of Day", 
-     breaks=seq(-0.5, 23.5, 1))
-
-labels <- c("12:00AM", "3:00AM", "6:00AM", "9:00AM", 
-            "12:00PM", "3:00PM", "6:00PM", "9:00PM")
-axp <- seq(0, 23, by=3)
-axis(1, at=axp, labels = labels)
-axp2 <- seq(0, 150000, by=50000)
-axis(2, at = axp2, labels = axp2)
 @
 
-We can see that most of the accidents occur during the daytime, with a semi-continuous increasing and decreasing structure. The distribution reaches its lowest value at 3:00AM, and peaks around 4:00PM. There are slight spikes around 8-9AM, when people would be driving to work, and also around 4-5:00PM, when people would be leaving work. There is also a small spike around midnight.
+\newpage
 
-\subsection{Crash Frequency by Hour and Day of Week}
+\section{Text Mining (Twitter vs Motor Collision NYC)}
 
-To explore when crashes are most likely to occur, we created a heatmap of crash counts by hour of the day and day of the week. Each tile represents the total number of crashes in that time slot, with brighter colors indicating more frequent crashes.
+We applied text mining to all five CONTRIBUTING.FACTOR.VEHICLE columns (about 2.2M entries) and to 65+ crash-related tweets. The goal was to compare how Motor Collision NYC data and social media describe traffic incidents.
 
-<<echo=FALSE, message=FALSE, warning=FALSE>>=
-nyc %>%
-  mutate(
-    hour = hour(hm(CRASH.TIME)),
-    date = ymd(CRASH.DATE),
-    weekday = wday(date, label = TRUE, abbr = FALSE)
-  ) %>%
-  count(hour, weekday) %>%
-  ggplot(aes(x = hour, y = weekday, fill = n)) +
-  geom_tile(color = "white") +
-  scale_fill_viridis_c(option = "C") +
-  labs(
-    title = "Crash Frequency by Hour and Day of Week",
-    x = "Hour of Day",
-    y = "Day of Week",
-    fill = "Number of Crashes"
-  ) +
-  theme_minimal()
-@
-
-The heatmap shows a clear concentration of crashes during daytime and evening hours, especially between 8 AM and 7 PM across all weekdays. Friday stands out with the highest crash intensity, particularly in the late afternoon and early evening, likely reflecting a mix of rush-hour traffic and increased social activity at the end of the work week.
-
-In contrast, the overnight hours (midnight to 6 AM) consistently display the fewest crashes across all days, reflecting lower traffic volumes during those times. Sundays appear somewhat less intense overall compared to weekdays, with a broader distribution of crashes throughout the afternoon.
-
-Overall, the heatmap highlights how crash risk peaks during high-traffic commuting periods and social activity times, with Friday evenings being particularly hazardous in New York City.
-
-\subsection{Accidents and speed limits on NYC map}
-
-\subsubsection{All Accidents}
-
-Below, there is a heatmap of all of the accidents in NYC plotted over a map of NYC. 
-
-<<echo=FALSE, message=FALSE, warning=FALSE>>=
-#plot the car crashes on the NYC map
-small_sample_sf <- filter(combined, between(LONGITUDE, -74.26, -73.70) & 
-                            between(LATITUDE, 40.49, 40.92)) %>%
-  sample_n(3000) %>%
-  st_as_sf(coords = c("LONGITUDE", "LATITUDE"), crs = 4326) %>%
-  st_transform(3857)
-
-nyc_bbox <- st_bbox(small_sample_sf)
-
-ggplot(small_sample_sf)+
-  annotation_map_tile(type = "cartolight", zoom=11)+
-  stat_density_2d(
-    aes(x = st_coordinates(small_sample_sf)[,1],
-        y = st_coordinates(small_sample_sf)[,2],
-        fill = after_stat(level),
-        alpha = after_stat(level)),
-    geom = "polygon",
-    contour = TRUE
-  ) +
-  scale_fill_viridis_c(option = "magma") +
-  scale_alpha(range = c(0.05, 0.4), guide = "none") +
-  coord_sf(xlim = c(nyc_bbox["xmin"], nyc_bbox["xmax"]),
-           ylim = c(nyc_bbox["ymin"], nyc_bbox["ymax"]),
-           expand = FALSE) +
-  labs(title = "NYC Accident Density Heatmap") +
-  xlab("Longitude Coordinates") +
-  ylab("Latitude Coordinates") +
-  guides(fill = guide_colorbar(title = "Density"))
-@
-
-With this, we can easily visualize at which locations most of the accidents are concentrated. We see that a large majority occur in midtown Manhattan, while there are other hot-spots around upper Manhattan / Harlem and Brooklyn. We see very few reaching out to Staten Island, and fewer as we get farther away from the center of the city.
-
-\subsubsection{Highway Accidents}
-
-Below, we have a graph showing all of the accidents that occurred on roads where the speed limit is greater than 40 mph, mapped onto an image of NYC. This gives us a clear picture of the highway road mapping in NYC.
-
-<<echo=FALSE, message=FALSE, warning=FALSE>>=
-# Find the accidents that occurred on high speed roads
-filter(combined, between(LONGITUDE, -74.26, -73.70) & 
-         between(LATITUDE, 40.49, 40.92), SPEED.LIMIT > 40) %>%
-  sample_n(3000) %>%
-  st_as_sf(coords = c("LONGITUDE", "LATITUDE"), crs = 4326) %>%
-  st_transform(3857) %>%
-  ggplot() +
-  annotation_map_tile(type = "cartolight", zoom = 11) +
-  geom_sf( size = 1) +
-  coord_sf(xlim = c(nyc_bbox["xmin"], nyc_bbox["xmax"]),
-           ylim = c(nyc_bbox["ymin"], nyc_bbox["ymax"]),
-           expand = FALSE) +
-  labs(title = "Car accidents on high speed roads (>40mph)")
-@
-
-While this imaging doesn’t directly allow us to draw any conclusions, having this mapping of which car accidents occurred on higher speed roads allows us to do further interpretations of the data with relation to the speed limit.
-
-\subsection{Crash Frequency by Hour of Day Across COVID Periods}
-
-This plot compares how the hourly distribution of crashes varied across Pre-COVID, During-COVID, and Post-COVID periods. Each bar represents the total number of crashes that occurred during a given hour (0–23). The Pre-COVID period shows pronounced morning (8 AM) and evening (5–6 PM) peaks, consistent with commuting patterns. During COVID, these rush-hour spikes flatten significantly, reflecting reduced travel and remote work. Post-COVID, the peaks partially return but remain lower than pre-pandemic levels, suggesting a lasting shift in commuting behavior.
-
-<<echo=FALSE, message=FALSE, warning=FALSE>>=
-hourly_proportions <- nyc %>%
-  group_by(covid_period) %>%
-  count(HOUR) %>%
-  mutate(prop = n / sum(n))
-
-ggplot(hourly_proportions, aes(x = HOUR, y = prop, fill = covid_period)) + 
-  geom_col(position = "dodge") +
-  labs(title = "Proportional Crash Distribution by Hour Across COVID Periods",
-       y = "Proportion of Total Crashes in Period")
-@
-
-\subsection{Time of Day vs. Fatality Rate}
-
-This scatterplot examines the relationship between the hour of day (0-23, military time) and the fatality rate, measured as deaths per 1,000 crashes. Each point represents one hour of the day, calculated across all crashes in the NYC dataset from 2012-2025. The blue line is the linear regression model, and the gray shaded area is the 95\% confidence interval.
-
-<<echo=FALSE, message=FALSE, warning=FALSE>>=
-# Fatality rate by hour
-crashes_per_hour <- table(nyc$HOUR)
-fatalities_per_hour <- tapply(nyc$NUMBER.OF.PERSONS.KILLED, nyc$HOUR, sum, na.rm = TRUE)
-
-hourly_summary <- data.frame(
-  HOUR = as.numeric(names(crashes_per_hour)),
-  total_crashes = as.numeric(crashes_per_hour),
-  total_fatalities = as.numeric(fatalities_per_hour)
-)
-
-# Normalization 
-# how many people die per 1,000 crashes at each hour
-hourly_summary$fatality_rate <- (hourly_summary$total_fatalities / hourly_summary$total_crashes) * 1000
-
-ggplot(data = hourly_summary) +
-  aes(x = HOUR, y = fatality_rate) +
-  geom_point(size = 3) +
-  geom_smooth(method = "lm") +
-  labs(title = "Fatality Rate by Hour of Day",
-       subtitle = "Are nighttime crashes deadlier?",
-       x = "Hour of Day (0 = Midnight, 23 = 11 PM)",
-       y = "Fatalities per 1,000 Crashes")
-@
-  
-The scatterplot shows that nighttime crashes are significantly deadlier than daytime crashes. Early morning hours (2-4 AM) show fatality rates of 4.5-6.5 deaths per 1,000 crashes, about 6 times higher than midday rates (~1 per 1,000). The negative linear trend also shows that fatality risk decreases consistently throughout the day, where it reaches its lowest point during morning and afternoon hours (7 AM-2 PM), then begins to rise again after 9 PM.
-
-\subsection{Text Mining Analysis}
-
-We applied text mining to crash contributing factors across all 5 CONTRIBUTING.FACTOR.VEHICLE columns (2.2M entries). We also analyzed Twitter crash reports (65+ tweets) to contrast social media dataset versus the Motor Vehicle Collision dataset.
+The comparison in the figure below shows a clear distinction. Motor Vehicle Collision data emphasize behavioral causes such as distraction, failure, and unsafe, while Twitter data focus on location and navigation terms like Bronx, parkway, and street. This suggests that official records capture why crashes occur, whereas social media posts describe where they occur.
 
 <<echo=FALSE, message=FALSE, warning=FALSE>>=
 library(tidytext)
 library(dplyr)
 library(stringr)
-library(tidyr) 
+library(tidyr)
 data(stop_words)
-@
 
-<<echo=FALSE, message=FALSE, warning=FALSE, fig.height=4, fig.width=10, fig.align='center'>>=
 # Twitter words
 twitter_words <- twitter_vehicle %>%
   unnest_tokens(word, tweet_text) %>%
   anti_join(stop_words, by = "word") %>%
   filter(!str_detect(word, "^\\d+$"),
-         !word %in% c("nyc", "new", "york", "updated", "incident", "cleared",
-                     "directions", "construction", "highway", "exit", "amp", 
-                     "https", "t.co")) %>%
+         !word %in% c("nyc","new","york","updated","incident","cleared",
+                      "directions","construction","highway","exit","amp",
+                      "https","t.co")) %>%
   count(word, sort = TRUE) %>%
   mutate(percentage = n / sum(n) * 100, source = "Twitter") %>%
   head(12)
 
 # NYC factors
 factor_words <- nyc %>%
-  tidyr::pivot_longer(cols = starts_with("CONTRIBUTING.FACTOR.VEHICLE."),
+  pivot_longer(cols = starts_with("CONTRIBUTING.FACTOR.VEHICLE."),
                values_to = "factor", values_drop_na = TRUE) %>%
   filter(factor != "", factor != "Unspecified") %>%
   unnest_tokens(word, factor) %>%
   anti_join(stop_words, by = "word") %>%
-  filter(!word %in% c("driver", "vehicle", "inattention", "error", 
-                      "unspecified")) %>%
+  filter(!word %in% c("driver","vehicle","inattention","error","unspecified")) %>%
   count(word, sort = TRUE) %>%
   mutate(percentage = n / sum(n) * 100, source = "Motor Vehicle Collisions") %>%
   head(12)
 
 bind_rows(twitter_words, factor_words) %>%
-  ggplot(aes(x = percentage, y = reorder_within(word, percentage, source), 
+  ggplot(aes(x = percentage, y = reorder_within(word, percentage, source),
              fill = source)) +
   geom_col(show.legend = FALSE) +
   facet_wrap(~source, scales = "free") +
   scale_y_reordered() +
-  scale_fill_manual(values = c("Twitter" = "lightblue", 
-                               "Motor Vehicle Collision" = "lightgreen")) +
-  labs(title = "Text Mining: Twitter vs. Motor Vehicle Collision",
+  scale_fill_manual(values = c("Twitter" = "lightblue",
+                               "Motor Vehicle Collisions" = "lightgreen")) +
+  labs(title = "Text Mining: Twitter vs. Motor Vehicle Collisions",
        x = "Percentage of Terms (%)", y = NULL) +
-  theme_minimal()
+  theme_minimal(base_size = 14)
 @
 
-The Twitter data emphasizes location/navigation (st, manhattan, avenue) while the Motor Vehicle Collision data focus on behavioral causes (distraction, failure, unsafe).
+We also text‑mined for speed‑related terms across all contributing factor fields to quantify behavioral risk. The table below summarizes the share of crashes mentioning speed.
 
-<<echo=FALSE, message=FALSE, warning=FALSE>>=
-# speed feature from text mining
+<<echo=FALSE, message=FALSE, warning=FALSE, fig.height=4, fig.width=10, fig.pos='H', fig.align='center'>>=
 nyc <- nyc %>%
-  mutate(
-    speed_mentioned = (
-      str_detect(tolower(CONTRIBUTING.FACTOR.VEHICLE.1), 
-                 "speed|unsafe|racing|fast") |
-      str_detect(tolower(CONTRIBUTING.FACTOR.VEHICLE.2), 
-                 "speed|unsafe|racing|fast") |
-      str_detect(tolower(CONTRIBUTING.FACTOR.VEHICLE.3), 
-                 "speed|unsafe|racing|fast") |
-      str_detect(tolower(CONTRIBUTING.FACTOR.VEHICLE.4), 
-                 "speed|unsafe|racing|fast") |
-      str_detect(tolower(CONTRIBUTING.FACTOR.VEHICLE.5), 
-                 "speed|unsafe|racing|fast")
-    ),
-    speed_mentioned = ifelse(is.na(speed_mentioned), FALSE, speed_mentioned)
-  )
+  mutate(speed_mentioned = (
+    str_detect(tolower(CONTRIBUTING.FACTOR.VEHICLE.1), "speed|unsafe|racing|fast") |
+    str_detect(tolower(CONTRIBUTING.FACTOR.VEHICLE.2), "speed|unsafe|racing|fast") |
+    str_detect(tolower(CONTRIBUTING.FACTOR.VEHICLE.3), "speed|unsafe|racing|fast") |
+    str_detect(tolower(CONTRIBUTING.FACTOR.VEHICLE.4), "speed|unsafe|racing|fast") |
+    str_detect(tolower(CONTRIBUTING.FACTOR.VEHICLE.5), "speed|unsafe|racing|fast")
+  ),
+  speed_mentioned = ifelse(is.na(speed_mentioned), FALSE, speed_mentioned))
 
 speed_summary <- nyc %>%
   group_by(covid_period) %>%
-  summarise(
-    total = n(),
-    speed_crashes = sum(speed_mentioned),
-    pct = speed_crashes / total * 100
-  )
+  summarise(total = n(),
+            speed_crashes = sum(speed_mentioned),
+            pct = speed_crashes / total * 100)
 
 library(knitr)
 speed_summary %>%
   kable(col.names = c("Period", "Total Crashes", "Speed-Related", "Percent"),
-        digits = 1, 
+        digits = 1,
         caption = "Speed-Related Crashes by COVID Period (Text-Mined)")
 @
 
-Text mining revealed speed-related crashes increased from X\% pre-COVID to Y\% during COVID, providing linguistic evidence for the severity paradox. This text-derived feature captures nuanced mentions across multiple contributing factor codes that structured analysis would miss.
+Speed‑related mentions increased from 7.3\% pre‑COVID to 9.5\% during COVID and 9.6\% post‑COVID, indicating that risky driving behaviors became more prominent during and after reduced traffic periods. This text‑derived feature reinforces the “severity paradox” observed in structured crash metrics and highlights how unstructured text can reveal behavioral patterns that numeric variables alone may overlook.
+
+\newpage
 
 \section{Statistical Modeling \& Interpretation}
 
@@ -912,8 +889,6 @@ Text mining revealed speed-related crashes increased from X\% pre-COVID to Y\% d
 To better understand the factors that influence the severity of motor vehicle collisions in New York City, we developed a preliminary statistical model using logistic regression. The outcome of interest is whether a crash was fatal (at least one person killed) or non-fatal. Logistic regression is appropriate in this context because the outcome is binary (fatal vs. non-fatal), and it allows us to estimate how different factors change the odds of a fatal crash while holding other conditions constant.
 
 In simple terms, the model compares patterns across thousands of crashes to estimate how likely a fatal outcome is under different conditions. For example, whether the crash happened at night or involved a motorcycle. The predictors we included were the borough of occurrence, time of day (day vs. night), vehicle type, and the primary contributing factor reported by police. By examining these, we can identify which circumstances or behaviors are most strongly associated with fatal outcomes.
-
-\subsection{Visualizations}
 
 <<echo=FALSE, message=FALSE, warning=FALSE>>=
 
@@ -1055,7 +1030,7 @@ ggplot(key_terms, aes(x = term, y = odds_ratio, fill = term)) +
 
 This bar chart summarizes the relative likelihood of a fatal crash across key factors, making the model’s results easily interpretable. It shows that crashes involving motorcycles are the most lethal; over 14 times more likely to result in death than the baseline (a daytime car or SUV crash with no specified cause). Other high-risk circumstances include driver illness, drug involvement, tinted windows, and traffic control violations, all of which multiply fatality odds by 5–13 times. Nighttime driving and alcohol involvement roughly double the risk, confirming their significant yet smaller effects compared to vehicle type or severe impairments. On the opposite end, factors like distraction, minor infractions, or mechanical issues are associated with odds ratios below 1, indicating little to no increase in fatality risk.
 
-\subsection{Interpretation}
+\subsubsection{Interpretation}
 Our analysis highlights which circumstances make crashes most likely to be deadly. Location matters somewhat: crashes in Staten Island are more likely to be fatal than in the Bronx, Queens, or Manhattan. In spite of this, the bigger differences come from time of day, vehicle type, and driver behavior.
 
 Time of day: Nighttime crashes are almost twice as likely to result in death compared to daytime crashes (about 1.8 times higher odds).
@@ -1143,6 +1118,116 @@ ggplot(interaction_effects, aes(x = term_clean, y = estimate, color = significan
   theme(legend.position = "none")
 @
 
+\subsubsection{Interpretation}
+
 The interaction analysis reveals that while overall severity increased across all vehicle types, the relative risk hierarchy remained largely consistent. No individual vehicle type showed statistically significant differential effects during COVID at the 0.05 level, though motorcycle crashes showed a notable trend toward increased risk during COVID (p = 0.097) and truck/bus crashes trended toward increased risk post-COVID (p = 0.100). This suggests the pandemic amplified crash severity uniformly rather than disproportionately affecting specific vehicle categories.
+
+\newpage
+
+\section{Killer Plot}
+
+\newpage
+
+\section{Conclusion}
+
+\subsection{Key Takeaways}
+
+\subsection{Potential Future Work}
+
+\newpage
+
+\section{Appendices}
+
+\subsection{Appendix A: Piecewise Linear Trends in Total Crashes per Year by Borough}
+<<echo=FALSE, message=FALSE, warning=FALSE>>=
+dat <- nyc %>%
+  filter(BOROUGH != "") %>%
+  group_by(BOROUGH) %>%
+  count(YEAR) %>%
+  ungroup() %>%
+  mutate(period = ifelse(YEAR <= 2019, "2019 and before", "2020 and after"))
+
+ggplot(dat, aes(x = YEAR, y = n, color = BOROUGH)) +
+  geom_point() +
+  geom_smooth(aes(linetype = period, group = interaction(BOROUGH, period)),
+              method = "lm",
+              se = FALSE) +
+  labs(title = "Piecewise Linear Trends in Total Crashes per Year by Borough",
+       x = "Year",
+       y = "Number of Crashes",
+       linetype = "Time Period")
+@
+
+\subsection{Appendix B: Total Number of Accidents per Time of Day}
+<<echo=FALSE, message=FALSE, warning=FALSE>>=
+layout(mat = 1)
+times <- nyc$CRASH.TIME
+hours <- as.numeric(sub("\\:.*", "", times))
+par(tck = -0.015, mgp = c(1.5, 0.4, 0), mar = c(3, 3, 3, 1.5))
+hist(hours, xlab = "Time of day", ylab = "Number of accidents", axes = FALSE, 
+     main="Total Number of Accidents per Time of Day", 
+     breaks=seq(-0.5, 23.5, 1))
+
+labels <- c("12:00AM", "3:00AM", "6:00AM", "9:00AM", 
+            "12:00PM", "3:00PM", "6:00PM", "9:00PM")
+axp <- seq(0, 23, by=3)
+axis(1, at=axp, labels = labels)
+axp2 <- seq(0, 150000, by=50000)
+axis(2, at = axp2, labels = axp2)
+@
+
+\subsection{Appendix C: All Accidents}
+<<echo=FALSE, message=FALSE, warning=FALSE>>=
+#plot the car crashes on the NYC map
+small_sample_sf <- filter(combined, between(LONGITUDE, -74.26, -73.70) & 
+                            between(LATITUDE, 40.49, 40.92)) %>%
+  sample_n(3000) %>%
+  st_as_sf(coords = c("LONGITUDE", "LATITUDE"), crs = 4326) %>%
+  st_transform(3857)
+
+nyc_bbox <- st_bbox(small_sample_sf)
+
+ggplot(small_sample_sf)+
+  annotation_map_tile(type = "cartolight", zoom=11)+
+  stat_density_2d(
+    aes(x = st_coordinates(small_sample_sf)[,1],
+        y = st_coordinates(small_sample_sf)[,2],
+        fill = after_stat(level),
+        alpha = after_stat(level)),
+    geom = "polygon",
+    contour = TRUE
+  ) +
+  scale_fill_viridis_c(option = "magma") +
+  scale_alpha(range = c(0.05, 0.4), guide = "none") +
+  coord_sf(xlim = c(nyc_bbox["xmin"], nyc_bbox["xmax"]),
+           ylim = c(nyc_bbox["ymin"], nyc_bbox["ymax"]),
+           expand = FALSE) +
+  labs(title = "NYC Accident Density Heatmap") +
+  xlab("Longitude Coordinates") +
+  ylab("Latitude Coordinates") +
+  guides(fill = guide_colorbar(title = "Density"))
+@
+
+\subsection{Appendix D: Highway Accidents}
+<<echo=FALSE, message=FALSE, warning=FALSE>>=
+# Find the accidents that occurred on high speed roads
+filter(combined, between(LONGITUDE, -74.26, -73.70) & 
+         between(LATITUDE, 40.49, 40.92), SPEED.LIMIT > 40) %>%
+  sample_n(3000) %>%
+  st_as_sf(coords = c("LONGITUDE", "LATITUDE"), crs = 4326) %>%
+  st_transform(3857) %>%
+  ggplot() +
+  annotation_map_tile(type = "cartolight", zoom = 11) +
+  geom_sf( size = 1) +
+  coord_sf(xlim = c(nyc_bbox["xmin"], nyc_bbox["xmax"]),
+           ylim = c(nyc_bbox["ymin"], nyc_bbox["ymax"]),
+           expand = FALSE) +
+  labs(title = "Car accidents on high speed roads (>40mph)")
+@
+
+\subsection{Appendix E: R Code}
+<<echo=FALSE, message=FALSE, warning=FALSE>>=
+{r ref.label=knitr::all_labels(), echo=TRUE, eval=FALSE}
+@
 
 \end{document}
