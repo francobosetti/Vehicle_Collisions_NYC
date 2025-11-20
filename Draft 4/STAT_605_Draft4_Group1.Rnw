@@ -499,9 +499,12 @@ twitter_vehicle <- dbGetQuery(dcon, "SELECT * FROM v_twitter_vehicle") %>%
 dbDisconnect(dcon)
 @
 
-\section{Visualizations}
+\section{Exploratory Data Analysis}
 
-\subsection{Vehicle Collisions over Time}
+\subsection{Collision Frequency}
+\subsection{Did collision rates return to pre-pandemic levels or establish a ”new normal”? }
+
+\subsubsubsection{Vehicle Collisions over Time}
 By grouping the collisions into each month in which they occured, we can plot a line graph showing the number of collisions over the past 13 years.
 <<echo=FALSE, message=FALSE, warning=FALSE, fig.height=13, fig.width=11, fig.align='center'>>=
 monthly_counts <- table(nyc$YEAR_MONTH)
@@ -584,6 +587,20 @@ text(x=as.Date("2020-03-17"), y=max_col*0.7,
      labels="Beginning of COVID lockdown", pos=4, col="black", cex=0.8)
 @
 Each borough follows very similar shapes in their respective line. Further analysis to normalize by some factor, e.g. by population or road network density may provide more insight.
+
+\subsection{Crash Frequency by Hour of Day Across COVID Periods}
+
+This plot compares how the hourly distribution of crashes varied across Pre-COVID, During-COVID, and Post-COVID periods. Each bar represents the total number of crashes that occurred during a given hour (0–23). The Pre-COVID period shows pronounced morning (8 AM) and evening (5–6 PM) peaks, consistent with commuting patterns. During COVID, these rush-hour spikes flatten significantly, reflecting reduced travel and remote work. Post-COVID, the peaks partially return but remain lower than pre-pandemic levels, suggesting a lasting shift in commuting behavior.
+
+<<echo=FALSE, message=FALSE, warning=FALSE>>=
+ggplot(nyc, aes(x = HOUR, fill = covid_period)) + 
+  geom_histogram(binwidth = 1, position = "dodge") + 
+  labs(title = "Crash Frequency by Hour of Day Across COVID Periods",
+       x = "Hour of Day", 
+       y = "Number of Collisions") + 
+  theme_minimal() + 
+  scale_fill_brewer(palette = "Set1")
+@
 
 \subsection{Analysis of linear trends in vehicle collisions}
 
@@ -768,20 +785,6 @@ filter(combined, between(LONGITUDE, -74.26, -73.70) &
 @
 
 While this imaging doesn’t directly allow us to draw any conclusions, having this mapping of which car accidents occurred on higher speed roads allows us to do further interpretations of the data with relation to the speed limit.
-
-\subsection{Crash Frequency by Hour of Day Across COVID Periods}
-
-This plot compares how the hourly distribution of crashes varied across Pre-COVID, During-COVID, and Post-COVID periods. Each bar represents the total number of crashes that occurred during a given hour (0–23). The Pre-COVID period shows pronounced morning (8 AM) and evening (5–6 PM) peaks, consistent with commuting patterns. During COVID, these rush-hour spikes flatten significantly, reflecting reduced travel and remote work. Post-COVID, the peaks partially return but remain lower than pre-pandemic levels, suggesting a lasting shift in commuting behavior.
-
-<<echo=FALSE, message=FALSE, warning=FALSE>>=
-ggplot(nyc, aes(x = HOUR, fill = covid_period)) + 
-  geom_histogram(binwidth = 1, position = "dodge") + 
-  labs(title = "Crash Frequency by Hour of Day Across COVID Periods",
-       x = "Hour of Day", 
-       y = "Number of Collisions") + 
-  theme_minimal() + 
-  scale_fill_brewer(palette = "Set1")
-@
 
 \subsection{Time of Day vs. Fatality Rate}
 
