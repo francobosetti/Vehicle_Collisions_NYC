@@ -99,16 +99,15 @@ library(stringr)
 library(tidytext)
 library(tidyr)
 
-dcon <- dbConnect(SQLite(), dbname = "~/Documents/STAT405_605/STAT605_Project/data/Collisions_DB.db")
+dcon <- dbConnect(SQLite(), dbname = "data/Collisions_DB.db")
 @
 
 <<echo=FALSE, message=FALSE, warning=FALSE, results = 'hide'>>=
 # nyc preprocessing
 dbExecute(dcon, "
-CREATE VIEW IF NOT EXISTS crashes_enriched AS
+CREATE TEMP VIEW IF NOT EXISTS crashes_enriched AS
 WITH b AS (
   SELECT
-    -- map raw columns to helper names
     substr(\"CRASH DATE\",7,4) || '-' || substr(\"CRASH DATE\",1,2) || '-' || substr(\"CRASH DATE\",4,2) AS crash_date_iso,
     \"CRASH TIME\"                                   AS crash_time_raw,
     \"BOROUGH\"                                      AS borough,
@@ -152,15 +151,15 @@ SELECT
   on_street_name                                     AS \"ON.STREET.NAME\",
   cross_street_name                                  AS \"CROSS.STREET.NAME\",
   off_street_name                                    AS \"OFF.STREET.NAME\",
-  number_of_persons_injured                          AS \"NUMBER.OF.PERSONS.INJURED\",
-  number_of_persons_killed                           AS \"NUMBER.OF.PERSONS.KILLED\",
-  number_of_pedestrians_injured                      AS \"NUMBER.OF.PEDESTRIANS.INJURED\",
-  number_of_pedestrians_killed                       AS \"NUMBER.OF.PEDESTRIANS.KILLED\",
-  number_of_cyclist_injured                          AS \"NUMBER.OF.CYCLIST.INJURED\",
-  number_of_cyclist_killed                           AS \"NUMBER.OF.CYCLIST.KILLED\",
-  number_of_motorist_injured                         AS \"NUMBER.OF.MOTORIST.INJURED\",
-  number_of_motorist_killed                          AS \"NUMBER.OF.MOTORIST.KILLED\",
-  contributing_factor_vehicle_1                      AS \"CONTRIBUTING.FACTOR.VEHICLE.1\",
+  CAST(number_of_persons_injured AS INTEGER)         AS \"NUMBER.OF.PERSONS.INJURED\",
+  CAST(number_of_persons_killed AS INTEGER)          AS \"NUMBER.OF.PERSONS.KILLED\",
+  CAST(number_of_pedestrians_injured AS INTEGER)     AS \"NUMBER.OF.PEDESTRIANS.INJURED\",
+  CAST(number_of_pedestrians_killed AS INTEGER)      AS \"NUMBER.OF.PEDESTRIANS.KILLED\",
+  CAST(number_of_cyclist_injured AS INTEGER)          AS \"NUMBER.OF.CYCLIST.INJURED\",
+  CAST(number_of_cyclist_killed AS INTEGER)          AS \"NUMBER.OF.CYCLIST.KILLED\",
+  CAST(number_of_motorist_injured AS INTEGER)        AS \"NUMBER.OF.MOTORIST.INJURED\",
+  CAST(number_of_motorist_killed AS INTEGER)         AS \"NUMBER.OF.MOTORIST.KILLED\",
+  UPPER(contributing_factor_vehicle_1)               AS \"CONTRIBUTING.FACTOR.VEHICLE.1\",
   contributing_factor_vehicle_2                      AS \"CONTRIBUTING.FACTOR.VEHICLE.2\",
   contributing_factor_vehicle_3                      AS \"CONTRIBUTING.FACTOR.VEHICLE.3\",
   contributing_factor_vehicle_4                      AS \"CONTRIBUTING.FACTOR.VEHICLE.4\",
@@ -198,7 +197,7 @@ FROM b;
 ")
 
 dbExecute(dcon, "
-CREATE VIEW IF NOT EXISTS vehicles_enriched AS
+CREATE TEMP VIEW IF NOT EXISTS vehicles_enriched AS
 WITH v AS (
   SELECT
     -- original columns
@@ -229,7 +228,7 @@ FROM v;
 ")
 
 dbExecute(dcon, "
-CREATE VIEW IF NOT EXISTS vehicle_agg AS
+CREATE TEMP VIEW IF NOT EXISTS vehicle_agg AS
 SELECT
   COLLISION_ID,
   COUNT(*)                                                     AS VEHICLE_COUNT,
@@ -260,35 +259,12 @@ nyc$covid_period <- factor(nyc$covid_period,
                            levels = c("Pre-COVID","During COVID","Post-COVID"))
 
 nyc$BOROUGH <- factor(nyc$BOROUGH)
-
-nyc <- nyc %>%
-mutate(across(
-    c(NUMBER.OF.PERSONS.INJURED,
-      NUMBER.OF.PERSONS.KILLED,
-      NUMBER.OF.PEDESTRIANS.INJURED,
-      NUMBER.OF.PEDESTRIANS.KILLED,
-      NUMBER.OF.CYCLIST.INJURED,
-      NUMBER.OF.CYCLIST.KILLED,
-      NUMBER.OF.MOTORIST.INJURED,
-      NUMBER.OF.MOTORIST.KILLED),
-    as.integer
-  ))
 @
 
 <<echo=FALSE, message=FALSE, warning=FALSE, results = 'hide'>>=
 # vzv speed limit preprocessing
 # Format the sp_limits latitude and longitude
 # Pre-process the speed limit data
-dbExecute(dcon, "
-  DROP VIEW IF EXISTS v_speed_limits_parsed;
-")
-dbExecute(dcon, "
-  DROP VIEW IF EXISTS v_sp_lim_proc;
-")
-dbExecute(dcon, "
-  DROP VIEW IF EXISTS v_sp_limits_filt;
-")
-
 dbExecute(dcon, "
 CREATE TEMP VIEW v_speed_limits_parsed AS
 WITH base AS (
@@ -384,10 +360,6 @@ combined <- # add speed limit data to nyc dataset
 <<echo=FALSE, message=FALSE, warning=FALSE, results = 'hide'>>=
 # twitter preprocessing 2
 # transit vs vehicle tweets
-dbExecute(dcon, "DROP VIEW IF EXISTS v_twitter_flags;")
-dbExecute(dcon, "DROP VIEW IF EXISTS v_twitter_vehicle;")
-dbExecute(dcon, "DROP VIEW IF EXISTS v_twitter_nyc;")
-
 dbExecute(dcon, "
 CREATE TEMP VIEW v_twitter_nyc AS
 WITH base AS (
