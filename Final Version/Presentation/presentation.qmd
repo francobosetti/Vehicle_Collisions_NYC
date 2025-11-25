@@ -568,29 +568,28 @@ par(mfrow = c(1, 1))
 ## Borough-Level Patterns {.smaller}
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.width=10, fig.height=5}
-# Yearly Crash Trends by Borough, 2012–2025
 dat <- nyc %>%
   filter(BOROUGH != "") %>%
-  group_by(BOROUGH, YEAR) %>%
-  summarise(n = n(), .groups = "drop")
+  group_by(BOROUGH) %>%
+  count(YEAR) %>%
+  ungroup() %>%
+  mutate(period = ifelse(YEAR <= 2019, "2019 and before", "2020 and after"))
 
 ggplot(dat, aes(x = YEAR, y = n, color = BOROUGH)) +
-  geom_line(size = 1) +
-  geom_point(size = 2) +
-  labs(
-    title = "Yearly Crash Trends by Borough, 2012–2025",
-    x = "Year",
-    y = "Number of Crashes",
-    color = "Borough"
-  ) +
-  theme_minimal(base_size = 13) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  geom_point() +
+  geom_smooth(aes(linetype = period, group = interaction(BOROUGH, period)),
+              method = "lm",
+              se = FALSE) +
+  labs(title = "Piecewise Linear Trends in Total Crashes per Year by Borough",
+       x = "Year",
+       y = "Number of Crashes",
+       linetype = "Time Period")
 ```
 
 ::: {.fragment}
-- **Brooklyn & Queens:** Largest declines, slowest recovery
-- **Manhattan:** Steepest drop, partial rebound
-- **Staten Island:** Most stable
+- **Brooklyn & Queens & Bronx:** Increasing pre-COVID, Decreasing post-COVID
+- **Manhattan:** Decreasing pre-COVID, more static post-COVID
+- **Staten Island:** Largely static the whole time
 :::
 
 # Did Crashes Become More Severe? {background="#43464B"}
