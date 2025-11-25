@@ -577,23 +577,22 @@ Overall, these trends reveal that while traffic volumes rebounded after the lock
 \subsubsection{Yearly Crash Trends by Borough, 2012–2025}
 
 <<echo=FALSE, message=FALSE, warning=FALSE, fig.height=13, fig.width=11, fig.align='center'>>=
-# Yearly Crash Trends by Borough, 2012–2025
 dat <- nyc %>%
   filter(BOROUGH != "") %>%
-  group_by(BOROUGH, YEAR) %>%
-  summarise(n = n(), .groups = "drop")
+  group_by(BOROUGH) %>%
+  count(YEAR) %>%
+  ungroup() %>%
+  mutate(period = ifelse(YEAR <= 2019, "2019 and before", "2020 and after"))
 
 ggplot(dat, aes(x = YEAR, y = n, color = BOROUGH)) +
-  geom_line(size = 1) +
-  geom_point(size = 2) +
-  labs(
-    title = "Yearly Crash Trends by Borough, 2012–2025",
-    x = "Year",
-    y = "Number of Crashes",
-    color = "Borough"
-  ) +
-  theme_minimal(base_size = 13) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  geom_point() +
+  geom_smooth(aes(linetype = period, group = interaction(BOROUGH, period)),
+              method = "lm",
+              se = FALSE) +
+  labs(title = "Piecewise Linear Trends in Total Crashes per Year by Borough",
+       x = "Year",
+       y = "Number of Crashes",
+       linetype = "Time Period")
 
 @
 
@@ -709,8 +708,8 @@ These patterns suggest that while the total number of crashes declined during th
 crash_severity_period <- nyc %>%
   group_by(covid_period) %>%
   summarize(
-    fatal_rate = sum(NUMBER.OF.PERSONS.KILLED, na.rm = TRUE) / n() * 1000,
-    injury_rate = sum(NUMBER.OF.PERSONS.INJURED, na.rm = TRUE) / n() * 1000
+    fatal_rate = sum(NUMBER.OF.PERSONS.KILLED, na.rm = TRUE) / n() * 100000,
+    injury_rate = sum(NUMBER.OF.PERSONS.INJURED, na.rm = TRUE) / n() * 100000
   ) %>%
   pivot_longer(
     cols = c(fatal_rate, injury_rate),
@@ -727,7 +726,7 @@ ggplot(crash_severity_period, aes(x = covid_period, y = rate, fill = type)) +
   labs(
     title = "Crash Severity by COVID Period",
     x = "COVID Period",
-    y = "Rate per 1,000 Crashes",
+    y = "Rate per 100,000 Crashes",
     fill = "Type"
   ) +
   facet_wrap(~type, scales="free_y") +

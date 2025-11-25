@@ -14,7 +14,7 @@ format:
 server: shiny
 ---
 
-```{r, include=FALSE}
+```{r preprocessing, include=FALSE}
 # Preprocessing 
 library(RSQLite)
 library(tidyr)
@@ -478,7 +478,8 @@ dbDisconnect(dcon)
 
 ## Monthly Collision Trends {.smaller}
 
-```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.width=10, fig.height=5}
+**Number of Monthly Vehicle Collisions in NYC:**
+```{r plot1, echo=FALSE, message=FALSE, warning=FALSE, fig.width=10, fig.height=5}
 # Motor Vehicle Collisions over Time
 par(mfrow = c(1, 2))
 
@@ -486,9 +487,12 @@ monthly_counts <- table(nyc$YEAR_MONTH)
 months <- names(monthly_counts)
 colspermonth <- as.numeric(monthly_counts)
 plot_months <- as.Date(paste0(months, "-01"))
+
+par(mar = c(5, 5, 4, 2) + 0.1) 
+
 plot(plot_months, colspermonth,
-     main="Number of Monthly Vehicle Collisions in NYC",
-     type="o",
+     cex.main = 0.9,
+     type="n",
      pch=20,
      xlab="Month",
      ylab="Number of Collisions",
@@ -496,8 +500,25 @@ plot(plot_months, colspermonth,
      yaxt="n",
      xaxs="i",
      yaxs="i",
-     ylim=c(0,max(colspermonth)+1000))
+     ylim=c(0,max(colspermonth)+1000),
+     mgp = c(3, 1, 0))
 
+rect(xleft = as.Date("2017-01-01"), 
+     ybottom = 0, 
+     xright = as.Date("2020-01-01"), 
+     ytop = max(colspermonth)+1000,
+     col = adjustcolor("lightblue", alpha.f = 0.3), 
+     border = NA)
+
+rect(xleft = as.Date("2022-01-01"), 
+     ybottom = 0, 
+     xright = as.Date("2025-01-01"), 
+     ytop = max(colspermonth)+1000,
+     col = adjustcolor("lightgreen", alpha.f = 0.3), 
+     border = NA)
+
+points(plot_months, colspermonth, pch=20)
+lines(plot_months, colspermonth)
 
 xticks <- seq(min(plot_months), max(plot_months)+365, by = "6 months")
 axis.Date(1, at = xticks, 
@@ -506,7 +527,7 @@ axis(2, at = seq(0, max(colspermonth)+1000, by = 1000), cex.axis = 0.7, las=1)
 abline(v = xticks, col = "gray", lty = "dotted")
 abline(v=as.Date("2020-03-17"), col="red", lwd=1.5, lty=5)
 text(x=as.Date("2020-03-17"), y=max(colspermonth)*0.9, 
-     labels="Beginning of COVID lockdown", pos=4, col="red", cex=0.8)
+     labels="Beginning of \nCOVID lockdown", pos=4, col="red", cex=0.8)
 
 
 borough <- levels(nyc$BOROUGH)
@@ -526,7 +547,6 @@ min_dat <- as.Date(min(sapply(plot_months,min)))
 max_dat <- as.Date(max(sapply(plot_months,max)))
 
 plot(plot_months[[1]], colspermonth[[1]],
-     main="Number of Monthly Vehicle Collisions in NYC",
      type="l",
      pch=20,
      col= colors[1],
@@ -546,8 +566,10 @@ legend("topright",
        legend = borough,
        col = colors,
        lty = 1,
-       cex=0.9)
-
+       cex = 0.7,
+       inset = c(0.02, 0.02),
+       bg = "white",
+       box.lty = 0)
 
 xticks <- seq(min_dat, max_dat+365, by = "6 months")
 axis.Date(1, at = xticks, 
@@ -556,18 +578,15 @@ axis(2, at = seq(0, max_col+1000, by = 1000), cex.axis = 0.7, las=1)
 abline(v = xticks, col = "gray", lty = "dotted")
 abline(v=as.Date("2020-03-17"), col="black", lwd=1.5, lty=5)
 text(x=as.Date("2020-03-17"), y=max_col*0.7, 
-     labels="Beginning of COVID lockdown", pos=4, col="black", cex=0.8)
+     labels="Beginning of COVID lockdown", pos=4, col="black", cex=0.6)
 
 par(mfrow = c(1, 1))
 ```
 
-::: {.fragment}
-**Key Finding:** Crashes dropped dramatically in March 2020 but did not fully recover
-:::
 
 ## Borough-Level Patterns {.smaller}
 
-```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.width=10, fig.height=5}
+```{r plot2, echo=FALSE, message=FALSE, warning=FALSE, fig.width=10, fig.height=5}
 dat <- nyc %>%
   filter(BOROUGH != "") %>%
   group_by(BOROUGH) %>%
@@ -589,20 +608,19 @@ ggplot(dat, aes(x = YEAR, y = n, color = BOROUGH)) +
 ::: {.fragment}
 - **Brooklyn & Queens & Bronx:** Increasing pre-COVID, Decreasing post-COVID
 - **Manhattan:** Decreasing pre-COVID, more static post-COVID
-- **Staten Island:** Largely static the whole time
 :::
 
 # Did Crashes Become More Severe? {background="#43464B"}
 
 ## Severity  {.smaller}
 
-```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.width=10, fig.height=5}
+```{r plot3, echo=FALSE, message=FALSE, warning=FALSE, fig.width=10, fig.height=5}
 # Crash Severity by COVID Period
 crash_severity_period <- nyc %>%
   group_by(covid_period) %>%
   summarize(
-    fatal_rate = sum(NUMBER.OF.PERSONS.KILLED, na.rm = TRUE) / n() * 1000,
-    injury_rate = sum(NUMBER.OF.PERSONS.INJURED, na.rm = TRUE) / n() * 1000
+    fatal_rate = sum(NUMBER.OF.PERSONS.KILLED, na.rm = TRUE) / n() * 100000,
+    injury_rate = sum(NUMBER.OF.PERSONS.INJURED, na.rm = TRUE) / n() * 100000
   ) %>%
   pivot_longer(
     cols = c(fatal_rate, injury_rate),
@@ -614,26 +632,110 @@ ggplot(crash_severity_period, aes(x = covid_period, y = rate, fill = type)) +
   geom_col(position = "dodge") +
   scale_fill_manual(
     values = c("fatal_rate" = "firebrick", "injury_rate" = "steelblue"),
-    labels = c("Fatality rate", "Injury rate")
+    labels = c("Fatality Rate", "Injury Rate")
+  ) +
+  facet_wrap(
+    ~type,
+    scales = "free_y",
+    labeller = as_labeller(c(
+      fatal_rate = "Fatality Rate",
+      injury_rate = "Injury Rate"
+    ))
   ) +
   labs(
     title = "Crash Severity by COVID Period",
     x = "COVID Period",
-    y = "Rate per 1,000 Crashes",
+    y = "Rate per 100,000 Crashes",
     fill = "Type"
   ) +
-  facet_wrap(~type, scales="free_y") +
   theme_minimal(base_size = 13) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    legend.position = "bottom",
+    legend.title = element_text(size = 10),
+    legend.text = element_text(size = 9)
+  )
 ```
 
 ::: {.fragment}
 **Key Finding:** Crash severity increased during and after COVID‑19
 :::
 
+## COVID's Impact on Severity {.smaller}
+```{r plot4, echo=FALSE, message=FALSE, warning=FALSE, fig.width=10, fig.height=5}
+nyc_small <- nyc %>%
+  transmute(
+    covid_period = covid_period,
+    is_fatal = ifelse(NUMBER.OF.PERSONS.KILLED > 0, 1, 0),
+    borough = BOROUGH,
+    crash_hour = hour(hm(CRASH.TIME)),
+    contributing_factor_grouped = factor(case_when(
+    grepl("ALCOHOL|DRUGS|ILLNES|FATIGUE|ASLEEP|CONSCIOUSNESS|MEDICATION|DISABILITY", 
+          CONTRIBUTING.FACTOR.VEHICLE.1, ignore.case = TRUE) ~ "Impairment",
+    grepl("SPEED|AGGRESSIVE|RAGE", 
+          CONTRIBUTING.FACTOR.VEHICLE.1, ignore.case = TRUE) ~ "Speeding/Aggression",
+    grepl("DISTRACTION|INATTENTION|PHONE|TEXTING|ELECTRONIC|NAVIGATION|EATING|HEADPHONES", 
+          CONTRIBUTING.FACTOR.VEHICLE.1, ignore.case = TRUE) ~ "Distraction",
+    grepl("YIELD|TRAFFIC CONTROL|KEEP RIGHT", 
+          CONTRIBUTING.FACTOR.VEHICLE.1, ignore.case = TRUE) ~ "Traffic Violation",
+    grepl("FOLLOWING|PASSING|LANE|TURNING|BACKING|UNINVOLVED|EXPERIENCE|PEDESTRIAN ERROR", 
+          CONTRIBUTING.FACTOR.VEHICLE.1, ignore.case = TRUE) ~ "Driver Error",
+    grepl("PAVEMENT|GLARE|VIEW|OBSTRUCT|ANIMAL|DEFECTIVE|FAILURE|TINTED|WINDSHIELD|OVERSIZED|VANDALISM", 
+          CONTRIBUTING.FACTOR.VEHICLE.1, ignore.case = TRUE) ~ "External Vehicle Defect",
+    TRUE ~ "Other/Unknown"
+    )),
+    vehicle_cat = factor(case_when(
+      grepl("MOTORCYCLE|MOTORBIKE", VEHICLE.TYPE.CODE.1, ignore.case = TRUE) ~ "Motorcycle",
+      grepl("TRUCK|BUS", VEHICLE.TYPE.CODE.1, ignore.case = TRUE) ~ "Truck/Bus",
+      grepl("BICYCLE|BIKE|SCOOTER", VEHICLE.TYPE.CODE.1, ignore.case = TRUE) ~ "Bike/Scooter",
+      TRUE ~ "Car/SUV"
+    ))
+  ) %>%
+  filter(borough != "") %>%
+  # Add Time of Day logic
+  mutate(tod = ifelse(crash_hour >= 6 & crash_hour < 18, "day", "night"))
+
+# 1. Set Factor Baseline (The "Normal" Crash)
+nyc_small$contributing_factor_grouped <- relevel(nyc_small$contributing_factor_grouped, ref = "Other/Unknown")
+
+# 2. Set Time Baseline (The "Normal" Time)
+nyc_small$covid_period <- relevel(nyc_small$covid_period, ref = "Pre-COVID")
+
+# Model 2: COVID period controlling for key factors
+covid_adjusted_model <- glm(is_fatal ~ covid_period + borough + vehicle_cat + tod,
+                           data = nyc_small, 
+                           family = binomial)
+
+covid_results <- tidy(covid_adjusted_model, conf.int = TRUE, exponentiate = TRUE) %>%
+  filter(grepl("covid_period", term)) %>%
+  mutate(period = case_when(
+    grepl("During COVID", term) ~ "During COVID",
+    grepl("Post-COVID", term) ~ "Post-COVID",
+    TRUE ~ "Reference"
+  )) %>%
+  filter(period != "Reference")
+
+ggplot(covid_results, aes(x = period, y = estimate)) +
+  geom_point(size = 5, color = "#D7191C") +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0.2, size = 1.5) +
+  geom_hline(yintercept = 1, linetype = "dashed", color = "black", size = 1) +
+  geom_text(aes(label = sprintf("%.2fx", estimate)),
+            hjust = -0.5, vjust = 0.3, size = 6, fontface = "bold") +
+  labs(title = "Fatal Crash Risk Rose during COVID",
+       subtitle = "Adjusted for vehicle type, time, and location",
+       x = "COVID Period", y = "Odds Ratio (vs. Pre-COVID)") +
+  ylim(1, 2.5) +
+  theme_minimal(base_size = 14) +
+  theme(plot.title = element_text(face = "bold"))
+```
+
+::: {.fragment}
+**Key Finding:** Even controlling for other factors, crashes became 67-78% more likely to be fatal
+:::
+
 ## Crash Timing Patterns {.smaller}
 
-```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.width=10, fig.height=5}
+```{r plot5, echo=FALSE, message=FALSE, warning=FALSE, fig.width=10, fig.height=5}
 # Hourly Crash Distribution by COVID Period
 hourly_proportions <- nyc %>%
   group_by(covid_period) %>%
@@ -664,49 +766,8 @@ Rush‑hour peaks dipped slightly during COVID but largely returned afterward
 
 ## Contributing Factors {.smaller}
 
-::: columns
-::: {.column width="50%"}
-**Top Causes Overall:**
-```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.width=5, fig.height=4}
-cfs <- unique(nyc$CONTRIBUTING.FACTOR.VEHICLE.1)
-cont_fact <- c()
-for (f in cfs){
-  s <- 0
-  for (i in 1:5){
-    colmn <- paste0("CONTRIBUTING.FACTOR.VEHICLE.",i)
-    s <- s + sum(nyc[[colmn]] == f)
-  }
-  cont_fact <- append(cont_fact,s)
-}
-names(cont_fact) <- cfs
-fivemost <- sort(cont_fact, decreasing=TRUE)[3:7] #1st and 2nd are unspecified
-
-par(mar = c(10, 5, 4, 2))
-bp <- barplot(fivemost, 
-        main = "Top Contributing Factors",
-        col = c("darkseagreen4", "darkseagreen", "darkseagreen3", 
-                "darkseagreen2", "darkseagreen1"),
-        las = 2,
-        cex.names = 0.8,
-        xaxt="n",
-        yaxt = "n",
-        ylim = c(0,ceiling(max(fivemost)/100000)*100000)
-        )
-text(bp, -max(fivemost)*0.05, names(fivemost), srt = 45, xpd = TRUE, adj = 1, 
-     cex = 0.8)
-title(ylab = "Number of Cases", line=4)
-axis(2, at = seq(0, ceiling(max(fivemost)/100000)*100000, by = 100000), 
-     labels = format(seq(0, ceiling(max(fivemost)/100000)*100000, by = 100000), 
-                     big.mark = ",",
-                     scientific = FALSE),
-     cex.axis = 0.8,
-     las = 1)
-```
-:::
-
-::: {.column width="50%"}
 **How Factors Changed:**
-```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.width=5, fig.height=4}
+```{r plot6, echo=FALSE, message=FALSE, warning=FALSE, fig.width=10, fig.height=6}
 all_factors <- toupper(c(
   nyc$CONTRIBUTING.FACTOR.VEHICLE.1,
   nyc$CONTRIBUTING.FACTOR.VEHICLE.2,
@@ -747,14 +808,14 @@ ggplot(factor_data, aes(x = reorder(factor, -pct), y = pct, fill = covid_period)
     values = c("Pre-COVID" = "#F8766D",
                "During COVID" = "darkseagreen3",
                "Post-COVID" = "#619CFF"),
-    name = "Period"
+    name = "Period: "
   ) +
   labs(
     title = "Top Causes by COVID Period",
     x = NULL,
     y = "% of Total Crashes"
   ) +
-  theme_minimal(base_size = 10) +
+  theme_minimal(base_size = 18) +
   theme(
     panel.grid = element_blank(),
     axis.text.x = element_text(angle = 60, vjust = 1, hjust = 1, size = 5, color = "black"),
@@ -766,8 +827,6 @@ ggplot(factor_data, aes(x = reorder(factor, -pct), y = pct, fill = covid_period)
     legend.title = element_text(color = "black")
   )
 ```
-:::
-:::
 
 ::: {.fragment}
 **Key Finding:** Driver inattention/distraction dominates, but its relative importance increased during COVID
@@ -775,27 +834,7 @@ ggplot(factor_data, aes(x = reorder(factor, -pct), y = pct, fill = covid_period)
 
 ## Text Mining Insights {.smaller}
 
-Compared NYC Motor Vehicle Collision reports vs. Twitter mentions:
-
-::: columns
-::: {.column width="50%"}
-**Official Reports Focus On:**
-   - Distraction
-   - Failure
-   - Unsafe behaviors
-   - **WHY** crashes happen
-:::
-
-::: {.column width="50%"}
-**Social Media Focus On:**
-   - Bronx, Brooklyn, Queens
-   - Parkway, Expressway
-   - Street names
-   - **WHERE** crashes happen
-:::
-:::
-
-```{r}
+```{r plot7}
 
 # Twitter words
 twitter_words <- twitter_vehicle %>%
@@ -839,150 +878,121 @@ bind_rows(twitter_words, factor_words) %>%
 
 ## Baseline Risk Factors {.smaller}
 
-**What makes crashes deadly?** (Logistic Regression Results)
+```{r plot8, echo=FALSE, message=FALSE, warning=FALSE, fig.width=10, fig.height=5}
+model_interaction <- glm(is_fatal ~ borough + vehicle_cat + tod + 
+                        (contributing_factor_grouped * covid_period),
+                        data = filter(nyc_small, 
+                                      covid_period != "During COVID"), 
+                        family = binomial)
 
-```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.width=10, fig.height=5}
-nyc_small <- nyc %>%
-  filter(BOROUGH != "" &
-           CONTRIBUTING.FACTOR.VEHICLE.1 != "" &
-           CONTRIBUTING.FACTOR.VEHICLE.1 != "1" &
-           CONTRIBUTING.FACTOR.VEHICLE.1 != "80") %>%
-  transmute(
-    covid_period = covid_period,
-    is_fatal = ifelse(NUMBER.OF.PERSONS.KILLED > 0, 1, 0),  # outcome
-    borough = BOROUGH,
-    crash_hour = hour(hm(CRASH.TIME)),
-    contributing_factor = CONTRIBUTING.FACTOR.VEHICLE.1,
-    vehicle_cat = factor(case_when(
-      grepl("MOTORCYCLE|MOTORBIKE", VEHICLE.TYPE.CODE.1, ignore.case = TRUE) ~ 
-        "motorcycle",
-      grepl("TRUCK|BUS", VEHICLE.TYPE.CODE.1, ignore.case = TRUE) ~ 
-        "truck_bus",
-      grepl("BICYCLE|BIKE|SCOOTER", VEHICLE.TYPE.CODE.1, ignore.case = TRUE) ~ 
-        "bike_scooter",
-      TRUE ~ "car_suv"
-    ))
+# Pre-COVID Model
+model_pre <- glm(is_fatal ~ borough + vehicle_cat + tod + contributing_factor_grouped, 
+                 data = filter(nyc_small, covid_period == "Pre-COVID"), 
+                 family = binomial)
+
+# Post-COVID Model
+model_post <- glm(is_fatal ~ borough + vehicle_cat + tod + contributing_factor_grouped, 
+                  data = filter(nyc_small, covid_period == "Post-COVID"), 
+                  family = binomial)
+
+#Control
+controls_results <- tidy(model_interaction, exponentiate = TRUE, conf.int = TRUE) %>%
+  filter(!grepl(":", term)) %>%             # Remove Interaction terms
+  filter(term != "(Intercept)") %>%         # Remove Intercept
+  filter(!grepl("covid_period", term)) %>%  # Remove the general Time Period term
+  filter(!grepl("contributing_factor", term)) %>% # Remove Factors (saved for the other plot)
+  mutate(
+    term_clean = case_when(
+      grepl("borough", term) ~ gsub("borough", "Borough: ", term),
+      grepl("vehicle_cat", term) ~ gsub("vehicle_cat", "Vehicle: ", term),
+      grepl("tod", term) ~ gsub("tod", "Time: ", term),
+      TRUE ~ term
+    )
   )
 
-nyc_small <- nyc_small %>%
-  mutate(hour = as.numeric(substr(crash_hour, 1, 2)),
-         tod = ifelse(hour >= 6 & hour < 18, "day", "night"))
-
-nyc_small$BOROUGH <- droplevels(as.factor(nyc_small$borough))
-
-# set baselines for model
-nyc_small$borough <- relevel(as.factor(nyc_small$BOROUGH), 
-                             ref = "STATEN ISLAND")
-nyc_small$tod <- relevel(as.factor(nyc_small$tod), 
-                         ref = "day")
-nyc_small$vehicle_cat <- relevel(as.factor(nyc_small$vehicle_cat), 
-                                 ref = "car_suv")
-nyc_small$contributing_factor <- relevel(
-  as.factor(nyc_small$contributing_factor),ref = "Unspecified")
-
-model <- glm(is_fatal ~ borough + tod + vehicle_cat + contributing_factor,
-             data = nyc_small,
-             family = binomial)
-
-
-summ <- summary(model)
-
-coefs <- summ$coefficients
-est <- coefs[, "Estimate"]         # log-odds
-se  <- coefs[, "Std. Error"]       # standard errors
-
-# compute odds ratios + 95% confidence intervals
-ci_low  <- exp(est - 1.96 * se)
-ci_high <- exp(est + 1.96 * se)
-
-results_table <- data.frame(
-  term        = rownames(coefs),
-  odds_ratio  = exp(est),
-  ci_low      = ci_low,
-  ci_high     = ci_high,
-  significant = ifelse(coefs[, "Pr(>|z|)"] < 0.05, "yes", "no"),
-  row.names   = NULL
-)
-
-# filter out the intercept/baseline to keep table cleaner
-results_table <- results_table[results_table$term != "(Intercept)", ]
-
-results_table$term <- gsub("vehicle_cat", "V: ", 
-                           results_table$term)
-results_table$term <- gsub("borough", "B: ", 
-                           results_table$term)
-results_table$term <- gsub("tod", "ToD: ", 
-                           results_table$term)
-results_table$term <- gsub("contributing_factor", "CF: ", 
-                           results_table$term)
-
-results_table %>%
-  filter(significant == "yes") %>%
-  mutate(term = fct_reorder(term, odds_ratio)) %>%
-  ggplot(aes(x = term, y = odds_ratio, color = significant)) +
-  geom_point(size = 3) +
-  geom_errorbar(aes(ymin = ci_low, ymax = ci_high), width = 0.2) +
-  coord_flip() +
-  scale_color_manual(values = c("no" = "gray60", "yes" = "#E69F00")) +
-  geom_hline(yintercept = 1, linetype = "dashed", color = "black") +
+ggplot(controls_results, aes(x = estimate, y = fct_reorder(term_clean, estimate))) +
+  geom_vline(xintercept = 1, linetype = "dashed", color = "black", alpha = 0.5) +
+  geom_errorbarh(aes(xmin = conf.low, xmax = conf.high), height = 0.2, color = "gray40") +
+  geom_point(size = 3, color = "#2c3e50") +
+  scale_x_log10() +
   labs(
-    title = "Factors Increasing the Odds of a Fatal Motor Vehicle Collision in NYC",
-    x = NULL,
-    y = "Odds Ratio (log scale)",
-    caption = "Values above 1 indicate higher odds of a fatal outcome",
-    color = "Significant"
+    title = "Baseline Control Factors: What increases Fatal Risk?",
+    x = "Odds Ratio (Log Scale)",
+    y = NULL,
+    caption = "NOTE: These effects are held constant in the model."
   ) +
-  scale_y_log10() +
   theme_minimal(base_size = 12)
+
 ```
 
-baseline change?
-and make shorter
 
 ::: {.fragment}
-- **Motorcycles:** 14x more likely fatal vs. cars
-- **Nighttime:** 1.8x higher odds than daytime
+- **Motorcycles:** 3x+ more likely to be fatal
+- **Nighttime:** ~2x higher odds than daytime
+- **Manhattan:** Lower risk due to congestion
 :::
 
-## COVID's Impact on Severity {.smaller}
-```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.width=10, fig.height=5}
-# Model 2: COVID period controlling for key factors
-covid_adjusted_model <- glm(is_fatal ~ covid_period + borough + vehicle_cat + tod,
-                           data = nyc_small, 
-                           family = binomial)
+## How COVID Changed Risk {.smaller}
 
-covid_results <- tidy(covid_adjusted_model, conf.int = TRUE, exponentiate = TRUE) %>%
-  filter(grepl("covid_period", term)) %>%
-  mutate(period = case_when(
-    grepl("During COVID", term) ~ "During COVID",
-    grepl("Post-COVID", term) ~ "Post-COVID",
-    TRUE ~ "Reference"
-  )) %>%
-  filter(period != "Reference")
+```{r plot9, echo=FALSE, message=FALSE, warning=FALSE, fig.width=10, fig.height=5}
+interaction_results <- tidy(model_interaction, exponentiate = TRUE, conf.int = TRUE) %>%
+  filter(grepl(":", term)) %>%
+  mutate(
+    term_clean = gsub("contributing_factor_grouped", "", term),
+    term_clean = gsub(":covid_periodPost-COVID", "", term_clean),
+    is_significant = ifelse(p.value < 0.05, "Significant Shift", "No Significant Change")
+  )
 
-ggplot(covid_results, aes(x = period, y = estimate)) +
-  geom_point(size = 5, color = "#D7191C") +
-  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0.2, size = 1.5) +
-  geom_hline(yintercept = 1, linetype = "dashed", color = "black", size = 1) +
-  geom_text(aes(label = sprintf("%.2fx", estimate)),
-            hjust = -0.5, vjust = 0.3, size = 6, fontface = "bold") +
-  labs(title = "Fatal Crash Risk Rose during COVID",
-       subtitle = "Adjusted for vehicle type, time, and location",
-       x = "COVID Period", y = "Odds Ratio (vs. Pre-COVID)") +
-  ylim(1, 2.5) +
-  theme_minimal(base_size = 14) +
-  theme(plot.title = element_text(face = "bold"))
+tidy_pre <- tidy(model_pre, exponentiate = TRUE, conf.int = TRUE) %>% 
+  mutate(period = "Pre-COVID")
+tidy_post <- tidy(model_post, exponentiate = TRUE, conf.int = TRUE) %>% 
+  mutate(period = "Post-COVID")
+
+plot_data <- bind_rows(tidy_pre, tidy_post) %>%
+  filter(grepl("contributing_factor", term)) %>%
+  # Clean up the names for the chart
+  mutate(term = gsub("contributing_factor_grouped", "", term))
+
+p1 <- ggplot(plot_data, aes(y = term, x = estimate)) +
+  # The line connecting the dots
+  geom_line(aes(group = term), color = "grey50", size = 1) + 
+  # The dots themselves
+  geom_point(aes(color = period), size = 4) + 
+  # Add a vertical line at 1 (The Baseline/Unspecified Risk)
+  geom_vline(xintercept = 1, linetype = "dashed", alpha = 0.5) +
+  scale_color_manual(values = c("Pre-COVID" = "#1f77b4", "Post-COVID" = "#d62728")) +
+  labs(
+    title = "How Did Fatal Crash Risks Shift?",
+    x = "Odds Ratio (Log Scale)",
+    y = NULL,
+    color = "Period"
+  ) +
+  scale_x_log10() +
+  theme_minimal(base_size = 14)
+
+p2 <- ggplot(interaction_results, aes(x = estimate, y = fct_reorder(term_clean, estimate), color = is_significant)) +
+  
+  geom_vline(xintercept = 1, linetype = "dashed", color = "black", alpha = 0.7) +
+  geom_errorbarh(aes(xmin = conf.low, xmax = conf.high), height = 0.2, linewidth = 0.8) +
+  geom_point(size = 4) +
+  scale_color_manual(values = c("Significant Shift" = "#D55E00", "No Significant Change" = "gray70")) +
+  scale_x_log10() +
+  labs(
+    title = "Did the Risk Change Significantly Post-COVID?",
+    x = "Change in Odds Ratio (Log Scale)\n(Right = Became Riskier | Left = Became Safer)",
+    y = "Risk Factor",
+    color = "Statistical Significance"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(legend.position = "bottom")
+
+grid.arrange(p1, p2, ncol = 2)
 ```
-
-::: {.fragment}
-**Key Finding:** Even controlling for other factors, crashes became 67-78% more likely to be fatal
-:::
-
 
 # Killer Plot {background="#43464B"}
 
 ## Interactive Crash Density Map {.smaller}
-```{r}
+```{r plot10}
 #| panel: sidebar
 sliderInput('n', 'Number of points', 50, min = 10, max = 100)
 ```
@@ -997,21 +1007,23 @@ output$plot <- renderPlot({
 })
 ```
 
-ask for data/nybb_25c/nybb.shp
-
 # Conclusion {background="#43464B"}
 
 ## Key Findings {.smaller}
 
 ::: incremental
-1. 
-   - 
+1. Collision trends
 
-2.
-   -
+   - Rates stayed lower than before COVID and never fully returned
+   - Each borough showed a distinct pattern; Brooklyn and Queens fell hardest, Manhattan recovered faster
 
-3. 
-   - 
+2. Severity trends
+   - Fatality rate per crash rose sharply during and after COVID
+   - Injuries per crash fell, indicating fewer but more lethal crashes
+
+3. Driver‑behavior
+   - Speeding/Aggression and Impairment remained high‑risk with unchanged odds
+   - Distraction and Traffic‑Violation odds fell significantly
 ::: 
 
 

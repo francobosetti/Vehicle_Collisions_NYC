@@ -396,19 +396,16 @@ Astha Singh, Franco Bosetti, Louis Clarke, Lindsey Russ
 </section>
 <section id="monthly-collision-trends" class="slide level2 smaller">
 <h2>Monthly Collision Trends</h2>
+<p><strong>Number of Monthly Vehicle Collisions in NYC:</strong></p>
 
-<img data-src="presentation_files/figure-revealjs/unnamed-chunk-2-1.png" width="960" class="r-stretch"><div class="fragment">
-<p><strong>Key Finding:</strong> Crashes dropped dramatically in March 2020 but did not fully recover</p>
-</div>
-</section>
+<img data-src="presentation_files/figure-revealjs/plot1-1.png" width="960" class="r-stretch"></section>
 <section id="borough-level-patterns" class="slide level2 smaller">
 <h2>Borough-Level Patterns</h2>
 
-<img data-src="presentation_files/figure-revealjs/unnamed-chunk-3-1.png" width="960" class="r-stretch"><div class="fragment">
+<img data-src="presentation_files/figure-revealjs/plot2-1.png" width="960" class="r-stretch"><div class="fragment">
 <ul>
-<li><strong>Brooklyn &amp; Queens:</strong> Largest declines, slowest recovery</li>
-<li><strong>Manhattan:</strong> Steepest drop, partial rebound</li>
-<li><strong>Staten Island:</strong> Most stable</li>
+<li><strong>Brooklyn &amp; Queens &amp; Bronx:</strong> Increasing pre-COVID, Decreasing post-COVID</li>
+<li><strong>Manhattan:</strong> Decreasing pre-COVID, more static post-COVID</li>
 </ul>
 </div>
 </section></section>
@@ -420,14 +417,21 @@ Astha Singh, Franco Bosetti, Louis Clarke, Lindsey Russ
 <section id="severity" class="slide level2 smaller">
 <h2>Severity</h2>
 
-<img data-src="presentation_files/figure-revealjs/unnamed-chunk-4-1.png" width="960" class="r-stretch"><div class="fragment">
+<img data-src="presentation_files/figure-revealjs/plot3-1.png" width="960" class="r-stretch"><div class="fragment">
 <p><strong>Key Finding:</strong> Crash severity increased during and after COVID‑19</p>
+</div>
+</section>
+<section id="covids-impact-on-severity" class="slide level2 smaller">
+<h2>COVID’s Impact on Severity</h2>
+
+<img data-src="presentation_files/figure-revealjs/plot4-1.png" width="960" class="r-stretch"><div class="fragment">
+<p><strong>Key Finding:</strong> Even controlling for other factors, crashes became 67-78% more likely to be fatal</p>
 </div>
 </section>
 <section id="crash-timing-patterns" class="slide level2 smaller">
 <h2>Crash Timing Patterns</h2>
 
-<img data-src="presentation_files/figure-revealjs/unnamed-chunk-5-1.png" width="960" class="r-stretch"><div class="fragment">
+<img data-src="presentation_files/figure-revealjs/plot5-1.png" width="960" class="r-stretch"><div class="fragment">
 <p>Rush‑hour peaks dipped slightly during COVID but largely returned afterward</p>
 </div>
 </section></section>
@@ -438,39 +442,16 @@ Astha Singh, Franco Bosetti, Louis Clarke, Lindsey Russ
 </section>
 <section id="contributing-factors" class="slide level2 smaller">
 <h2>Contributing Factors</h2>
-<div class="columns">
-<div class="column" style="width:50%;">
-<p><strong>Top Causes Overall:</strong></p>
-<div class="cell">
-<div class="cell-output-display">
-<p><img data-src="presentation_files/figure-revealjs/unnamed-chunk-6-1.png" width="480"></p>
-</div>
-</div>
-</div><div class="column" style="width:50%;">
 <p><strong>How Factors Changed:</strong></p>
-<div class="cell">
-<div class="cell-output-display">
-<p><img data-src="presentation_files/figure-revealjs/unnamed-chunk-7-1.png" width="480"></p>
-</div>
-</div>
-</div>
-</div>
-<div class="fragment">
+
+<img data-src="presentation_files/figure-revealjs/plot6-1.png" width="960" class="r-stretch"><div class="fragment">
 <p><strong>Key Finding:</strong> Driver inattention/distraction dominates, but its relative importance increased during COVID</p>
 </div>
 </section>
 <section id="text-mining-insights" class="slide level2 smaller">
 <h2>Text Mining Insights</h2>
-<p>Compared NYC Motor Vehicle Collision reports vs.&nbsp;Twitter mentions:</p>
-<div class="columns">
-<div class="column" style="width:50%;">
-<p><strong>Official Reports Focus On:</strong> - Distraction - Failure - Unsafe behaviors - <strong>WHY</strong> crashes happen</p>
-</div><div class="column" style="width:50%;">
-<p><strong>Social Media Focus On:</strong> - Bronx, Brooklyn, Queens - Parkway, Expressway - Street names - <strong>WHERE</strong> crashes happen</p>
-</div>
-</div>
 
-<img data-src="presentation_files/figure-revealjs/unnamed-chunk-8-1.png" width="960" class="r-stretch"></section></section>
+<img data-src="presentation_files/figure-revealjs/plot7-1.png" width="960" class="r-stretch"></section></section>
 <section>
 <section id="statistical-modeling" class="title-slide slide level1 center" data-background="#43464B">
 <h1>Statistical Modeling</h1>
@@ -478,21 +459,20 @@ Astha Singh, Franco Bosetti, Louis Clarke, Lindsey Russ
 </section>
 <section id="baseline-risk-factors" class="slide level2 smaller">
 <h2>Baseline Risk Factors</h2>
-<p><strong>What makes crashes deadly?</strong> (Logistic Regression Results)</p>
 
-<img data-src="presentation_files/figure-revealjs/unnamed-chunk-9-1.png" width="960" class="r-stretch"><p>baseline change? and make shorter</p>
-<div class="fragment">
+<img data-src="presentation_files/figure-revealjs/plot8-1.png" width="960" class="r-stretch"><div class="fragment">
 <ul>
-<li><strong>Motorcycles:</strong> 14x more likely fatal vs.&nbsp;cars</li>
-<li><strong>Nighttime:</strong> 1.8x higher odds than daytime</li>
+<li><strong>Motorcycles:</strong> 3x+ more likely to be fatal</li>
+<li><strong>Nighttime:</strong> ~2x higher odds than daytime</li>
+<li><strong>Manhattan:</strong> Lower risk due to congestion</li>
 </ul>
 </div>
 </section>
-<section id="covids-impact-on-severity" class="slide level2 smaller">
-<h2>COVID’s Impact on Severity</h2>
+<section id="how-covid-changed-risk" class="slide level2 smaller">
+<h2>How COVID Changed Risk</h2>
 
-<img data-src="presentation_files/figure-revealjs/unnamed-chunk-10-1.png" width="960" class="r-stretch"><div class="fragment">
-<p><strong>Key Finding:</strong> Even controlling for other factors, crashes became 67-78% more likely to be fatal</p>
+<img data-src="presentation_files/figure-revealjs/plot9-1.png" width="960" class="r-stretch"><div class="fragment">
+<p><strong>Key Finding:</strong> Distraction and traffic violations became <em>less</em> deadly post-COVID, while speeding/impairment remained consistently dangerous</p>
 </div>
 </section></section>
 <section>
@@ -584,7 +564,7 @@ ojs_define <- function(..., .session = shiny::getDefaultReactiveDomain()) {
 <!--html_preserve-->
 
 <script type="application/shiny-prerendered" data-context="execution_dependencies">
-{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["packages"]}},"value":[{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["packages","version"]},"class":{"type":"character","attributes":{},"value":["data.frame"]},"row.names":{"type":"integer","attributes":{},"value":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,122,123]}},"value":[{"type":"character","attributes":{},"value":["backports","base","bit","bit64","blob","boot","broom","bslib","cachem","cellranger","class","classInt","cli","codetools","coin","compiler","data.table","datasets","DBI","DescTools","digest","dplyr","e1071","evaluate","Exact","expm","farver","fastmap","forcats","fs","generics","ggeffects","ggplot2","ggspatial","gld","glue","graphics","grDevices","grid","gridExtra","gtable","haven","hms","htmltools","httpuv","httr","insight","janeaustenr","jquerylib","jsonlite","KernSmooth","knitr","labeling","later","lattice","libcoin","lifecycle","lmom","lmtest","lubridate","magrittr","MASS","Matrix","matrixStats","memoise","methods","mime","modeltools","multcomp","multcompView","mvtnorm","nortest","parallel","pillar","pkgconfig","plyr","prettymapr","promises","proxy","purrr","R6","raster","RColorBrewer","rcompanion","Rcpp","readr","readxl","rlang","rmarkdown","rootSolve","RSQLite","rstudioapi","sandwich","sass","scales","sf","shiny","SnowballC","sp","splines","stats","stats4","stringi","stringr","survival","terra","TH.data","tibble","tidyr","tidyselect","tidytext","timechange","tokenizers","tools","tzdb","units","utils","vctrs","withr","xfun","xtable","yaml","zoo"]},{"type":"character","attributes":{},"value":["1.5.0","4.4.0","4.6.0","4.6.0-1","1.2.4","1.3-31","1.0.9","0.9.0","1.1.0","1.1.0","7.3-23","0.4-11","3.6.5","0.2-20","1.4-3","4.4.0","1.17.8","4.4.0","1.2.3","0.99.60","0.6.37","1.1.4","1.7-16","1.0.4","3.3","1.0-0","2.1.2","1.2.0","1.0.0","1.6.6","0.1.4","2.3.1","3.5.2","1.1.10","2.6.7","1.8.0","4.4.0","4.4.0","4.4.0","2.3","0.3.6","2.5.5","1.1.3","0.5.8.1","1.6.16","1.4.7","1.4.2","1.0.0","0.1.4","2.0.0","2.23-26","1.50","0.4.3","1.4.2","0.22-7","1.0-10","1.0.4","3.2","0.9-40","1.9.4","2.0.4","7.3-65","1.7-3","1.5.0","2.0.1","4.4.0","0.13","0.2-24","1.4-28","0.1-10","1.3-3","1.0-4","4.4.0","1.11.0","2.0.3","1.8.9","0.2.5","1.3.3","0.4-27","1.1.0","2.6.1","3.6-32","1.1-3","2.5.0","1.1.0","2.1.5","1.4.5","1.1.6","2.29","1.8.2.4","2.4.3","0.17.1","3.1-1","0.4.10","1.4.0","1.0-21","1.11.1","0.7.1","2.2-0","4.4.0","4.4.0","4.4.0","1.8.7","1.5.1","3.8-3","1.8-60","1.1-3","3.3.0","1.3.1","1.2.1","0.4.3","0.3.0","0.3.0","4.4.0","0.5.0","0.8-7","4.4.0","0.6.5","3.0.2","0.52","1.8-4","2.3.10","1.8-14"]}]}]}
+{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["packages"]}},"value":[{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["packages","version"]},"class":{"type":"character","attributes":{},"value":["data.frame"]},"row.names":{"type":"integer","attributes":{},"value":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,122,123,124,125]}},"value":[{"type":"character","attributes":{},"value":["backports","base","bit","bit64","blob","boot","broom","bslib","cachem","cellranger","class","classInt","cli","codetools","coin","compiler","data.table","datasets","DBI","DescTools","digest","dplyr","e1071","evaluate","Exact","expm","farver","fastmap","forcats","fs","generics","ggeffects","ggplot2","ggspatial","gld","glue","graphics","grDevices","grid","gridExtra","gtable","haven","hms","htmltools","httpuv","httr","insight","janeaustenr","jquerylib","jsonlite","KernSmooth","knitr","labeling","later","lattice","libcoin","lifecycle","lmom","lmtest","lubridate","magrittr","MASS","Matrix","matrixStats","memoise","methods","mgcv","mime","modeltools","multcomp","multcompView","mvtnorm","nlme","nortest","parallel","pillar","pkgconfig","plyr","prettymapr","promises","proxy","purrr","R6","raster","RColorBrewer","rcompanion","Rcpp","readr","readxl","rlang","rmarkdown","rootSolve","RSQLite","rstudioapi","sandwich","sass","scales","sf","shiny","SnowballC","sp","splines","stats","stats4","stringi","stringr","survival","terra","TH.data","tibble","tidyr","tidyselect","tidytext","timechange","tokenizers","tools","tzdb","units","utils","vctrs","withr","xfun","xtable","yaml","zoo"]},{"type":"character","attributes":{},"value":["1.5.0","4.4.0","4.6.0","4.6.0-1","1.2.4","1.3-31","1.0.9","0.9.0","1.1.0","1.1.0","7.3-23","0.4-11","3.6.5","0.2-20","1.4-3","4.4.0","1.17.8","4.4.0","1.2.3","0.99.60","0.6.37","1.1.4","1.7-16","1.0.4","3.3","1.0-0","2.1.2","1.2.0","1.0.0","1.6.6","0.1.4","2.3.1","3.5.2","1.1.10","2.6.7","1.8.0","4.4.0","4.4.0","4.4.0","2.3","0.3.6","2.5.5","1.1.3","0.5.8.1","1.6.16","1.4.7","1.4.2","1.0.0","0.1.4","2.0.0","2.23-26","1.50","0.4.3","1.4.2","0.22-7","1.0-10","1.0.4","3.2","0.9-40","1.9.4","2.0.4","7.3-65","1.7-3","1.5.0","2.0.1","4.4.0","1.9-3","0.13","0.2-24","1.4-28","0.1-10","1.3-3","3.1-168","1.0-4","4.4.0","1.11.0","2.0.3","1.8.9","0.2.5","1.3.3","0.4-27","1.1.0","2.6.1","3.6-32","1.1-3","2.5.0","1.1.0","2.1.5","1.4.5","1.1.6","2.29","1.8.2.4","2.4.3","0.17.1","3.1-1","0.4.10","1.4.0","1.0-21","1.11.1","0.7.1","2.2-0","4.4.0","4.4.0","4.4.0","1.8.7","1.5.1","3.8-3","1.8-60","1.1-3","3.3.0","1.3.1","1.2.1","0.4.3","0.3.0","0.3.0","4.4.0","0.5.0","0.8-7","4.4.0","0.6.5","3.0.2","0.52","1.8-4","2.3.10","1.8-14"]}]}]}
 </script>
 <!--/html_preserve-->
 <div class="footer footer-default">
