@@ -1,3 +1,7 @@
+library(shiny)
+library(dplyr)
+library(sf)
+library(grid)
 library(RSQLite)
 library(dplyr)
 library(ggplot2)
@@ -15,9 +19,11 @@ library(stringr)
 library(tidytext)
 library(grid)
 library(tidyr)
+library(shiny)
+
 # SQL Preprocessing
 
-dcon <- dbConnect(SQLite(), dbname = "data/Collisions_DB.db")
+dcon <- dbConnect(SQLite(), dbname = "~/Documents/STAT405_605/STAT605_Project/data/Collisions_DB.db")
 
 dbExecute(dcon, "
 CREATE VIEW IF NOT EXISTS crashes_enriched AS
@@ -189,155 +195,40 @@ nyc <- nyc %>%
     as.integer
   ))
 
+### STATIC COMPUTATIONS
 
-
-draw_color_key <- function(x = unit(0.9, "npc"),
-                           y = unit(0.1, "npc"),
-                           height = unit(0.8, "npc"),
-                           width  = unit(0.03, "npc"),
-                           n = 100,
-                           breaks = NULL,
-                           col_fun = pal) {
-  
-  # Generate colors
-  cols <- col_fun(n)
-  
-  # One rect per color
-  for (i in seq_len(n)) {
-    grid.rect(
-      x = x,
-      y = y + height * (i - 1) / n,
-      width = width,
-      height = height / n,
-      just = c("center", "bottom"),
-      gp = grid::gpar(fill = cols[i], col = NA)
-    )
-  }
-  
-  # Optional: add labels (if breaks provided)
-  if (!is.null(breaks)) {
-    for (b in breaks) {
-      pos <- y + height * b
-      grid.text(label = sprintf("%.2f", b),
-                x = x + width * 1.2,
-                y = pos,
-                just = "left",
-                gp = grid::gpar(cex = 0.7))
-    }
-  }
-}
-
-
-# COMBINED W LOUIE CODE
-
-library(sf)
-
-# Data Processing
-nyc_pre <- filter(nyc, covid_period == "Pre-COVID", round_location != "(0.0000, 0.0000)")
-nyc_post <- filter(nyc, covid_period == "Post-COVID", round_location != "(0.0000, 0.0000)")
-grid_size <- 50
-xs <- seq(-74.3, -73.6, length.out=grid_size)
-ys <- seq(40.4, 41.0, length.out=grid_size)
-  
-pre_count <- nyc_pre %>%
-  mutate(
-    x_bin = findInterval(LONGITUDE, xs),
-    y_bin = findInterval(LATITUDE, ys)
-  ) %>%
-  filter(!is.na(x_bin), !is.na(y_bin),
-         x_bin >= 1, x_bin < length(xs),
-         y_bin >= 1, y_bin < length(ys)) %>%
-  mutate(
-    x_center = (xs[x_bin] + xs[x_bin + 1]) / 2,
-    y_center = (ys[y_bin] + ys[y_bin + 1]) / 2
-  ) %>%
-  count(x_center, y_center, name = "pre_count")
-
-
-post_count <- nyc_post %>%
-  mutate(
-    x_bin = findInterval(LONGITUDE, xs),
-    y_bin = findInterval(LATITUDE, ys)
-  ) %>%
-  filter(!is.na(x_bin), !is.na(y_bin),
-         x_bin >= 1, x_bin < length(xs),
-         y_bin >= 1, y_bin < length(ys)) %>%
-  mutate(
-    x_center = (xs[x_bin] + xs[x_bin + 1]) / 2,
-    y_center = (ys[y_bin] + ys[y_bin + 1]) / 2
-  ) %>%
-  count(x_center, y_center, name = "post_count")
-
-
-a <- 0.01 #arrow length scale
-
-
-full_count <- full_join(pre_count, post_count, by = c("x_center", "y_center")) %>%
-  replace_na(list(pre_count <2, post_count <2)) %>%
-  mutate(total_count = pre_count+post_count) %>%
-  filter(total_count != 0) %>%
-  mutate(angle = case_when(
-    pre_count == 0 ~ pi/2,                      
-    post_count == 0 ~ -pi/2,                     
-    TRUE ~ atan(0.2*(log(post_count / pre_count)^5))),
-    #TRUE ~ pi/2*tanh(log(post_count / pre_count))),
-    angle_360 = angle*180/pi,
-    x_end = x_center + a*cos(angle),
-    y_end = y_center + a*sin(angle),
-    total_count = total_count)
-head(full_count)
-start_x <- full_count$x_center
-start_y <- full_count$y_center
-end_x <- full_count$x_end
-end_y <- full_count$y_end
-total_count <- full_count$total_count
-
-t <- (total_count - min(total_count)) / (max(total_count) - min(total_count))
-colors <- rev(hcl.colors(n=100, palette= "YlOrRd"))[as.numeric(cut(t, breaks = 100))]
-norm_count <- datawizard::normalize(total_count)
-
-# Read shapefile
-nyc_data <- st_read("data/nybb_25c/nybb.shp")
-
-# Convert to lat/lon
-nyc_geographic <- st_transform(nyc_data, crs = 4326)
+nyc_data <- sf::st_read("~/Documents/STAT405_605/STAT605_Project/data/nybb.shp", quiet = TRUE)
+nyc_geographic <- sf::st_transform(nyc_data, crs = 4326)
 
 # Extract polygons
 extract_all_landmasses <- function(sf_object) {
   landmass_list <- list()
-  
   for (i in 1:nrow(sf_object)) {
     borough_name <- sf_object$BoroName[i]
     borough_coords <- st_coordinates(sf_object$geometry[i])
-    
     unique_polygons <- unique(borough_coords[, "L2"])
     
     for (poly_id in unique_polygons) {
       poly_mask <- borough_coords[, "L2"] == poly_id
-      poly_data <- borough_coords[poly_mask, c("X", "Y")]  # lon, lat
+      poly_data <- borough_coords[poly_mask, c("X", "Y")]  # lon/lat
       
-      landmass_id <- paste(borough_name, "Landmass", poly_id)
-      landmass_list[[landmass_id]] <- list(
-        borough     = borough_name,
-        poly_id     = poly_id,
-        coordinates = poly_data
+      landmass_list[[paste(borough_name, poly_id)]] <- list(
+        borough = borough_name,
+        coords  = poly_data
       )
     }
   }
-  
   landmass_list
 }
 
 landmasses_geo <- extract_all_landmasses(nyc_geographic)
 
-# Bounds for dataViewport
-all_lon <- unlist(lapply(landmasses_geo, \(x) x$coordinates[,1]))
-all_lat <- unlist(lapply(landmasses_geo, \(x) x$coordinates[,2]))
-
+# Precompute map ranges
+all_lon <- unlist(lapply(landmasses_geo, \(x) x$coords[,1]))
+all_lat <- unlist(lapply(landmasses_geo, \(x) x$coords[,2]))
 x_range <- range(all_lon)
 y_range <- range(all_lat)
 
-# Borough colors
 borough_colors <- c(
   "Staten Island" = "red",
   "Bronx"         = "blue",
@@ -346,139 +237,184 @@ borough_colors <- c(
   "Manhattan"     = "purple"
 )
 
-# Draw with native coordinates
-grid.newpage()
-grid.rect(gp = grid::gpar(fill = "#6699FF"))
-outer_vp <- plotViewport(margins = c(5.1, 4.1, 4.1, 2.1))
-pushViewport(outer_vp)
-inner_vp <- dataViewport(x_range, y_range)
-pushViewport(inner_vp)
+# Grid definitions
+grid_size <- 50
+xs <- seq(-74.3, -73.6, length.out = grid_size)
+ys <- seq(40.4, 41.0, length.out = grid_size)
 
-# Draw polygons directly in lon/lat
-for (landmass_name in names(landmasses_geo)) {
-  landmass <- landmasses_geo[[landmass_name]]
-  coords   <- landmass$coordinates
+
+### UI
+ui <- fluidPage(
+  titlePanel("Adjustable Map"),
   
-  closed_coords <- rbind(coords, coords[1,]) # close polygon
+  radioButtons(
+    "mode", "Choose view:",
+    choices = c("Accident Distribution" = "acdist",
+                "Accident Trends"       = "trend")
+  ),
   
-  grid.polygon(
-    x  = closed_coords[,1],   # longitude
-    y  = closed_coords[,2],   # latitude
-    default.units = "native",
-    gp = grid::gpar(col  = borough_colors[landmass$borough],
-              fill = "#669933",
-              lwd  = 2
-    )
-  )
+  conditionalPanel(
+    condition = "input.mode == 'acdist'",
+    sliderInput("year", "Year:", min = 2012, max = 2025, value = 2018)
+  ),
+  
+  conditionalPanel(
+    condition = "input.mode == 'trend'",
+    sliderInput("years", "Year Range:", min = 2012, max = 2025,
+                value = c(2015, 2018), step = 1)
+  ),
+  
+  plotOutput("mainplot", width = "650px", height = "650px")
+)
+
+
+### SERVER
+server <- function(input, output, session) {
+  
+  ### ---------------------------------------------------
+  ### REACTIVE: accident distribution for selected year
+  ### ---------------------------------------------------
+  acdist_data <- reactive({
+    req(input$year)
+    
+    nyc_year <- nyc %>% filter(YEAR == input$year)
+    
+    nyc_year %>%
+      mutate(
+        x_bin = findInterval(LONGITUDE, xs),
+        y_bin = findInterval(LATITUDE, ys)
+      ) %>%
+      filter(
+        !is.na(x_bin), !is.na(y_bin),
+        x_bin >= 1, x_bin < length(xs),
+        y_bin >= 1, y_bin < length(ys)
+      ) %>%
+      mutate(
+        x_center = (xs[x_bin] + xs[x_bin + 1]) / 2,
+        y_center = (ys[y_bin] + ys[y_bin + 1]) / 2
+      ) %>%
+      count(x_center, y_center, name = "year_count")
+  })
+  
+  trend_data <- reactive({
+    yr <- input$years
+    req(yr)
+    
+    nyc_range <- nyc %>%
+      filter(YEAR >= yr[1], YEAR <= yr[2]) %>%
+      mutate(
+        x_bin = findInterval(LONGITUDE, xs),
+        y_bin = findInterval(LATITUDE, ys)
+      ) %>%
+      filter(
+        !is.na(x_bin), !is.na(y_bin),
+        x_bin >= 1, x_bin < length(xs),
+        y_bin >= 1, y_bin < length(ys)
+      ) %>%
+      mutate(
+        x_center = (xs[x_bin] + xs[x_bin + 1]) / 2,
+        y_center = (ys[y_bin] + ys[y_bin + 1]) / 2
+      )
+    
+    cell_slopes <- nyc_range %>%
+      mutate(
+        YEAR = as.numeric(YEAR),     # <-- FIX: must be numeric BEFORE count()
+        x_center = as.numeric(x_center),
+        y_center = as.numeric(y_center)
+      ) %>%
+      count(x_center, y_center, YEAR, name = "count") %>%
+      group_by(x_center, y_center) %>%
+      summarize(
+        slope = {
+          if (n() < 2) {
+            NA_real_
+          } else {
+            yrs <- YEAR
+            cnt <- count
+            coef_val <- coef(lm(cnt ~ I(yrs - mean(yrs))))
+            if (length(coef_val) >= 2 && !is.na(coef_val[2])) unname(coef_val[2]) else 0
+          }
+        },
+        n_obs = n(),
+        .groups = "drop"
+      )
+    
+    
+    ### arrow scaling
+    max_abs <- max(abs(cell_slopes$slope), na.rm = TRUE)
+    if (max_abs == 0) max_abs <- 1
+    gain <- 1.5
+    
+    mean_lat <- mean(cell_slopes$y_center)
+    lon_scale <- cos(mean_lat * pi/180)
+    arrow_len <- 0.008
+    
+    cell_slopes %>%
+      mutate(
+        slope_norm = slope / max_abs,
+        vx_raw = 1,
+        vy_raw = gain * slope_norm,
+        vx_scaled = vx_raw * lon_scale,
+        raw_len = sqrt(vx_scaled^2 + vy_raw^2),
+        dx = (vx_scaled / raw_len) * arrow_len / lon_scale,
+        dy = (vy_raw / raw_len) * arrow_len
+      )
+  })
+  
+  ### ---------------------------------------------------
+  ### SINGLE renderPlot — switches based on input$mode
+  ### ---------------------------------------------------
+  output$mainplot <- renderPlot({
+    grid.newpage()
+    grid.rect(gp = gpar(fill = "#6699FF"))
+    
+    pushViewport(plotViewport(c(5.1, 4.1, 4.1, 2.1)))
+    pushViewport(dataViewport(x_range, y_range))
+    
+    # Draw static map polygons
+    for (name in names(landmasses_geo)) {
+      item <- landmasses_geo[[name]]
+      coords <- item$coords
+      closed <- rbind(coords, coords[1,])
+      
+      grid.polygon(
+        x = closed[,1], y = closed[,2],
+        default.units = "native",
+        gp = gpar(
+          col = borough_colors[item$borough],
+          fill = "#669933",
+          lwd = 2
+        )
+      )
+    }
+    
+    ### MODE SWITCH
+    if (input$mode == "acdist") {
+      df <- acdist_data()
+      df$year_count <- datawizard::normalize(df$year_count)
+      
+      grid.points(df$x_center, df$y_center,
+                  size = unit(df$year_count, "char"),
+                  pch = 19)
+      grid.text("Relative Number of Accidents in a Given Year by Area", y = 1.0,
+                gp = gpar(fontface = "bold", cex = 1.3))
+      
+    } else {
+      df <- trend_data()
+      
+      grid.segments(
+        df$x_center, df$y_center,
+        df$x_center + df$dx, df$y_center + df$dy,
+        arrow = arrow(type = "open", length = unit(.007, "npc")),
+        gp = gpar(col = "black", lwd=2),
+        default.units = "native"
+      )
+      grid.text("Linear Regression Over Given Range of Years by Area", y = 1.0,
+                gp = gpar(fontface = "bold", cex = 1.3))
+    }
+    
+    popViewport(2)
+  })
 }
 
-# plot color gradient based on total_count
-n <- length(start_x)
-for (i in seq_len(n)) {
-  grid.segments(
-    start_x[i], start_y[i],
-    end_x[i],   end_y[i],
-    default.units = "native",
-    arrow = arrow(type = "open", length = unit(.01, "npc")),
-    gp = grid::gpar(col = colors[i], lwd = 2)
-  )
-}
-grid.text("Changes in the quantity of car crashes by area after COVID", y = 1.1,
-          gp = grid::gpar(fontface = "bold", cex = 1.3))
-grid.newpage()
-#legend
-grid.rect(
-  x = unit(0.05, "npc"),   # left margin of box
-  y = unit(0.95, "npc"),   # top of box
-  width  = unit(0.35, "npc"),
-  height = unit(0.2, "npc"),
-  just = c("left", "top"),
-  gp = grid::gpar(fill = "white", col = "black")
-)
-
-# Add key inside the box
-grid.text(
-  "Angle Definitions",
-  x = unit(0.09, "npc"),
-  y = unit(0.94, "npc"),
-  just = c("left", "top"),
-  gp=grid::gpar(fontsize=10)
-)
-grid.segments(
-  .10, .90,
-  .15, .90,
-  default.units = "npc",
-  arrow = arrow(type = "open", length = unit(.01, "npc")),
-  gp = gpar(col = "black", lwd = 2)
-)
-grid.text(
-  "0%",
-  x = unit(0.16, "npc"),
-  y = unit(0.91, "npc"),
-  just = c("left", "top"),
-  gp=gpar(fontsize=10)
-)
-grid.segments(
-  .10, .90,
-  .14, .87,
-  default.units = "npc",
-  arrow = arrow(type = "open", length = unit(.01, "npc")),
-  gp = gpar(col = "black", lwd = 2)
-)
-grid.text(
-  "50%",
-  x = unit(0.15, "npc"),
-  y = unit(0.87, "npc"),
-  just = c("left", "top"),
-  gp=gpar(fontsize=10)
-)
-grid.segments(
-  .10, .90,
-  .10, .85,
-  default.units = "npc",
-  arrow = arrow(type = "open", length = unit(.01, "npc")),
-  gp = gpar(col = "black", lwd = 2)
-)
-grid.text(
-  "100%",
-  x = unit(0.09, "npc"),
-  y = unit(0.84, "npc"),
-  just = c("left", "top"),
-  gp=gpar(fontsize=10)
-)
-grid.text(
-  "Total Crashes in this area",
-  x = unit(0.2, "npc"),
-  y = unit(0.94, "npc"),
-  just = c("left", "top"),
-  gp=gpar(fontsize=10)
-)
-draw_color_key(x= unit(.24, "npc"),
-               y= unit(.8, "npc"),
-               height = unit(.1, "npc"),
-               width = unit(.01, "npc"),
-               col_fun=rev(hcl.colors(n=100, palette= "YlOrRd")))
-grid.text(
-  "23k",
-  x = unit(0.25, "npc"),
-  y = unit(0.9, "npc"),
-  just = c("left", "top"),
-  gp=grid::gpar(fontsize=10)
-)
-grid.text(
-  "12k",
-  x = unit(0.25, "npc"),
-  y = unit(0.86, "npc"),
-  just = c("left", "top"),
-  gp=grid::gpar(fontsize=10)
-)
-grid.text(
-  "0",
-  x = unit(0.25, "npc"),
-  y = unit(0.82, "npc"),
-  just = c("left", "top"),
-  gp=grid:gpar(fontsize=10)
-)
-
-popViewport(2)
-
+shinyApp(ui, server)

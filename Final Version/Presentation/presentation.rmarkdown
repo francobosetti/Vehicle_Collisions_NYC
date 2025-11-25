@@ -432,6 +432,7 @@ twitter_vehicle <- dbGetQuery(dcon, "SELECT * FROM v_twitter_vehicle") %>%
 dbDisconnect(dcon)
 ```
 
+
 # Introduction {background="#6B6B6B"}
 
 ## Project Overview {.smaller}
@@ -478,6 +479,7 @@ dbDisconnect(dcon)
 ## Monthly Collision Trends {.smaller}
 
 **Number of Monthly Vehicle Collisions in NYC:**
+
 ```{r plot1, echo=FALSE, message=FALSE, warning=FALSE, fig.width=10, fig.height=5}
 # Motor Vehicle Collisions over Time
 par(mfrow = c(1, 2))
@@ -583,7 +585,9 @@ par(mfrow = c(1, 1))
 ```
 
 
+
 ## Borough-Level Patterns {.smaller}
+
 
 ```{r plot2, echo=FALSE, message=FALSE, warning=FALSE, fig.width=10, fig.height=5}
 dat <- nyc %>%
@@ -604,6 +608,7 @@ ggplot(dat, aes(x = YEAR, y = n, color = BOROUGH)) +
        linetype = "Time Period")
 ```
 
+
 ::: {.fragment}
 - **Brooklyn & Queens & Bronx:** Increasing pre-COVID, Decreasing post-COVID
 - **Manhattan:** Decreasing pre-COVID, more static post-COVID
@@ -612,6 +617,7 @@ ggplot(dat, aes(x = YEAR, y = n, color = BOROUGH)) +
 # Did Crashes Become More Severe? {background="#43464B"}
 
 ## Severity  {.smaller}
+
 
 ```{r plot3, echo=FALSE, message=FALSE, warning=FALSE, fig.width=10, fig.height=5}
 # Crash Severity by COVID Period
@@ -656,11 +662,13 @@ ggplot(crash_severity_period, aes(x = covid_period, y = rate, fill = type)) +
   )
 ```
 
+
 ::: {.fragment}
 **Key Finding:** Crash severity increased during and after COVID‑19
 :::
 
 ## COVID's Impact on Severity {.smaller}
+
 ```{r plot4, echo=FALSE, message=FALSE, warning=FALSE, fig.width=10, fig.height=5}
 nyc_small <- nyc %>%
   transmute(
@@ -728,11 +736,13 @@ ggplot(covid_results, aes(y = period, x = estimate)) +
   theme(plot.title = element_text(face = "bold"))
 ```
 
+
 ::: {.fragment}
 **Key Finding:** Even controlling for other factors, crashes became 67-78% more likely to be fatal
 :::
 
 ## Crash Timing Patterns {.smaller}
+
 
 ```{r plot5, echo=FALSE, message=FALSE, warning=FALSE, fig.width=10, fig.height=5}
 # Hourly Crash Distribution by COVID Period
@@ -757,6 +767,7 @@ ggplot(hourly_proportions, aes(x = HOUR, y = prop, fill = covid_period)) +
 
 ```
 
+
 ::: {.fragment}
 Rush‑hour peaks dipped slightly during COVID but largely returned afterward
 :::
@@ -767,6 +778,7 @@ Rush‑hour peaks dipped slightly during COVID but largely returned afterward
 ## Contributing Factors {.smaller}
 
 **How Factors Changed:**
+
 ```{r plot6, echo=FALSE, message=FALSE, warning=FALSE, fig.width=14, fig.height=8}
 all_factors <- toupper(c(
   nyc$CONTRIBUTING.FACTOR.VEHICLE.1,
@@ -828,6 +840,7 @@ ggplot(factor_data, aes(x = reorder(factor, -pct), y = pct, fill = covid_period)
   )
 ```
 
+
 ::: {.fragment}
 **Key Finding:** Driver inattention and distraction are the leading cause and became more common during COVID
 :::
@@ -842,6 +855,7 @@ ggplot(factor_data, aes(x = reorder(factor, -pct), y = pct, fill = covid_period)
    - Filtered to NYC-specific mentions
    - Isolated vehicle crashes (excluded transit) 
    - Final dataset: **700+ vehicle crash tweets from 2018**
+
 
 ```{r wordcloud_plot, echo=FALSE, message=FALSE, warning=FALSE, fig.width=12, fig.height=8, out.width="100%", fig.align='center'}
 library(dplyr)
@@ -872,10 +886,12 @@ twitter_bigrams <- twitter_bigrams_raw %>%
 wordcloud(twitter_bigrams$bigram, twitter_bigrams$n, max.words = 150)
 ```
 
+
 ## Top Phrases {.smaller}
 
 ::: columns
 ::: {.column width="50%"}
+
 
 ```{r highway_plot, echo=FALSE, message=FALSE, warning=FALSE, fig.width=7, fig.height=6}
 library(ggspatial)
@@ -910,9 +926,11 @@ ggplot() +
   theme_minimal(base_size = 10)
 ```
 
+
 :::
 
 ::: {.column width="50%"}
+
 
 ```{r top_phrases_plot_side, echo=FALSE, message=FALSE, warning=FALSE, fig.width=7, fig.height=6}
 ggplot(twitter_bigrams %>% slice_max(n, n = 15),
@@ -928,12 +946,14 @@ ggplot(twitter_bigrams %>% slice_max(n, n = 15),
         panel.grid.minor = element_blank())
 ```
 
+
 :::
 :::
 
 # Statistical Modeling {background="#43464B"}
 
 ## Baseline Risk Factors {.smaller}
+
 
 ```{r plot8, echo=FALSE, message=FALSE, warning=FALSE, fig.width=10, fig.height=5}
 model_interaction <- glm(is_fatal ~ borough + vehicle_cat + tod + 
@@ -983,6 +1003,7 @@ ggplot(controls_results, aes(x = estimate, y = fct_reorder(term_clean, estimate)
 ```
 
 
+
 ::: {.fragment}
 - **Motorcycles:** 3x+ more likely to be fatal
 - **Nighttime:** ~2x higher odds than daytime
@@ -991,6 +1012,7 @@ ggplot(controls_results, aes(x = estimate, y = fct_reorder(term_clean, estimate)
   
 ## How COVID Changed Risk {.smaller}
   
+
 ```{r plot9, echo=FALSE, message=FALSE, warning=FALSE, fig.width=10, fig.height=5}
 interaction_results <- tidy(model_interaction, exponentiate = TRUE, conf.int = TRUE) %>%
   filter(grepl(":", term)) %>%
@@ -1046,7 +1068,9 @@ p2 <- ggplot(interaction_results, aes(x = estimate, y = fct_reorder(term_clean, 
 grid.arrange(p1, p2, ncol = 2)
 ```
 
+
 # Killer Plot {background="#43464B"}
+
 
 ```{r}
 plotOutput("crashMap", width = "100%", height = "500px")
@@ -1497,6 +1521,7 @@ upViewport(0)
 })
 ```
 
+
 ## Interactive Killer Plot {.smaller}
 
 <iframe src="http://127.0.0.1:6485"
@@ -1523,4 +1548,5 @@ upViewport(0)
 
 
 # Thank You! {background="#43464B"}
+
 
