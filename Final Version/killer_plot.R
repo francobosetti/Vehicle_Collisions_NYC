@@ -194,8 +194,6 @@ nyc <- nyc %>%
 
 # COMBINED W LOUIE CODE
 
-library(sf)
-
 # Data Processing
 nyc_pre <- filter(nyc, covid_period == "Pre-COVID", round_location != "(0.0000, 0.0000)")
 nyc_post <- filter(nyc, covid_period == "Post-COVID", round_location != "(0.0000, 0.0000)")
