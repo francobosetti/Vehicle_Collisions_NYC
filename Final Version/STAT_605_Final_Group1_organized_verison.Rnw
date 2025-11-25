@@ -100,7 +100,7 @@ library(tidytext)
 library(tidyr)
 library(patchwork)
 
-dcon <- dbConnect(SQLite(), dbname = "data/Collisions_DB.db")
+dcon <- dbConnect(SQLite(), dbname = "~/Documents/STAT405_605/STAT605_Project/data/Collisions_DB.db")
 @
 
 <<echo=FALSE, message=FALSE, warning=FALSE, results = 'hide'>>=
@@ -645,10 +645,18 @@ hourly_proportions <- nyc %>%
   count(HOUR) %>%
   mutate(prop = n / sum(n))
 
-ggplot(hourly_proportions, aes(x = HOUR, y = prop, fill = covid_period)) + 
+ggplot(hourly_proportions, aes(x = HOUR, y = prop, fill = covid_period)) +
   geom_col(position = "dodge") +
-  labs(title = "Proportional Crash Distribution by Hour Across COVID Periods",
-       y = "Proportion of Total Crashes in Period")
+  scale_x_continuous(
+    breaks = seq(0, 23, by = 3),
+    labels = c("12AM", "3AM", "6AM", "9AM", "12PM", "3PM", "6PM", "9PM")
+  ) +
+  labs(
+    title = "Proportional Crash Distribution by Hour Across COVID Periods",
+    y = "Proportion of Total Crashes in Period",
+    x = "Hour of Day"
+  ) +
+  theme_minimal()
 
 @
 
@@ -737,6 +745,7 @@ The plot shows how crash severity shifted across COVID periods. During the pande
 To identify the most common causes of collisions, we aggregated all recorded contributing factors across vehicles. The bar chart below shows the five most frequent causes citywide.
 
 <<echo=FALSE, message=FALSE, warning=FALSE, fig.height=13, fig.width=11, fig.align='center'>>=
+par(mfrow = c(1, 2))
 # Causes of Collisions
 cfs <- unique(nyc$CONTRIBUTING.FACTOR.VEHICLE.1)
 cont_fact <- c()
@@ -776,16 +785,69 @@ axis(2, at = seq(0, ceiling(max(fivemost)/100000)*100000, by = 100000),
      las = 1,
      )
 
+# Distribution of contributing factors by COVID period
+all_factors <- toupper(c(
+  nyc$CONTRIBUTING.FACTOR.VEHICLE.1,
+  nyc$CONTRIBUTING.FACTOR.VEHICLE.2,
+  nyc$CONTRIBUTING.FACTOR.VEHICLE.3,
+  nyc$CONTRIBUTING.FACTOR.VEHICLE.4,
+  nyc$CONTRIBUTING.FACTOR.VEHICLE.5
+))
+
+factor_counts <- table(all_factors)
+# removing all unspecified 
+factor_counts <- factor_counts[!names(factor_counts) %in% 
+                                c("", "UNSPECIFIED", "1", "80")]
+top_5_factors <- names(sort(factor_counts, decreasing = TRUE)[1:5])
+
+# Now create data with standardized factors
+factor_data <- nyc %>%
+  mutate(across(starts_with("CONTRIBUTING.FACTOR.VEHICLE."), toupper)) %>%
+  pivot_longer(
+    cols = starts_with("CONTRIBUTING.FACTOR.VEHICLE."),
+    names_to = "vehicle_num",
+    values_to = "factor"
+  ) %>%
+  filter(
+    factor %in% top_5_factors,
+    !is.na(covid_period)
+  ) %>%
+  count(covid_period, factor) %>%
+  group_by(covid_period) %>%
+  mutate(
+    total = sum(n),
+    pct = n / total * 100
+  ) %>%
+  ungroup()
+
+ggplot(factor_data, aes(x = reorder(factor, -pct), y = pct, fill = covid_period)) +
+  geom_col(position = position_dodge(preserve = "single"), color = "black", linewidth = 0.5) +
+  scale_fill_manual(
+    values = c("Pre-COVID" = "#F8766D",
+               "During COVID" = "darkseagreen3",
+               "Post-COVID" = "#619CFF"),
+    name = "Period"
+  ) +
+  labs(
+    title = "Top Causes by COVID Period",
+    x = NULL,
+    y = "% of Total Crashes"
+  ) +
+  theme_minimal(base_size = 10) +
+  theme(
+    panel.grid = element_blank(),
+    axis.text.x = element_text(angle = 60, vjust = 1, hjust = 1, size = 5, color = "black"),
+    axis.text.y = element_text(size = 8, color = "black"),
+    axis.title.y = element_text(color = "black"),
+    plot.title = element_text(face = "bold", size = 11, color = "black"),
+    legend.position = "top",
+    legend.text = element_text(color = "black"),
+    legend.title = element_text(color = "black")
+  )
+par(mfrow = c(1, 1))
 @
 
 Driver inattention or distraction stands out as the leading cause, responsible for more than three times as many crashes as the next factor. Failure to yield, following too closely, and unsafe passing follow far behind, showing that most collisions stem from everyday driving mistakes rather than external conditions.
-
-\subsubsection{Distribution of contributing factors by COVID period}
-
-<<echo=FALSE, message=FALSE, warning=FALSE, fig.height=4, fig.width=12, fig.align='center'>>=
-# Distribution of contributing factors by COVID period
-
-@
 
 \newpage
 
@@ -1091,6 +1153,10 @@ covid_results <- bind_rows(
     TRUE ~ "Reference"
   )) %>%
   filter(period != "Reference")
+
+covid_results %>%
+  filter(term %in% c("covid_periodDuring COVID", "covid_periodPost-COVID")) %>%
+  select(term, estimate)
 
 ggplot(covid_results, aes(x = period, y = estimate, color = model, group = model)) +
   geom_point(position = position_dodge(width = 0.5), size = 4) +
