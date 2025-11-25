@@ -432,6 +432,14 @@ twitter_vehicle <- dbGetQuery(dcon, "SELECT * FROM v_twitter_vehicle") %>%
 dbDisconnect(dcon)
 ```
 
+# Killer Plot {background="#43464B"}
+
+## Interactive Crash Density Map {.smaller}
+```{r plot10}
+
+
+
+```
 
 # Introduction {background="#6B6B6B"}
 
@@ -840,6 +848,8 @@ ggplot(factor_data, aes(x = reorder(factor, -pct), y = pct, fill = covid_period)
    - Isolated vehicle crashes (excluded transit) 
    - Final dataset: **700+ vehicle crash tweets from 2018**
 
+::: columns
+::: {.column width="50%"}
 ```{r plot7, echo=FALSE, message=FALSE, warning=FALSE, fig.width=10, fig.height=5}
 library(tidytext)
 library(dplyr)
@@ -848,8 +858,6 @@ library(wordcloud)
 library(tidyr)
 library(ggplot2)
 data(stop_words)
-
-par(mfrow = c(1, 2))
 
 # bigrams
 twitter_bigrams_raw <- twitter_vehicle %>%
@@ -876,7 +884,11 @@ twitter_bigrams <- twitter_bigrams_raw %>%
   mutate(percentage = n / sum(n) * 100)
 
 wordcloud(twitter_bigrams$bigram, twitter_bigrams$n, max.words = 150)
+```
+:::
 
+::: {.column width="50%"}
+```{r plot77, echo=FALSE, message=FALSE, warning=FALSE, fig.width=10, fig.height=5}
 ggplot(twitter_bigrams %>% slice_max(n, n = 15),
        aes(x = percentage, y = reorder(bigram, percentage))) +
   geom_col(fill = "steelblue", alpha = 0.8) +
@@ -886,8 +898,9 @@ ggplot(twitter_bigrams %>% slice_max(n, n = 15),
   xlim(0, max(twitter_bigrams$percentage) * 1.15) +
   theme_minimal(base_size = 14) +
   theme(panel.grid.major.y = element_blank(), panel.grid.minor = element_blank())
-par(mfrow = c(1, 1))
+
 ```
+::: :::
 
 ::: {.fragment}
 **Key Findings:** 
@@ -1012,23 +1025,7 @@ p2 <- ggplot(interaction_results, aes(x = estimate, y = fct_reorder(term_clean, 
 grid.arrange(p1, p2, ncol = 2)
 ```
 
-# Killer Plot {background="#43464B"}
 
-## Interactive Crash Density Map {.smaller}
-```{r plot10}
-#| panel: sidebar
-sliderInput('n', 'Number of points', 50, min = 10, max = 100)
-```
-```{r}
-#| panel: fill
-plotOutput('plot')
-```
-```{r}
-#| context: server
-output$plot <- renderPlot({
-  plot(1:input$n, rnorm(input$n))
-})
-```
 
 # Conclusion {background="#43464B"}
 

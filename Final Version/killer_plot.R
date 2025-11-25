@@ -261,7 +261,7 @@ colors <- rev(hcl.colors(n=100, palette= "YlOrRd"))[as.numeric(cut(t, breaks = 1
 norm_count <- datawizard::normalize(total_count)
 
 # Read your shapefile
-nyc_data <- st_read("data/nybb_25c/nybb.shp")
+nyc_data <- st_read("~/Documents/STAT405_605/STAT605_Project/data/nybb.shp")
 
 # Convert to geographic coordinates (latitude/longitude)
 nyc_geographic <- st_transform(nyc_data, crs = 4326)
