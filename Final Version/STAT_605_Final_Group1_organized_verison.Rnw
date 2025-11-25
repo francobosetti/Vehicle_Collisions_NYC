@@ -98,6 +98,7 @@ library(forcats)
 library(stringr)
 library(tidytext)
 library(tidyr)
+library(patchwork)
 
 dcon <- dbConnect(SQLite(), dbname = "data/Collisions_DB.db")
 @
@@ -575,7 +576,7 @@ Overall, these trends reveal that while traffic volumes rebounded after the lock
 
 \subsubsection{Yearly Crash Trends by Borough, 2012–2025}
 
-<<echo=FALSE, message=FALSE, warning=FALSE>>=
+<<echo=FALSE, message=FALSE, warning=FALSE, fig.height=13, fig.width=11, fig.align='center'>>=
 # Yearly Crash Trends by Borough, 2012–2025
 dat <- nyc %>%
   filter(BOROUGH != "") %>%
@@ -606,7 +607,7 @@ These results indicate that while the overall pattern of decline and partial rec
 
 To understand when crashes are most likely to occur, we created a heatmap of the crash frequency by hour of the day and day of the week. Each tile represents the total number of crashes in that time slot, with brighter colors indicating more frequent crashes.
 
-<<echo=FALSE, message=FALSE, warning=FALSE>>=
+<<echo=FALSE, message=FALSE, warning=FALSE, fig.height=13, fig.width=11, fig.align='center'>>=
 # Crash Frequency by Hour and Day of Week
 nyc %>%
   mutate(
@@ -637,7 +638,7 @@ Overall, the heatmap highlights how collision risk peaks during high-traffic com
 
 \subsubsection{Hourly Crash Distribution by COVID Period}
 
-<<echo=FALSE, message=FALSE, warning=FALSE>>=
+<<echo=FALSE, message=FALSE, warning=FALSE, fig.height=13, fig.width=11, fig.align='center'>>=
 # Hourly Crash Distribution by COVID Period
 hourly_proportions <- nyc %>%
   group_by(covid_period) %>%
@@ -659,7 +660,7 @@ We next assessed whether crash severity changed during the pandemic by comparing
 
 \subsubsection{Nighttime Crashes Are More Severe: Baseline Pattern}
 
-<<echo=FALSE, message=FALSE, warning=FALSE>>=
+<<echo=FALSE, message=FALSE, warning=FALSE, fig.height=13, fig.width=11, fig.align='center'>>=
 # Nighttime Crashes Are More Severe: Baseline Pattern
 # Fatalities and injuries per hour
 crashes_per_hour <- table(nyc$HOUR)
@@ -695,7 +696,7 @@ This plot compares the rates of fatal and injury crashes by hour of day to asses
 These patterns suggest that while the total number of crashes declined during the pandemic, the relative risk of severe outcomes did not decrease proportionally. Nighttime crashes continued to be far deadlier, reflecting persistent high‑risk driving behaviors such as speeding and impaired driving.
 
 \subsubsection{Crash Severity by COVID Period}
-<<echo=FALSE, message=FALSE, warning=FALSE>>=
+<<echo=FALSE, message=FALSE, warning=FALSE, fig.height=13, fig.width=11, fig.align='center'>>=
 # Crash Severity by COVID Period
 crash_severity_period <- nyc %>%
   group_by(covid_period) %>%
@@ -735,7 +736,7 @@ The plot shows how crash severity shifted across COVID periods. During the pande
 
 To identify the most common causes of collisions, we aggregated all recorded contributing factors across vehicles. The bar chart below shows the five most frequent causes citywide.
 
-<<echo=FALSE, message=FALSE, warning=FALSE>>=
+<<echo=FALSE, message=FALSE, warning=FALSE, fig.height=13, fig.width=11, fig.align='center'>>=
 # Causes of Collisions
 cfs <- unique(nyc$CONTRIBUTING.FACTOR.VEHICLE.1)
 cont_fact <- c()
@@ -794,7 +795,7 @@ We applied text mining to all five CONTRIBUTING.FACTOR.VEHICLE columns (about 2.
 
 The comparison in the figure below shows a clear distinction. Motor Vehicle Collision data emphasize behavioral causes such as distraction, failure, and unsafe, while Twitter data focus on location and navigation terms like Bronx, parkway, and street. This suggests that official records capture why crashes occur, whereas social media posts describe where they occur.
 
-<<echo=FALSE, message=FALSE, warning=FALSE>>=
+<<echo=FALSE, message=FALSE, warning=FALSE, fig.height=13, fig.width=11, fig.align='center'>>=
 # Text Mining
 library(tidytext)
 library(dplyr)
@@ -875,155 +876,197 @@ Speed‑related mentions increased from 7.3\% pre‑COVID to 9.5\% during COVID 
 
 \subsection{Part 1: Baseline Risk Factors for Fatal Crashes}
 
-To better understand the factors that influence the severity of motor vehicle collisions in New York City, we developed a preliminary statistical model using logistic regression. The outcome of interest is whether a crash was fatal (at least one person killed) or non-fatal. Logistic regression is appropriate in this context because the outcome is binary (fatal vs. non-fatal), and it allows us to estimate how different factors change the odds of a fatal crash while holding other conditions constant.
+To investigate how the dynamics of fatal motor vehicle collisions in New York City shifted following the onset of the COVID-19 pandemic, we developed an interaction-based logistic regression model. The outcome of interest remains binary: whether a crash was fatal (at least one person killed) or non-fatal. However, unlike a standard baseline model, this approach allows us to explicitly test whether the relationship between risky behaviors and fatality rates changed significantly between the Pre-COVID and Post-COVID periods.
 
-In simple terms, the model compares patterns across thousands of crashes to estimate how likely a fatal outcome is under different conditions. For example, whether the crash happened at night or involved a motorcycle. The predictors we included were the borough of occurrence, time of day (day vs. night), vehicle type, and the primary contributing factor reported by police. By examining these, we can identify which circumstances or behaviors are most strongly associated with fatal outcomes.
+In simple terms, this model performs a difference-in-differences analysis. It compares crash patterns across thousands of incidents to answer two distinct questions:
 
-<<echo=FALSE, message=FALSE, warning=FALSE>>=
-# Statistical Modeling Part 1
-# Data cleansing and transformations:
+\begin{enumerate}
+    \item Baseline Risk: Which factors (e.g., motorcycles, speeding) are inherently dangerous? dangerous?
+    \item The "COVID Effect": Did these specific factors become significantly more lethal after the pandemic began, even after accounting for general background trends?
+\end{enumerate}
+
+To ensure statistical robustness, we aggregated over 50 granular police-reported contributing factors into seven high-level behavioral categories (such as Impairment, Speeding/Aggression, and Distraction). By interacting these categories with the time period and using "Other/Unknown" crashes as a control group, the model isolates distinct behavioral shifts from general systemic changes. We also controlled for borough, time of day, and vehicle type to ensure that observed spikes in fatality risk were due to driver behavior rather than location or vehicle differences.
+
+To interpret the results of the logistic regression, we rely on the Odds Ratio. This metric functions as a risk multiplier, quantifying how strongly a specific factor is associated with a fatal outcome compared to the baseline scenario.
+
+The values are interpreted as follows:
+
+\begin{itemize}
+    \item An Odds Ratio of 1.0 indicates no difference in risk. The factor has no impact on the likelihood of a fatality compared to the baseline.
+    \item An Odds Ratio greater than 1.0 indicates an increased risk. For example, a value of 3.0 suggests that the presence of this factor makes a fatal outcome three times more likely than if the factor were absent.
+    \item An Odds Ratio less than 1.0 indicates a decreased risk. This suggests the factor has a protective effect, making a fatal outcome less likely.
+\end{itemize}
+
+<<echo=FALSE, message=FALSE, warning=FALSE, fig.height=13, fig.width=11, fig.align='center'>>=
 nyc_small <- nyc %>%
-  filter(BOROUGH != "" &
-           CONTRIBUTING.FACTOR.VEHICLE.1 != "" &
-           CONTRIBUTING.FACTOR.VEHICLE.1 != "1" &
-           CONTRIBUTING.FACTOR.VEHICLE.1 != "80") %>%
   transmute(
     covid_period = covid_period,
-    is_fatal = ifelse(NUMBER.OF.PERSONS.KILLED > 0, 1, 0),  # outcome
+    is_fatal = ifelse(NUMBER.OF.PERSONS.KILLED > 0, 1, 0),
     borough = BOROUGH,
     crash_hour = hour(hm(CRASH.TIME)),
-    contributing_factor = CONTRIBUTING.FACTOR.VEHICLE.1,
+    contributing_factor_grouped = factor(case_when(
+    grepl("ALCOHOL|DRUGS|ILLNES|FATIGUE|ASLEEP|CONSCIOUSNESS|MEDICATION|DISABILITY", 
+          CONTRIBUTING.FACTOR.VEHICLE.1, ignore.case = TRUE) ~ "Impairment",
+    grepl("SPEED|AGGRESSIVE|RAGE", 
+          CONTRIBUTING.FACTOR.VEHICLE.1, ignore.case = TRUE) ~ "Speeding/Aggression",
+    grepl("DISTRACTION|INATTENTION|PHONE|TEXTING|ELECTRONIC|NAVIGATION|EATING|HEADPHONES", 
+          CONTRIBUTING.FACTOR.VEHICLE.1, ignore.case = TRUE) ~ "Distraction",
+    grepl("YIELD|TRAFFIC CONTROL|KEEP RIGHT", 
+          CONTRIBUTING.FACTOR.VEHICLE.1, ignore.case = TRUE) ~ "Traffic Violation",
+    grepl("FOLLOWING|PASSING|LANE|TURNING|BACKING|UNINVOLVED|EXPERIENCE|PEDESTRIAN ERROR", 
+          CONTRIBUTING.FACTOR.VEHICLE.1, ignore.case = TRUE) ~ "Driver Error",
+    grepl("PAVEMENT|GLARE|VIEW|OBSTRUCT|ANIMAL|DEFECTIVE|FAILURE|TINTED|WINDSHIELD|OVERSIZED|VANDALISM", 
+          CONTRIBUTING.FACTOR.VEHICLE.1, ignore.case = TRUE) ~ "External Vehicle Defect",
+    TRUE ~ "Other/Unknown"
+    )),
     vehicle_cat = factor(case_when(
-      grepl("MOTORCYCLE|MOTORBIKE", VEHICLE.TYPE.CODE.1, ignore.case = TRUE) ~ 
-        "motorcycle",
-      grepl("TRUCK|BUS", VEHICLE.TYPE.CODE.1, ignore.case = TRUE) ~ 
-        "truck_bus",
-      grepl("BICYCLE|BIKE|SCOOTER", VEHICLE.TYPE.CODE.1, ignore.case = TRUE) ~ 
-        "bike_scooter",
-      TRUE ~ "car_suv"
+      grepl("MOTORCYCLE|MOTORBIKE", VEHICLE.TYPE.CODE.1, ignore.case = TRUE) ~ "Motorcycle",
+      grepl("TRUCK|BUS", VEHICLE.TYPE.CODE.1, ignore.case = TRUE) ~ "Truck/Bus",
+      grepl("BICYCLE|BIKE|SCOOTER", VEHICLE.TYPE.CODE.1, ignore.case = TRUE) ~ "Bike/Scooter",
+      TRUE ~ "Car/SUV"
     ))
+  ) %>%
+  filter(borough != "") %>%
+  # Add Time of Day logic
+  mutate(tod = ifelse(crash_hour >= 6 & crash_hour < 18, "day", "night"))
+
+# 1. Set Factor Baseline (The "Normal" Crash)
+nyc_small$contributing_factor_grouped <- relevel(nyc_small$contributing_factor_grouped, ref = "Other/Unknown")
+
+# 2. Set Time Baseline (The "Normal" Time)
+nyc_small$covid_period <- relevel(nyc_small$covid_period, ref = "Pre-COVID")
+@
+
+<<echo=FALSE, message=FALSE, warning=FALSE, fig.height=13, fig.width=11, fig.align='center'>>=
+model_interaction <- glm(is_fatal ~ borough + vehicle_cat + tod + 
+                        (contributing_factor_grouped * covid_period),
+                        data = filter(nyc_small, 
+                                      covid_period != "During COVID"), 
+                        family = binomial)
+
+# Pre-COVID Model
+model_pre <- glm(is_fatal ~ borough + vehicle_cat + tod + contributing_factor_grouped, 
+                 data = filter(nyc_small, covid_period == "Pre-COVID"), 
+                 family = binomial)
+
+# Post-COVID Model
+model_post <- glm(is_fatal ~ borough + vehicle_cat + tod + contributing_factor_grouped, 
+                  data = filter(nyc_small, covid_period == "Post-COVID"), 
+                  family = binomial)
+@
+
+While the primary focus of this analysis is the shift in driver behavior, it is crucial to isolate these effects from the inherent physical risks of different crash scenarios. To achieve this, our model controls for Borough, Vehicle Type, and Time of Day as fixed effects. This adjustment accounts for known structural confounders (such as the heightened lethality of motorcycle collisions or the reduced visibility of nighttime driving) which exist independently of the pandemic. By holding these variables constant, we ensure that the significant changes observed in the behavioral categories represent a genuine shift in the lethality of driver conduct, rather than a byproduct of changing traffic composition or location patterns.
+
+<<echo=FALSE, message=FALSE, warning=FALSE, fig.height=13, fig.width=11, fig.align='center'>>=
+#Control
+controls_results <- tidy(model_interaction, exponentiate = TRUE, conf.int = TRUE) %>%
+  filter(!grepl(":", term)) %>%             # Remove Interaction terms
+  filter(term != "(Intercept)") %>%         # Remove Intercept
+  filter(!grepl("covid_period", term)) %>%  # Remove the general Time Period term
+  filter(!grepl("contributing_factor", term)) %>% # Remove Factors (saved for the other plot)
+  mutate(
+    term_clean = case_when(
+      grepl("borough", term) ~ gsub("borough", "Borough: ", term),
+      grepl("vehicle_cat", term) ~ gsub("vehicle_cat", "Vehicle: ", term),
+      grepl("tod", term) ~ gsub("tod", "Time: ", term),
+      TRUE ~ term
+    )
   )
 
-nyc_small <- nyc_small %>%
-  mutate(hour = as.numeric(substr(crash_hour, 1, 2)),
-         tod = ifelse(hour >= 6 & hour < 18, "day", "night"))
-
-nyc_small$BOROUGH <- droplevels(as.factor(nyc_small$borough))
-
-# set baselines for model
-nyc_small$borough <- relevel(as.factor(nyc_small$BOROUGH), 
-                             ref = "STATEN ISLAND")
-nyc_small$tod <- relevel(as.factor(nyc_small$tod), 
-                         ref = "day")
-nyc_small$vehicle_cat <- relevel(as.factor(nyc_small$vehicle_cat), 
-                                 ref = "car_suv")
-nyc_small$contributing_factor <- relevel(
-  as.factor(nyc_small$contributing_factor),ref = "Unspecified")
-
+# 2. Plot the Baseline Controls
+ggplot(controls_results, aes(x = estimate, y = fct_reorder(term_clean, estimate))) +
+  geom_vline(xintercept = 1, linetype = "dashed", color = "black", alpha = 0.5) +
+  geom_errorbarh(aes(xmin = conf.low, xmax = conf.high), height = 0.2, color = "gray40") +
+  geom_point(size = 3, color = "#2c3e50") +
+  scale_x_log10() +
+  labs(
+    title = "Baseline Control Factors: What increases Fatal Risk?",
+    subtitle = "Holding all else constant (Average across Pre & Post COVID)",
+    x = "Odds Ratio (Log Scale)",
+    y = NULL,
+    caption = "NOTE: These effects are held constant in the model."
+  ) +
+  theme_minimal(base_size = 12)
 @
 
-<<echo=FALSE, message=FALSE, warning=FALSE>>=
-# Creating the logistic regression model:
-model <- glm(is_fatal ~ borough + tod + vehicle_cat + contributing_factor,
-             data = nyc_small,
-             family = binomial)
+This plot illustrates the fixed effects of the control variables (Vehicle Type, Time of Day, and Borough), holding all behavioral factors constant. These results validate the model’s reliability, as they align with established traffic safety principles. The most significant predictor of fatality is vehicle type: incidents involving motorcycles show a drastically elevated risk (Odds Ratio > 3.0) compared to the baseline, confirming that motorcyclists remain the most vulnerable road users regardless of other conditions. Time of day is also a significant factor, with nighttime crashes showing nearly double the odds of a fatal outcome compared to daytime incidents, likely due to reduced visibility and higher travel speeds. Geographically, Manhattan is associated with the lowest fatality risk, likely a result of congestion and lower average speeds. On the other hand, Staten Island, with its more suburban, highway-centric infrastructure, presents a higher baseline risk.
 
+<<echo=FALSE, message=FALSE, warning=FALSE, fig.height=13, fig.width=11, fig.align='center'>>=
+interaction_results <- tidy(model_interaction, exponentiate = TRUE, conf.int = TRUE) %>%
+  filter(grepl(":", term)) %>%
+  mutate(
+    term_clean = gsub("contributing_factor_grouped", "", term),
+    term_clean = gsub(":covid_periodPost-COVID", "", term_clean),
+    is_significant = ifelse(p.value < 0.05, "Significant Shift", "No Significant Change")
+  )
 
-summ <- summary(model)
+tidy_pre <- tidy(model_pre, exponentiate = TRUE, conf.int = TRUE) %>% 
+  mutate(period = "Pre-COVID")
+tidy_post <- tidy(model_post, exponentiate = TRUE, conf.int = TRUE) %>% 
+  mutate(period = "Post-COVID")
 
-coefs <- summ$coefficients
-est <- coefs[, "Estimate"]         # log-odds
-se  <- coefs[, "Std. Error"]       # standard errors
-
-# compute odds ratios + 95% confidence intervals
-ci_low  <- exp(est - 1.96 * se)
-ci_high <- exp(est + 1.96 * se)
-
-results_table <- data.frame(
-  term        = rownames(coefs),
-  odds_ratio  = exp(est),
-  ci_low      = ci_low,
-  ci_high     = ci_high,
-  significant = ifelse(coefs[, "Pr(>|z|)"] < 0.05, "yes", "no"),
-  row.names   = NULL
-)
-
-# filter out the intercept/baseline to keep table cleaner
-results_table <- results_table[results_table$term != "(Intercept)", ]
-
-results_table$term <- gsub("vehicle_cat", "V: ", 
-                           results_table$term)
-results_table$term <- gsub("borough", "B: ", 
-                           results_table$term)
-results_table$term <- gsub("tod", "ToD: ", 
-                           results_table$term)
-results_table$term <- gsub("contributing_factor", "CF: ", 
-                           results_table$term)
-
+plot_data <- bind_rows(tidy_pre, tidy_post) %>%
+  filter(grepl("contributing_factor", term)) %>%
+  # Clean up the names for the chart
+  mutate(term = gsub("contributing_factor_grouped", "", term))
 @
 
 <<echo=FALSE, message=FALSE, warning=FALSE, fig.height=13, fig.width=11, fig.align='center'>>=
-results_table %>%
-  filter(significant == "yes") %>%
-  mutate(term = fct_reorder(term, odds_ratio)) %>%
-  ggplot(aes(x = term, y = odds_ratio, color = significant)) +
-  geom_point(size = 3) +
-  geom_errorbar(aes(ymin = ci_low, ymax = ci_high), width = 0.2) +
-  coord_flip() +
-  scale_color_manual(values = c("no" = "gray60", "yes" = "#E69F00")) +
-  geom_hline(yintercept = 1, linetype = "dashed", color = "black") +
+p1 <- ggplot(plot_data, aes(y = term, x = estimate)) +
+  # The line connecting the dots
+  geom_line(aes(group = term), color = "grey50", size = 1) + 
+  # The dots themselves
+  geom_point(aes(color = period), size = 4) + 
+  # Add a vertical line at 1 (The Baseline/Unspecified Risk)
+  geom_vline(xintercept = 1, linetype = "dashed", alpha = 0.5) +
+  scale_color_manual(values = c("Pre-COVID" = "#1f77b4", "Post-COVID" = "#d62728")) +
   labs(
-    title = "Factors Increasing the Odds of a Fatal Motor Vehicle Collision in NYC",
-    x = NULL,
-    y = "Odds Ratio (log scale)",
-    caption = "Values above 1 indicate higher odds of a fatal outcome",
-    color = "Significant"
+    title = "How Did Fatal Crash Risks Shift?",
+    x = "Odds Ratio (Log Scale)",
+    y = NULL,
+    color = "Period"
   ) +
-  scale_y_log10() +
-  theme_minimal(base_size = 12)
+  scale_x_log10() +
+  theme_minimal(base_size = 14)
 
+p2 <- ggplot(interaction_results, aes(x = estimate, y = fct_reorder(term_clean, estimate), color = is_significant)) +
+  
+  geom_vline(xintercept = 1, linetype = "dashed", color = "black", alpha = 0.7) +
+  geom_errorbarh(aes(xmin = conf.low, xmax = conf.high), height = 0.2, linewidth = 0.8) +
+  geom_point(size = 4) +
+  scale_color_manual(values = c("Significant Shift" = "#D55E00", "No Significant Change" = "gray70")) +
+  scale_x_log10() +
+  labs(
+    title = "Did the Risk Change Significantly Post-COVID?",
+    x = "Change in Odds Ratio (Log Scale)\n(Right = Became Riskier | Left = Became Safer)",
+    y = "Risk Factor",
+    color = "Statistical Significance"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(legend.position = "bottom")
+
+combined_plot <- p1 + p2 + 
+  plot_layout(widths = c(1, 1))
+
+combined_plot
 @
 
-The forest plot clearly highlights which predictors have a statistically significant association with fatal motor vehicle collisions in NYC. Most notably, crashes involving motorcycles stand out with the highest odds of fatality, followed by those related to drug or alcohol involvement, unsafe speed, and pedestrian or bicyclist confusion—each showing odds ratios well above 1 and confidence intervals that do not cross the null line. Nighttime crashes also significantly increase fatal risk compared to daytime. In contrast, factors such as borough or minor driving errors (e.g., backing unsafely, turning improperly) show odds ratios close to 1 and wide confidence intervals, indicating no statistically significant effect. Overall, the most significant predictors are those linked to risky behaviors and vulnerable vehicle types, underscoring the human and situational nature of fatal crash risk.
+This figure presents a comprehensive view of how driver behaviors shifted during the pandemic. The left panel illustrates the absolute risk levels, identifying Speeding/Aggression and Traffic Violations as the most lethal factors in both periods (Odds Ratios > 2.0).
 
-<<echo=FALSE, message=FALSE, warning=FALSE, fig.height=13, fig.width=11, fig.align='center'>>=
-key_terms <- results_table %>%
-  filter(grepl("V|ToD|CF", term), significant == "yes") %>%
-  mutate(term = fct_reorder(term, odds_ratio))
-
-ggplot(key_terms, aes(x = term, y = odds_ratio, fill = term)) +
-  geom_col(show.legend = FALSE) +
-  geom_text(aes(label = sprintf("%.1fx", odds_ratio)), hjust = -0.1, size = 3.5) +
-  coord_flip() +
-  labs(
-    title = "Relative Likelihood of Fatal Crash by Key Factors",
-    subtitle = "Compared to baseline: Car/SUV during daytime with unspecified cause",
-    y = "Odds Ratio", x = NULL
-  ) +
-  theme_minimal(base_size = 12)
-
-@
-
-This bar chart summarizes the relative likelihood of a fatal crash across key factors, making the model’s results easily interpretable. It shows that crashes involving motorcycles are the most lethal; over 14 times more likely to result in death than the baseline (a daytime car or SUV crash with no specified cause). Other high-risk circumstances include driver illness, drug involvement, tinted windows, and traffic control violations, all of which multiply fatality odds by 5–13 times. Nighttime driving and alcohol involvement roughly double the risk, confirming their significant yet smaller effects compared to vehicle type or severe impairments. On the opposite end, factors like distraction, minor infractions, or mechanical issues are associated with odds ratios below 1, indicating little to no increase in fatality risk.
+However, the right panel reveals crucial nuances in how these risks changed. Notably, Distraction and Traffic Violations showed a statistically significant decrease in lethality relative to the baseline trends (Interaction OR < 1.0, $p < 0.05$). In contrast, while Impairment appeared to become more dangerous in the raw data (Left Panel, Red dot > Blue dot), the interaction model (Right Panel, Gray bar) confirms that this shift was not statistically distinguishable from chance ($p > 0.05$). This suggests that while distracted driving became less predictive of fatalities, the extreme danger of impaired driving remained a stable constant throughout the pandemic.
 
 \subsubsection{Interpretation}
-Our analysis highlights which circumstances make crashes most likely to be deadly. Location matters somewhat: crashes in Staten Island are more likely to be fatal than in the Bronx, Queens, or Manhattan. In spite of this, the bigger differences come from time of day, vehicle type, and driver behavior.
 
-Time of day: Nighttime crashes are almost twice as likely to result in death compared to daytime crashes (about 1.8 times higher odds).
+In summary, this analysis utilized an interaction-based logistic regression to disentangle the specific effects of the COVID-19 pandemic from established structural risk factors in NYC collisions. By controlling for fixed effects such as vehicle type and borough, we confirmed that physical determinants of fatality—most notably motorcycle involvement and nighttime driving—remained consistent predictors of mortality regardless of the pandemic. 
 
-Vehicle type: Motorcycles are especially dangerous. A crash involving a motorcycle is over 14 times as likely to be fatal compared to a crash involving a car or SUV. Trucks and buses are more than 3 times riskier, and crashes involving bicycles or scooters are nearly 3 times more likely to be fatal.
+However, the interaction model revealed that the "COVID Effect" was not a uniform amplifier of risk. While Speeding/Aggression and Impairment remained persistently high-risk behaviors with no statistically significant deviation from their baseline lethality, Distraction and Traffic Violations exhibited a significant relative decline in their association with fatal outcomes. These findings underscore that the post-pandemic traffic landscape was not defined by a blanket increase in danger across all categories, but rather by a specific restructuring of how certain driver behaviors translate into fatal outcomes.
 
-Driver and pedestrian behaviors: Risky behaviors dramatically elevate danger. Alcohol-related crashes are about 2 times more likely to result in death, while drug-involved crashes are nearly 8–10 times more likely. Dangerous driving behaviors such as speeding, running red lights, or unsafe lane changes typically multiply the odds of a fatal crash by 4–5.
-
-By contrast, mechanical issues (like brake defects) appear much less often, so their effect is harder to measure reliably.
-
-Overall, these results suggest that time of day, vehicle type, and risky human behaviors are the dominant predictors of fatal outcomes in NYC crashes, while borough differences are smaller in magnitude.
 
 \subsection{Part 2: COVID-19's Impact on Crash Severity}
 
 Building on our baseline risk analysis, we developed statistical models to quantify how COVID-19 specifically altered crash severity patterns in NYC. This analysis tests whether the pandemic period itself was independently associated with changes in fatality risk, controlling for established risk factors.
 
-<<echo=FALSE, message=FALSE, warning=FALSE>>=
+<<echo=FALSE, message=FALSE, warning=FALSE, fig.height=13, fig.width=11, fig.align='center'>>=
 # Statistical Modeling Part 2
 # Model 1: COVID period effect
 covid_simple_model <- glm(is_fatal ~ covid_period,
@@ -1068,7 +1111,7 @@ The statistical models reveal that COVID-19 had a significant and substantial ef
 
 Even after controlling for differences in borough, vehicle type, and time of day, the effect persisted: crashes during COVID remained 1.67 times more likely to be fatal (95\% CI: [1.45, 1.91]), and post-COVID crashes were 1.79 times more likely (95\% CI: [1.61, 1.98]). The persistence of this strong effect in the adjusted model suggests the pandemic introduced fundamental changes in crash dynamics beyond simple compositional shifts in traffic patterns.
 
-<<echo=FALSE, message=FALSE, warning=FALSE>>=
+<<echo=FALSE, message=FALSE, warning=FALSE, fig.height=13, fig.width=11, fig.align='center'>>=
 # Model 3: Interaction effects
 interaction_model <- glm(is_fatal ~ covid_period * vehicle_cat + borough + tod,
                         data = nyc_small,
@@ -1118,7 +1161,7 @@ The interaction analysis reveals that while overall severity increased across al
 \section{Appendices}
 
 \subsection{Appendix A: Piecewise Linear Trends in Total Crashes per Year by Borough}
-<<echo=FALSE, message=FALSE, warning=FALSE>>=
+<<echo=FALSE, message=FALSE, warning=FALSE, fig.height=13, fig.width=11, fig.align='center'>>=
 # Appendix A: Piecewise Linear Trends in Total Crashes per Year by Borough
 dat <- nyc %>%
   filter(BOROUGH != "") %>%
@@ -1140,7 +1183,7 @@ ggplot(dat, aes(x = YEAR, y = n, color = BOROUGH)) +
 @
 
 \subsection{Appendix B: Total Number of Accidents per Time of Day}
-<<echo=FALSE, message=FALSE, warning=FALSE>>=
+<<echo=FALSE, message=FALSE, warning=FALSE, fig.height=13, fig.width=11, fig.align='center'>>=
 # Appendix B: Total Number of Accidents per Time of Day
 layout(mat = 1)
 times <- nyc$CRASH.TIME
@@ -1194,7 +1237,7 @@ ggplot(small_sample_sf)+
 @
 
 \subsection{Appendix D: Highway Accidents}
-<<echo=FALSE, message=FALSE, warning=FALSE>>=
+<<echo=FALSE, message=FALSE, warning=FALSE, fig.height=13, fig.width=11, fig.align='center'>>=
 # Appendix D: Highway Accidents
 # Find the accidents that occurred on high speed roads
 filter(combined, between(LONGITUDE, -74.26, -73.70) & 
@@ -1213,7 +1256,7 @@ filter(combined, between(LONGITUDE, -74.26, -73.70) &
 @
 
 \subsection{Appendix E: R Code}
-<<echo=FALSE, message=FALSE, warning=FALSE>>=
+<<echo=FALSE, message=FALSE, warning=FALSE, fig.height=13, fig.width=11, fig.align='center'>>=
 {r ref.label=knitr::all_labels(), echo=TRUE, eval=FALSE}
 @
 
