@@ -17,7 +17,7 @@ library(grid)
 library(tidyr)
 # SQL Preprocessing
 
-dcon <- dbConnect(SQLite(), dbname = "data/Collisions_DB.db")
+dcon <- dbConnect(SQLite(), dbname = "Presentation/data/Collisions_DB.db")
 
 dbExecute(dcon, "
 CREATE VIEW IF NOT EXISTS crashes_enriched AS
@@ -297,7 +297,7 @@ colors <- rev(hcl.colors(n=100, palette= "YlOrRd"))[as.numeric(cut(t, breaks = 1
 norm_count <- datawizard::normalize(total_count)
 
 # Read shapefile
-nyc_data <- st_read("data/nybb_25c/nybb.shp")
+nyc_data <- st_read("Presentation/data/nybb_25c/nybb.shp")
 
 # Convert to lat/lon
 nyc_geographic <- st_transform(nyc_data, crs = 4326)
@@ -385,7 +385,6 @@ for (i in seq_len(n)) {
 }
 grid.text("Changes in the quantity of car crashes by area after COVID", y = 1.1,
           gp = grid::gpar(fontface = "bold", cex = 1.3))
-grid.newpage()
 #legend
 grid.rect(
   x = unit(0.05, "npc"),   # left margin of box
@@ -395,89 +394,50 @@ grid.rect(
   just = c("left", "top"),
   gp = grid::gpar(fill = "white", col = "black")
 )
-
-# Add key inside the box
-grid.text(
-  "Angle Definitions",
-  x = unit(0.09, "npc"),
-  y = unit(0.94, "npc"),
-  just = c("left", "top"),
-  gp=grid::gpar(fontsize=10)
-)
-grid.segments(
-  .10, .90,
-  .15, .90,
-  default.units = "npc",
-  arrow = arrow(type = "open", length = unit(.01, "npc")),
-  gp = gpar(col = "black", lwd = 2)
-)
-grid.text(
-  "0%",
-  x = unit(0.16, "npc"),
-  y = unit(0.91, "npc"),
-  just = c("left", "top"),
-  gp=gpar(fontsize=10)
-)
-grid.segments(
-  .10, .90,
-  .14, .87,
-  default.units = "npc",
-  arrow = arrow(type = "open", length = unit(.01, "npc")),
-  gp = gpar(col = "black", lwd = 2)
-)
-grid.text(
-  "50%",
-  x = unit(0.15, "npc"),
-  y = unit(0.87, "npc"),
-  just = c("left", "top"),
-  gp=gpar(fontsize=10)
-)
-grid.segments(
-  .10, .90,
-  .10, .85,
-  default.units = "npc",
-  arrow = arrow(type = "open", length = unit(.01, "npc")),
-  gp = gpar(col = "black", lwd = 2)
-)
-grid.text(
-  "100%",
-  x = unit(0.09, "npc"),
-  y = unit(0.84, "npc"),
-  just = c("left", "top"),
-  gp=gpar(fontsize=10)
-)
 grid.text(
   "Total Crashes in this area",
-  x = unit(0.2, "npc"),
+  x = unit(0.1, "npc"),
   y = unit(0.94, "npc"),
   just = c("left", "top"),
   gp=gpar(fontsize=10)
 )
-draw_color_key(x= unit(.24, "npc"),
-               y= unit(.8, "npc"),
-               height = unit(.1, "npc"),
-               width = unit(.01, "npc"),
-               col_fun=rev(hcl.colors(n=100, palette= "YlOrRd")))
+
+# Generate colors
+cols <- rev(hcl.colors(n=100, palette= "YlOrRd"))
+
+# One rect per color
+for (i in 1:100) {
+  grid.rect(
+    x = unit(.14, "npc"),
+    y = unit(.8, "npc") + unit(.1, "npc") * (i - 1) / 100,
+    width = unit(.01, "npc"),
+    height = unit(.1, "npc") / 100,
+    just = c("center", "bottom"),
+    gp = gpar(fill = cols[i], col = NA)
+  )
+}
+
+
 grid.text(
   "23k",
-  x = unit(0.25, "npc"),
+  x = unit(0.15, "npc"),
   y = unit(0.9, "npc"),
   just = c("left", "top"),
-  gp=grid::gpar(fontsize=10)
+  gp=gpar(fontsize=10)
 )
 grid.text(
   "12k",
-  x = unit(0.25, "npc"),
+  x = unit(0.15, "npc"),
   y = unit(0.86, "npc"),
   just = c("left", "top"),
-  gp=grid::gpar(fontsize=10)
+  gp=gpar(fontsize=10)
 )
 grid.text(
   "0",
-  x = unit(0.25, "npc"),
+  x = unit(0.15, "npc"),
   y = unit(0.82, "npc"),
   just = c("left", "top"),
-  gp=grid:gpar(fontsize=10)
+  gp=gpar(fontsize=10)
 )
 
 popViewport(2)
